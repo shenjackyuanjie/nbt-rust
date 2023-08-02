@@ -184,8 +184,17 @@ impl NbtValue {
         let mut value_type = [0_u8];
         _ = value.read(&mut value_type).unwrap();
         match value_type {
+            [0x00] => Some(Self::NbtEnd),
+            [0x01] => Some(Self::from_bool(value)),
+            [0x02] => Some(Self::from_i16(value)),
+            [0x03] => Some(Self::from_i32(value)),
+            [0x04] => Some(Self::from_i64(value)),
+            [0x05] => Some(Self::from_f32(value)),
+            [0x06] => Some(Self::from_f64(value)),
+            [0x08] => Some(Self::from_string(value)),
             _ => {
                 value.seek(SeekFrom::Current(-1)).unwrap();
+                // 退回一个字节
                 None
             }
         }
@@ -195,8 +204,38 @@ impl NbtValue {
         let mut value_type = [0_u8];
         _ = value.read(&mut value_type).unwrap();
         match value_type {
+            [0x00] => Some((Self::NbtEnd, Arc::from(""))),
+            [0x01] => {
+                let name = Self::from_string(value).as_string().unwrap();
+                Some((Self::from_bool(value), name))
+            }
+            [0x02] => {
+                let name = Self::from_string(value).as_string().unwrap();
+                Some((Self::from_i16(value), name))
+            }
+            [0x03] => {
+                let name = Self::from_string(value).as_string().unwrap();
+                Some((Self::from_i32(value), name))
+            }
+            [0x04] => {
+                let name = Self::from_string(value).as_string().unwrap();
+                Some((Self::from_i64(value), name))
+            }
+            [0x05] => {
+                let name = Self::from_string(value).as_string().unwrap();
+                Some((Self::from_f32(value), name))
+            }
+            [0x06] => {
+                let name = Self::from_string(value).as_string().unwrap();
+                Some((Self::from_f64(value), name))
+            }
+            [0x08] => {
+                let name = Self::from_string(value).as_string().unwrap();
+                Some((Self::from_string(value), name))
+            }
             _ => {
                 value.seek(SeekFrom::Current(-1)).unwrap();
+                // 退回一个字节
                 None
             }
         }
