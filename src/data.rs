@@ -141,6 +141,13 @@ macro_rules! read_data {
 
 #[allow(unused)]
 impl NbtValue {
+    pub fn as_end(&self) -> Option<()> {
+        match self {
+            Self::NbtEnd => Some(()),
+            _ => None,
+        }
+    }
+
     export_data!(as_bool, NbtByte, bool);
     export_data!(as_i16, NbtShort, i16);
     export_data!(as_i32, NbtInt, i32);
