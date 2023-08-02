@@ -156,6 +156,12 @@ impl NbtValue {
     export_data!(as_f64, NbtDouble, f64);
     export_data!(as_string, NbtString, Arc<str>);
 
+    pub fn from_end(value: &mut Reader) -> Self {
+        let mut buff = [0_u8];
+        _ = value.read(&mut buff).unwrap();
+        Self::NbtEnd
+    }
+
     read_data!(from_bool, NbtByte, bool, 1);
     read_data!(from_i16, NbtShort, i16, 2);
     read_data!(from_i32, NbtInt, i32, 4);
