@@ -57,26 +57,26 @@ macro_rules! add_impl {
     ($type:ty, $value:ty, $tag:expr, false) => {
         impl NbtListTrait for $type {
             type ValueType = $value;
-
+            #[inline]
             fn type_tag() -> u8 { $tag }
-
+            #[inline]
             fn len(&self) -> usize { self.len() }
-
+            #[inline]
             fn get_index(&self, _: usize) -> Option<Self::ValueType> { None }
-
+            #[inline]
             fn get_name(&self, name: &str) -> Option<Self::ValueType> { self.get(name).copied() }
         }
     };
     ($type:ty, $value:ty ,$tag:expr, true) => {
         impl NbtListTrait for $type {
             type ValueType = $value;
-
+            #[inline]
             fn type_tag() -> u8 { $tag }
-
+            #[inline]
             fn len(&self) -> usize { self.len() }
-
+            #[inline]
             fn get_index(&self, index: usize) -> Option<Self::ValueType> { self.get(index).copied() }
-
+            #[inline]
             fn get_name(&self, _: &str) -> Option<Self::ValueType> { None }
         }
     };
@@ -113,6 +113,7 @@ pub enum NbtValue {
 
 macro_rules! export_data {
     ($name:ident, $nbt_name:ident, $type:ty) => {
+        #[inline]
         pub fn $name(&self) -> Option<$type> {
             match self {
                 Self::$nbt_name(value) => Some(value.to_owned()),
@@ -124,6 +125,7 @@ macro_rules! export_data {
 
 macro_rules! read_data {
     ($name:ident, $nbt_name:ident, bool, 1) => {
+        #[inline]
         pub fn $name(value: &mut Reader) -> Self {
             let mut buff = [0_u8];
             _ = value.read(&mut buff).unwrap();
@@ -131,6 +133,7 @@ macro_rules! read_data {
         }
     };
     ($name:ident, $nbt_name:ident, $type:ty, $len:expr) => {
+        #[inline]
         pub fn $name(value: &mut Reader) -> Self {
             let mut buff = [0_u8; $len];
             _ = value.read(&mut buff).unwrap();
@@ -174,5 +177,24 @@ impl NbtValue {
         let mut buff = vec![0_u8; len as usize];
         _ = value.read(&mut buff).unwrap();
         Self::NbtString(Arc::from(String::from_utf8(buff).unwrap()))
+    }
+
+    /// 读取一个有类型无名称的值
+    pub fn try_read_value(value: &mut Reader) -> Option<Self> {
+        let mut value_type = [0_u8];
+        _ = value.read(&mut value_type).unwrap();
+        match value_type {
+            
+            _ => None
+        }
+    }
+
+    pub fn try_read_value_with_name(value: &mut Reader) -> Option<(Self, Arc<str>)> {
+        let mut value_type = [0_u8];
+        _ = value.read(&mut value_type).unwrap();
+        match value_type {
+            
+            _ => None
+        }
     }
 }
