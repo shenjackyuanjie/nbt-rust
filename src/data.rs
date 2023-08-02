@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::io::{Cursor, Read};
+use std::io::{Cursor, Read, Seek, SeekFrom};
 use std::sync::Arc;
 
 /// NBT 里除了字符串的长度量都是 i32
@@ -179,22 +179,26 @@ impl NbtValue {
         Self::NbtString(Arc::from(String::from_utf8(buff).unwrap()))
     }
 
-    /// 读取一个有类型无名称的值
+    /// 读取一个有类型无名称的值 (List)
     pub fn try_read_value(value: &mut Reader) -> Option<Self> {
         let mut value_type = [0_u8];
         _ = value.read(&mut value_type).unwrap();
         match value_type {
-            
-            _ => None
+            _ => {
+                value.seek(SeekFrom::Current(-1)).unwrap();
+                None
+            }
         }
     }
-
+    /// 读取一个有类型有名称的值 (Other)
     pub fn try_read_value_with_name(value: &mut Reader) -> Option<(Self, Arc<str>)> {
         let mut value_type = [0_u8];
         _ = value.read(&mut value_type).unwrap();
         match value_type {
-            
-            _ => None
+            _ => {
+                value.seek(SeekFrom::Current(-1)).unwrap();
+                None
+            }
         }
     }
 }
