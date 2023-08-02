@@ -12,6 +12,11 @@ pub type StringLength = u32;
 /// Reader
 pub type Reader<'a> = Cursor<&'a [u8]>;
 
+pub enum NbtItem<T: NbtListTrait> {
+    Value(NbtValue),
+    Array(NbtList<T>),
+}
+
 /// 一个 NBT list 的基本素养
 pub trait NbtListTrait {
     /// 内容类型
@@ -87,6 +92,20 @@ add_impl!(HashMap<Arc<str>, i32>, i32, 0x0A, false);
 add_impl!(Vec<i32>, i32, 0x0B, true);
 add_impl!(Vec<i64>, i64, 0x0C, true);
 
+impl NbtList<Vec<i32>> {
+    /// 直接读取长度和值 不带名称
+    pub fn from_reader(value: &mut Reader) -> Self {
+        let mut buff = [0_u8; 4];
+        _ = value.read(&mut buff).unwrap();
+        let len = NbtLength::from_be_bytes(buff);
+        let mut vec = Vec::with_capacity(len as usize);
+        for _ in 0..len {
+            vec.push(NbtValue::from_i32(value).as_i32().unwrap());
+        }
+        Self { value: vec }
+    }
+}
+
 /// 基本 NBT 数据类型
 #[allow(unused)]
 #[derive(Debug, Clone)]
@@ -125,6 +144,7 @@ macro_rules! export_data {
 
 macro_rules! read_data {
     ($name:ident, $nbt_name:ident, bool, 1) => {
+        /// 直接读取值 不带类型数据和名称
         #[inline]
         pub fn $name(value: &mut Reader) -> Self {
             let mut buff = [0_u8];
@@ -133,6 +153,7 @@ macro_rules! read_data {
         }
     };
     ($name:ident, $nbt_name:ident, $type:ty, $len:expr) => {
+        /// 直接读取值 不带类型数据和名称
         #[inline]
         pub fn $name(value: &mut Reader) -> Self {
             let mut buff = [0_u8; $len];
