@@ -25,7 +25,7 @@ pub trait NbtListTrait {
     /// 输出类型标识符
     /// 类型标识符
     /// (0x07) Vec<bool>
-    /// (0x09) Vec<NbtType>
+    /// (0x09) Vec<NbtItem>
     /// (0x0A) Compound <xxxx>
     /// (0x0B) Vec<i32>
     /// (0x0C) Vec<i64>
@@ -94,6 +94,35 @@ where
     fn get_name(&self, name: &str) -> Option<Self::ValueType> { self.get(name).cloned() }
 }
 
+impl<T> NbtListTrait for Vec<NbtItem<T>>
+where
+    T: Clone + NbtListTrait,
+{
+    type ValueType = NbtItem<T>;
+    #[inline]
+    fn type_tag() -> u8 { 0x09 }
+    #[inline]
+    fn len(&self) -> usize { self.len() }
+    #[inline]
+    fn get_index(&self, index: usize) -> Option<Self::ValueType> { self.get(index).cloned() }
+    #[inline]
+    fn get_name(&self, _: &str) -> Option<Self::ValueType> { None }
+}
+
+impl NbtList<Vec<bool>> {
+    /// 直接读取长度和值 不带名称
+    pub fn from_reader(value: &mut Reader) -> Self {
+        let mut buff = [0_u8; 4];
+        _ = value.read(&mut buff).unwrap();
+        let len = NbtLength::from_be_bytes(buff);
+        let mut vec = Vec::with_capacity(len as usize);
+        for _ in 0..len {
+            vec.push(NbtValue::from_bool(value).as_bool().unwrap());
+        }
+        Self { value: vec }
+    }
+}
+
 impl NbtList<Vec<i32>> {
     /// 直接读取长度和值 不带名称
     pub fn from_reader(value: &mut Reader) -> Self {
@@ -103,6 +132,20 @@ impl NbtList<Vec<i32>> {
         let mut vec = Vec::with_capacity(len as usize);
         for _ in 0..len {
             vec.push(NbtValue::from_i32(value).as_i32().unwrap());
+        }
+        Self { value: vec }
+    }
+}
+
+impl NbtList<Vec<i64>> {
+    /// 直接读取长度和值 不带名称
+    pub fn from_reader(value: &mut Reader) -> Self {
+        let mut buff = [0_u8; 4];
+        _ = value.read(&mut buff).unwrap();
+        let len = NbtLength::from_be_bytes(buff);
+        let mut vec = Vec::with_capacity(len as usize);
+        for _ in 0..len {
+            vec.push(NbtValue::from_i64(value).as_i64().unwrap());
         }
         Self { value: vec }
     }
