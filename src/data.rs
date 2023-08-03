@@ -116,6 +116,7 @@ where
 
 /// NbtList
 /// 来力
+#[allow(unused)]
 impl<T> NbtList<Vec<NbtItem<T>>>
 where
     T: NbtListTrait + Clone,
@@ -126,7 +127,52 @@ where
         let mut buff = [0_u8; 4];
         _ = value.read(&mut buff).unwrap();
         let len = NbtLength::from_be_bytes(buff);
-        let mut vec: Vec<T> = Vec::with_capacity(len as usize);
+        let mut vec: Vec<NbtItem<T>> = Vec::with_capacity(len as usize);
+        // 先读取 type
+        let mut type_buff = [0_u8; 1];
+        _ = value.read(&mut type_buff).unwrap();
+        match type_buff {
+            [0x00] => {
+                todo!()
+            }
+            [0x01] => {
+                for _ in 0..len {
+                    vec.push(NbtItem::Value(NbtValue::from_bool(value)));
+                }
+            }
+            [0x02] => {
+                for _ in 0..len {
+                    vec.push(NbtItem::Value(NbtValue::from_i16(value)));
+                }
+            }
+            [0x03] => {
+                for _ in 0..len {
+                    vec.push(NbtItem::Value(NbtValue::from_i32(value)));
+                }
+            }
+            [0x04] => {
+                for _ in 0..len {
+                    vec.push(NbtItem::Value(NbtValue::from_i64(value)));
+                }
+            }
+            [0x05] => {
+                for _ in 0..len {
+                    vec.push(NbtItem::Value(NbtValue::from_f32(value)));
+                }
+            }
+            [0x06] => {
+                for _ in 0..len {
+                    vec.push(NbtItem::Value(NbtValue::from_f64(value)));
+                }
+            }
+            [0x07] => {
+                for _ in 0..len {
+                    for _ in 0..len {
+                        vec.push(NbtItem::Array(NbtList::<Vec<bool>>::from_reader(value)));
+                    }
+                }
+            }
+        }
         todo!()
     }
 }
