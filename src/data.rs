@@ -12,6 +12,7 @@ pub type StringLength = u32;
 /// Reader
 pub type Reader<'a> = Cursor<&'a [u8]>;
 
+#[derive(Debug, Clone)]
 pub enum NbtItem<T: NbtListTrait> {
     Value(NbtValue),
     Array(NbtList<T>),
@@ -59,20 +60,7 @@ where
 }
 
 macro_rules! add_impl {
-    ($type:ty, $value:ty, $tag:expr, false) => {
-        impl NbtListTrait for $type {
-            type ValueType = $value;
-            #[inline]
-            fn type_tag() -> u8 { $tag }
-            #[inline]
-            fn len(&self) -> usize { self.len() }
-            #[inline]
-            fn get_index(&self, _: usize) -> Option<Self::ValueType> { None }
-            #[inline]
-            fn get_name(&self, name: &str) -> Option<Self::ValueType> { self.get(name).copied() }
-        }
-    };
-    ($type:ty, $value:ty ,$tag:expr, true) => {
+    ($type:ty, $value:ty ,$tag:expr) => {
         impl NbtListTrait for $type {
             type ValueType = $value;
             #[inline]
@@ -87,10 +75,24 @@ macro_rules! add_impl {
     };
 }
 
-add_impl!(Vec<bool>, bool, 0x07, true);
-add_impl!(HashMap<Arc<str>, i32>, i32, 0x0A, false);
-add_impl!(Vec<i32>, i32, 0x0B, true);
-add_impl!(Vec<i64>, i64, 0x0C, true);
+add_impl!(Vec<bool>, bool, 0x07);
+add_impl!(Vec<i32>, i32, 0x0B);
+add_impl!(Vec<i64>, i64, 0x0C);
+
+impl<T> NbtListTrait for HashMap<Arc<str>, NbtItem<T>>
+where
+    T: Clone + NbtListTrait,
+{
+    type ValueType = NbtItem<T>;
+    #[inline]
+    fn type_tag() -> u8 { 0x0A }
+    #[inline]
+    fn len(&self) -> usize { self.len() }
+    #[inline]
+    fn get_index(&self, _: usize) -> Option<Self::ValueType> { None }
+    #[inline]
+    fn get_name(&self, name: &str) -> Option<Self::ValueType> { self.get(name).cloned() }
+}
 
 impl NbtList<Vec<i32>> {
     /// 直接读取长度和值 不带名称
@@ -193,6 +195,7 @@ impl NbtValue {
     read_data!(from_f32, NbtFloat, f32, 4);
     read_data!(from_f64, NbtDouble, f64, 8);
 
+    /// 直接读取
     pub fn from_string(value: &mut Reader) -> Self {
         let len: StringLength = Self::from_i32(value).as_i32().unwrap() as u32;
         let mut buff = vec![0_u8; len as usize];
