@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::{Cursor, Read, Seek, SeekFrom};
+use std::rc::Rc;
 use std::sync::Arc;
 
 /// NBT 里除了字符串的长度量都是 i32
@@ -16,7 +18,7 @@ pub type Reader<'a> = Cursor<&'a [u8]>;
 #[derive(Debug, Clone)]
 pub enum NbtItem<T: NbtListTrait> {
     Value(NbtValue),
-    Array(NbtList<T>),
+    Array(NbtList),
 }
 
 /// 一个 NBT list 的基本素养
@@ -40,11 +42,15 @@ pub trait NbtListTrait {
 }
 
 /// 通过范型实现的 NBT List (其实包括了 NbtCompound)
-#[derive(Debug, Clone)]
-pub struct NbtList<T: NbtListTrait> {
-    /// 内容
-    pub value: T,
+// #[derive(Debug, Clone)]
+// pub struct NbtList<T: NbtListTrait> {
+//     /// 内容
+//     pub value: T,
+// }
+pub enum NbtList {
+    BoolArray(Rc<RefCell<Vec<bool>>>)
 }
+
 
 #[allow(unused)]
 impl<T> NbtList<T>
@@ -168,7 +174,7 @@ where
             [0x07] => {
                 for _ in 0..len {
                     for _ in 0..len {
-                        vec.push(NbtItem::Array(NbtList::<Vec<bool>>::from_reader(value)));
+                        vec.push(NbtItem::Array( todo!() ));
                     }
                 }
             }
