@@ -114,14 +114,34 @@ where
     fn get_name(&self, _: &str) -> Option<Self::ValueType> { None }
 }
 
+/// NbtList
+/// 来力
+impl<T> NbtList<Vec<NbtItem<T>>>
+where
+    T: NbtListTrait + Clone,
+{
+    /// 直接读取长度和值 不带名称
+    pub fn from_reader(value: &mut Reader) -> Self {
+        // 读取长度
+        let mut buff = [0_u8; 4];
+        _ = value.read(&mut buff).unwrap();
+        let len = NbtLength::from_be_bytes(buff);
+        let mut vec: Vec<T> = Vec::with_capacity(len as usize);
+        todo!()
+    }
+}
+
 /// ByteArray
+#[allow(unused)]
 impl NbtList<Vec<bool>> {
     /// 直接读取长度和值 不带名称
     pub fn from_reader(value: &mut Reader) -> Self {
+        // 读取长度
         let mut buff = [0_u8; 4];
         _ = value.read(&mut buff).unwrap();
         let len = NbtLength::from_be_bytes(buff);
         let mut vec = Vec::with_capacity(len as usize);
+        // 读取内容
         for _ in 0..len {
             vec.push(NbtValue::from_bool(value).as_bool().unwrap());
         }
@@ -130,13 +150,16 @@ impl NbtList<Vec<bool>> {
 }
 
 /// IntArray
+#[allow(unused)]
 impl NbtList<Vec<i32>> {
     /// 直接读取长度和值 不带名称
     pub fn from_reader(value: &mut Reader) -> Self {
+        // 读取长度
         let mut buff = [0_u8; 4];
         _ = value.read(&mut buff).unwrap();
         let len = NbtLength::from_be_bytes(buff);
         let mut vec = Vec::with_capacity(len as usize);
+        // 读取内容
         for _ in 0..len {
             vec.push(NbtValue::from_i32(value).as_i32().unwrap());
         }
@@ -145,13 +168,16 @@ impl NbtList<Vec<i32>> {
 }
 
 /// LongArray
+#[allow(unused)]
 impl NbtList<Vec<i64>> {
     /// 直接读取长度和值 不带名称
     pub fn from_reader(value: &mut Reader) -> Self {
+        // 读取长度
         let mut buff = [0_u8; 4];
         _ = value.read(&mut buff).unwrap();
         let len = NbtLength::from_be_bytes(buff);
         let mut vec = Vec::with_capacity(len as usize);
+        // 读取内容
         for _ in 0..len {
             vec.push(NbtValue::from_i64(value).as_i64().unwrap());
         }
