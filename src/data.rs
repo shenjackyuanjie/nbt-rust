@@ -12,6 +12,7 @@ pub type StringLength = u32;
 /// Reader
 pub type Reader<'a> = Cursor<&'a [u8]>;
 
+#[allow(unused)]
 #[derive(Debug, Clone)]
 pub enum NbtItem<T: NbtListTrait> {
     Value(NbtValue),
@@ -79,6 +80,8 @@ add_impl!(Vec<bool>, bool, 0x07);
 add_impl!(Vec<i32>, i32, 0x0B);
 add_impl!(Vec<i64>, i64, 0x0C);
 
+/// 给 HashMap 增加 NbtListTrait
+/// 用作待会儿的 NbtCompound
 impl<T> NbtListTrait for HashMap<Arc<str>, NbtItem<T>>
 where
     T: Clone + NbtListTrait,
@@ -94,6 +97,8 @@ where
     fn get_name(&self, name: &str) -> Option<Self::ValueType> { self.get(name).cloned() }
 }
 
+/// 给 Vec<NbtItem> 增加 NbtListTrait
+/// 用作待会儿的 NbtList
 impl<T> NbtListTrait for Vec<NbtItem<T>>
 where
     T: Clone + NbtListTrait,
@@ -109,6 +114,7 @@ where
     fn get_name(&self, _: &str) -> Option<Self::ValueType> { None }
 }
 
+/// ByteArray
 impl NbtList<Vec<bool>> {
     /// 直接读取长度和值 不带名称
     pub fn from_reader(value: &mut Reader) -> Self {
@@ -123,6 +129,7 @@ impl NbtList<Vec<bool>> {
     }
 }
 
+/// IntArray
 impl NbtList<Vec<i32>> {
     /// 直接读取长度和值 不带名称
     pub fn from_reader(value: &mut Reader) -> Self {
@@ -137,6 +144,7 @@ impl NbtList<Vec<i32>> {
     }
 }
 
+/// LongArray
 impl NbtList<Vec<i64>> {
     /// 直接读取长度和值 不带名称
     pub fn from_reader(value: &mut Reader) -> Self {
@@ -240,7 +248,7 @@ impl NbtValue {
 
     /// 直接读取
     pub fn from_string(value: &mut Reader) -> Self {
-        let len: StringLength = Self::from_i32(value).as_i32().unwrap() as u32;
+        let len: StringLength = Self::from_i32(value).as_i32().unwrap() as StringLength;
         let mut buff = vec![0_u8; len as usize];
         _ = value.read(&mut buff).unwrap();
         Self::NbtString(Arc::from(String::from_utf8(buff).unwrap()))
