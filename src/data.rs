@@ -14,227 +14,19 @@ pub type StringLength = u32;
 /// Reader
 pub type Reader<'a> = Cursor<&'a [u8]>;
 
-#[allow(unused)]
 #[derive(Debug, Clone)]
-pub enum NbtItem<T: NbtListTrait> {
+pub enum NbtItem {
     Value(NbtValue),
     Array(NbtList),
 }
 
-/// 一个 NBT list 的基本素养
-pub trait NbtListTrait {
-    /// 内容类型
-    type ValueType;
-    /// 输出类型标识符
-    /// 类型标识符
-    /// (0x07) Vec<bool>
-    /// (0x09) Vec<NbtItem>
-    /// (0x0A) Compound <xxxx>
-    /// (0x0B) Vec<i32>
-    /// (0x0C) Vec<i64>
-    fn type_tag() -> u8;
-    /// 输出自身长度
-    fn len(&self) -> usize;
-    /// 通过索引获取内容
-    fn get_index(&self, index: usize) -> Option<Self::ValueType>;
-    /// 通过名称获取内容
-    fn get_name(&self, name: &str) -> Option<Self::ValueType>;
-}
-
-/// 通过范型实现的 NBT List (其实包括了 NbtCompound)
-// #[derive(Debug, Clone)]
-// pub struct NbtList<T: NbtListTrait> {
-//     /// 内容
-//     pub value: T,
-// }
+#[derive(Debug, Clone)]
 pub enum NbtList {
-    BoolArray(Rc<RefCell<Vec<bool>>>)
-}
-
-
-#[allow(unused)]
-impl<T> NbtList<T>
-where
-    T: NbtListTrait,
-{
-    pub fn type_tag() -> u8 { T::type_tag() }
-
-    pub fn len(&self) -> usize { self.value.len() }
-
-    pub fn get_index(&self, index: usize) -> Option<T::ValueType> { self.value.get_index(index) }
-
-    pub fn get_name(&self, name: &str) -> Option<T::ValueType> { self.value.get_name(name) }
-}
-
-macro_rules! add_impl {
-    ($type:ty, $value:ty ,$tag:expr) => {
-        impl NbtListTrait for $type {
-            type ValueType = $value;
-            #[inline]
-            fn type_tag() -> u8 { $tag }
-            #[inline]
-            fn len(&self) -> usize { self.len() }
-            #[inline]
-            fn get_index(&self, index: usize) -> Option<Self::ValueType> { self.get(index).copied() }
-            #[inline]
-            fn get_name(&self, _: &str) -> Option<Self::ValueType> { None }
-        }
-    };
-}
-
-add_impl!(Vec<bool>, bool, 0x07);
-add_impl!(Vec<i32>, i32, 0x0B);
-add_impl!(Vec<i64>, i64, 0x0C);
-
-/// 给 HashMap 增加 NbtListTrait
-/// 用作待会儿的 NbtCompound
-impl<T> NbtListTrait for HashMap<Arc<str>, NbtItem<T>>
-where
-    T: Clone + NbtListTrait,
-{
-    type ValueType = NbtItem<T>;
-    #[inline]
-    fn type_tag() -> u8 { 0x0A }
-    #[inline]
-    fn len(&self) -> usize { self.len() }
-    #[inline]
-    fn get_index(&self, _: usize) -> Option<Self::ValueType> { None }
-    #[inline]
-    fn get_name(&self, name: &str) -> Option<Self::ValueType> { self.get(name).cloned() }
-}
-
-/// 给 Vec<NbtItem> 增加 NbtListTrait
-/// 用作待会儿的 NbtList
-impl<T> NbtListTrait for Vec<NbtItem<T>>
-where
-    T: Clone + NbtListTrait,
-{
-    type ValueType = NbtItem<T>;
-    #[inline]
-    fn type_tag() -> u8 { 0x09 }
-    #[inline]
-    fn len(&self) -> usize { self.len() }
-    #[inline]
-    fn get_index(&self, index: usize) -> Option<Self::ValueType> { self.get(index).cloned() }
-    #[inline]
-    fn get_name(&self, _: &str) -> Option<Self::ValueType> { None }
-}
-
-/// NbtList
-/// 来力
-#[allow(unused)]
-impl<T> NbtList<Vec<NbtItem<T>>>
-where
-    T: NbtListTrait + Clone,
-{
-    /// 直接读取长度和值 不带名称
-    pub fn from_reader(value: &mut Reader) -> Self {
-        // 读取长度
-        let mut buff = [0_u8; 4];
-        _ = value.read(&mut buff).unwrap();
-        let len = NbtLength::from_be_bytes(buff);
-        let mut vec: Vec<NbtItem<T>> = Vec::with_capacity(len as usize);
-        // 先读取 type
-        let mut type_buff = [0_u8; 1];
-        _ = value.read(&mut type_buff).unwrap();
-        match type_buff {
-            [0x00] => {
-                todo!()
-            }
-            [0x01] => {
-                for _ in 0..len {
-                    vec.push(NbtItem::Value(NbtValue::from_bool(value)));
-                }
-            }
-            [0x02] => {
-                for _ in 0..len {
-                    vec.push(NbtItem::Value(NbtValue::from_i16(value)));
-                }
-            }
-            [0x03] => {
-                for _ in 0..len {
-                    vec.push(NbtItem::Value(NbtValue::from_i32(value)));
-                }
-            }
-            [0x04] => {
-                for _ in 0..len {
-                    vec.push(NbtItem::Value(NbtValue::from_i64(value)));
-                }
-            }
-            [0x05] => {
-                for _ in 0..len {
-                    vec.push(NbtItem::Value(NbtValue::from_f32(value)));
-                }
-            }
-            [0x06] => {
-                for _ in 0..len {
-                    vec.push(NbtItem::Value(NbtValue::from_f64(value)));
-                }
-            }
-            [0x07] => {
-                for _ in 0..len {
-                    for _ in 0..len {
-                        vec.push(NbtItem::Array( todo!() ));
-                    }
-                }
-            }
-        }
-        todo!()
-    }
-}
-
-/// ByteArray
-#[allow(unused)]
-impl NbtList<Vec<bool>> {
-    /// 直接读取长度和值 不带名称
-    pub fn from_reader(value: &mut Reader) -> Self {
-        // 读取长度
-        let mut buff = [0_u8; 4];
-        _ = value.read(&mut buff).unwrap();
-        let len = NbtLength::from_be_bytes(buff);
-        let mut vec = Vec::with_capacity(len as usize);
-        // 读取内容
-        for _ in 0..len {
-            vec.push(NbtValue::from_bool(value).as_bool().unwrap());
-        }
-        Self { value: vec }
-    }
-}
-
-/// IntArray
-#[allow(unused)]
-impl NbtList<Vec<i32>> {
-    /// 直接读取长度和值 不带名称
-    pub fn from_reader(value: &mut Reader) -> Self {
-        // 读取长度
-        let mut buff = [0_u8; 4];
-        _ = value.read(&mut buff).unwrap();
-        let len = NbtLength::from_be_bytes(buff);
-        let mut vec = Vec::with_capacity(len as usize);
-        // 读取内容
-        for _ in 0..len {
-            vec.push(NbtValue::from_i32(value).as_i32().unwrap());
-        }
-        Self { value: vec }
-    }
-}
-
-/// LongArray
-#[allow(unused)]
-impl NbtList<Vec<i64>> {
-    /// 直接读取长度和值 不带名称
-    pub fn from_reader(value: &mut Reader) -> Self {
-        // 读取长度
-        let mut buff = [0_u8; 4];
-        _ = value.read(&mut buff).unwrap();
-        let len = NbtLength::from_be_bytes(buff);
-        let mut vec = Vec::with_capacity(len as usize);
-        // 读取内容
-        for _ in 0..len {
-            vec.push(NbtValue::from_i64(value).as_i64().unwrap());
-        }
-        Self { value: vec }
-    }
+    BoolArray(Rc<RefCell<Vec<bool>>>),
+    IntArray(Rc<RefCell<Vec<i32>>>),
+    LongArray(Rc<RefCell<Vec<i64>>>),
+    List(Rc<RefCell<Vec<NbtItem>>>),
+    Compound(Rc<RefCell<HashMap<Arc<str>, NbtItem>>>),
 }
 
 /// 基本 NBT 数据类型
@@ -259,6 +51,24 @@ pub enum NbtValue {
     /// 0x08
     /// 一个 UTF-8 编码的定长字符串
     NbtString(Arc<str>),
+}
+
+impl NbtItem {
+    #[inline]
+    pub fn as_value(&self) -> Option<&NbtValue> {
+        match self {
+            Self::Value(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn as_array(&self) -> Option<&NbtList> {
+        match self {
+            Self::Array(value) => Some(value),
+            _ => None,
+        }
+    }
 }
 
 macro_rules! export_data {
@@ -327,6 +137,9 @@ impl NbtValue {
     /// 直接读取
     pub fn from_string(value: &mut Reader) -> Self {
         let len: StringLength = Self::from_i32(value).as_i32().unwrap() as StringLength;
+        if len == 0 {
+            return Self::NbtString(Arc::from(""));
+        }
         let mut buff = vec![0_u8; len as usize];
         _ = value.read(&mut buff).unwrap();
         Self::NbtString(Arc::from(String::from_utf8(buff).unwrap()))
