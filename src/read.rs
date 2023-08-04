@@ -108,8 +108,7 @@ pub mod read {
             [0x07] => {
                 // ByteArray
                 for _ in 0..len {
-                    let arr = Rc::new(RefCell::new(from_bool_array(value)));
-                    vec.push(NbtItem::Array(NbtList::BoolArray(arr)));
+                    vec.push(NbtItem::Array(NbtList::from(from_bool_array(value))));
                 }
             }
             [0x08] => {
@@ -121,6 +120,10 @@ pub mod read {
             [0x09] => {
                 // NbtList
                 // 要命 (虽说没 Compound 那么麻烦)
+                // 直接递归就行
+                for _ in 0..len {
+                    vec.push(NbtItem::Array(NbtList::from(read_nbt_list(value))));
+                }
             }
             [0x0A] => {
                 // Compound
@@ -129,15 +132,13 @@ pub mod read {
             [0x0B] => {
                 // IntArray
                 for _ in 0..len {
-                    let arr = Rc::new(RefCell::new(from_i32_array(value)));
-                    vec.push(NbtItem::Array(NbtList::IntArray(arr)));
+                    vec.push(NbtItem::Array(NbtList::from(from_i32_array(value))));
                 }
             }
             [0x0C] => {
                 // LongArray
                 for _ in 0..len {
-                    let arr = Rc::new(RefCell::new(from_i64_array(value)));
-                    vec.push(NbtItem::Array(NbtList::LongArray(arr)));
+                    vec.push(NbtItem::Array(NbtList::from(from_i64_array(value))));
                 }
             }
             _ => {

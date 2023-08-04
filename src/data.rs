@@ -71,6 +71,31 @@ impl NbtItem {
     }
 }
 
+impl From<Vec<NbtItem>> for NbtList {
+    #[inline]
+    fn from(value: Vec<NbtItem>) -> Self { Self::List(Rc::new(RefCell::new(value))) }
+}
+
+impl From<HashMap<Arc<str>, NbtItem>> for NbtList {
+    #[inline]
+    fn from(value: HashMap<Arc<str>, NbtItem>) -> Self { Self::Compound(Rc::new(RefCell::new(value))) }
+}
+
+impl From<Vec<bool>> for NbtList {
+    #[inline]
+    fn from(value: Vec<bool>) -> Self { Self::BoolArray(Rc::new(RefCell::new(value))) }
+}
+
+impl From<Vec<i32>> for NbtList {
+    #[inline]
+    fn from(value: Vec<i32>) -> Self { Self::IntArray(Rc::new(RefCell::new(value))) }
+}
+
+impl From<Vec<i64>> for NbtList {
+    #[inline]
+    fn from(value: Vec<i64>) -> Self { Self::LongArray(Rc::new(RefCell::new(value))) }
+}
+
 macro_rules! export_data {
     ($name:ident, $nbt_name:ident, $type:ty) => {
         #[inline]
