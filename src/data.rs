@@ -71,6 +71,16 @@ impl NbtItem {
     }
 }
 
+impl From<NbtValue> for NbtItem {
+    #[inline]
+    fn from(value: NbtValue) -> Self { Self::Value(value) }
+}
+
+impl From<NbtList> for NbtItem {
+    #[inline]
+    fn from(value: NbtList) -> Self { Self::Array(value) }
+}
+
 impl From<Vec<NbtItem>> for NbtList {
     #[inline]
     fn from(value: Vec<NbtItem>) -> Self { Self::List(Rc::new(RefCell::new(value))) }
