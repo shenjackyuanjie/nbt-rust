@@ -81,6 +81,31 @@ impl From<NbtList> for NbtItem {
     fn from(value: NbtList) -> Self { Self::Array(value) }
 }
 
+impl From<Vec<NbtItem>> for NbtItem {
+    #[inline]
+    fn from(value: Vec<NbtItem>) -> Self { Self::Array(NbtList::from(Rc::new(RefCell::new(value)))) }
+}
+
+impl From<HashMap<Arc<str>, NbtItem>> for NbtItem {
+    #[inline]
+    fn from(value: HashMap<Arc<str>, NbtItem>) -> Self { Self::Array(NbtList::from(Rc::new(RefCell::new(value)))) }
+}
+
+impl From<Vec<bool>> for NbtItem {
+    #[inline]
+    fn from(value: Vec<bool>) -> Self { Self::Array(NbtList::from(Rc::new(RefCell::new(value)))) }
+}
+
+impl From<Vec<i32>> for NbtItem {
+    #[inline]
+    fn from(value: Vec<i32>) -> Self { Self::Array(NbtList::from(Rc::new(RefCell::new(value)))) }
+}
+
+impl From<Vec<i64>> for NbtItem {
+    #[inline]
+    fn from(value: Vec<i64>) -> Self { Self::Array(NbtList::from(Rc::new(RefCell::new(value)))) }
+}
+
 impl From<Vec<NbtItem>> for NbtList {
     #[inline]
     fn from(value: Vec<NbtItem>) -> Self { Self::List(Rc::new(RefCell::new(value))) }
