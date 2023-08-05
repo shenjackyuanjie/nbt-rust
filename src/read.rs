@@ -1,4 +1,4 @@
-use crate::data::{NbtItem, NbtLength, NbtList, NbtValue, Reader};
+use crate::data::{NbtItem, NbtList, NbtValue, Reader};
 use std::convert::From;
 use std::io::{Cursor, Read};
 
@@ -220,7 +220,6 @@ pub enum NbtStatus {
 /// NbtItem
 /// 完整的读取逻辑就在这里了
 /// 来力
-#[allow(unused)]
 impl TryFrom<Cursor<&[u8]>> for NbtItem {
     type Error = std::io::Error;
 

@@ -30,7 +30,6 @@ pub enum NbtList {
 }
 
 /// 基本 NBT 数据类型
-#[allow(unused)]
 #[derive(Debug, Clone)]
 pub enum NbtValue {
     /// 0x00
@@ -164,7 +163,6 @@ macro_rules! read_data {
     };
 }
 
-#[allow(unused)]
 impl NbtValue {
     pub fn as_end(&self) -> Option<()> {
         match self {
