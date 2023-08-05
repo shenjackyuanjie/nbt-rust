@@ -1,31 +1,41 @@
 #![feature(buf_read_has_data_left)]
 
 use std::io::Read;
+use crate::data::Reader;
 
 mod data;
 mod read;
 
 fn main() {
     println!("Hello, world!");
+    // sleep 1s
+    std::thread::sleep(std::time::Duration::from_secs(2));
     small_read_test();
-    // big_read_test();
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    big_read_test();
+    std::thread::sleep(std::time::Duration::from_secs(2));
     cli_read_test();
+    std::thread::sleep(std::time::Duration::from_secs(2));
 }
 
 // bincode-org/bincode: A binary encoder / decoder implementation in Rust.
 // https://github.com/bincode-org/bincode
 
 fn cli_read_test() {
+    let mut buff: Vec<u8> = Vec::new();
     // 从 CLI 读取文件名
     let filename = std::env::args().nth(1).unwrap();
     // 打开文件
-    let mut file = std::fs::File::open(filename).unwrap();
-    // 转为 &[u8]
-    let mut buff: Vec<u8> = Vec::new();
-    println!("file size: {}", file.metadata().unwrap().len());
-    _ = file.read_to_end(&mut buff).unwrap();
+    {
+        let mut file = std::fs::File::open(filename).unwrap();
+        // 转为 &[u8]
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        println!("file size: {}", file.metadata().unwrap().len());
+        _ = file.read_to_end(&mut buff).unwrap();
+        std::thread::sleep(std::time::Duration::from_secs(2));
+    }
     // 读取数据
-    read_test(&buff);
+    read_test(buff);
 }
 
 fn small_read_test() {
@@ -33,7 +43,7 @@ fn small_read_test() {
         0x0A, 0x00, 0x0B, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x77, 0x6F, 0x72, 0x6C, 0x64, 0x08, 0x00,
         0x04, 0x6E, 0x61, 0x6D, 0x65, 0x00, 0x09, 0x42, 0x61, 0x6E, 0x61, 0x6E, 0x72, 0x61, 0x6D, 0x61,
         0x00];
-    read_test(&data);
+    read_test(data.to_vec());
 }
 
 fn big_read_test() {
@@ -135,14 +145,15 @@ fn big_read_test() {
     0x5E, 0x4C, 0x44, 0x46, 0x52, 0x04, 0x24, 0x4E, 0x1E, 0x5C, 0x40, 0x2E, 0x26, 0x28, 0x34, 0x4A,
     0x06, 0x30, 0x06, 0x00, 0x0A, 0x64, 0x6F, 0x75, 0x62, 0x6C, 0x65, 0x54, 0x65, 0x73, 0x74, 0x3F,
     0xDF, 0x8F, 0x6B, 0xBB, 0xFF, 0x6A, 0x5E, 0x00 ];
-    read_test(&data);
+    read_test(data.to_vec());
 }
 
-fn read_test(data: &[u8]) {
+fn read_test(data: Vec<u8>) {
     let len = data.len();
-    let cursor: std::io::Cursor<&[u8]> = std::io::Cursor::new(data);
     #[cfg(feature = "debug")]
     println!("data: {:?}", data);
+    let cursor: Reader = std::io::Cursor::new(data.as_slice());
+    std::thread::sleep(std::time::Duration::from_secs(2));
     let start_time = std::time::Instant::now();
     let nbt_data = data::NbtItem::try_from(cursor).unwrap();
     let end_time = std::time::Instant::now();

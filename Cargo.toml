@@ -10,3 +10,4 @@ edition = "2021"
 [features]
 default = []
 debug = []
+core_debug = ["debug"]
