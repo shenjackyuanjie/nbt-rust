@@ -12,8 +12,8 @@ use std::io::{Cursor, Read};
 /// (0x0C) Vec<i64>
 pub mod read {
     use crate::data::{NbtItem, NbtLength, NbtList, NbtValue, Reader};
-    use std::io::Read;
     use std::collections::HashMap;
+    use std::io::Read;
     use std::sync::Arc;
 
     /// 直接读取长度和值 不带名称
