@@ -165,20 +165,20 @@ pub mod read_data {
         // loop 读取长度 name len name value value
         // 直到一个 End
         #[cfg(feature = "debug")]
-        println!("reading compound {} bytes", value.position());
+        println!("compound at {} bytes", value.position());
         let mut map: HashMap<Arc<str>, NbtItem> = HashMap::new();
         loop {
-            // 读取 name
-            // 直接调之前的方法读
-            let name = NbtValue::from_string(value).as_string().unwrap();
             let mut type_tag = [0_u8; 1];
             _ = value.read(&mut type_tag).unwrap();
-            #[cfg(feature = "debug")]
-            println!("compound type tag {:?} with name: {:?}", type_tag, name);
             if type_tag == [0x00] {
                 // End
                 break;
             }
+            // 读取 name
+            // 直接调之前的方法读
+            let name = NbtValue::from_string(value).as_string().unwrap();
+            #[cfg(feature = "debug")]
+            println!("compound type tag {:?} with name: {:?}", type_tag, name);
             // 读取 value
             let nbt_value: NbtItem = match type_tag {
                 [0x01] => NbtItem::Value(NbtValue::from_bool(value)),
@@ -190,7 +190,16 @@ pub mod read_data {
                 [0x07] => NbtItem::from(from_bool_array(value)),
                 [0x08] => NbtItem::Value(NbtValue::from_string(value)),
                 [0x09] => NbtItem::from(from_nbt_list(value)),
-                [0x0A] => NbtItem::from(from_compound(value)),
+                [0x0A] => {
+                    let item = match from_compound(value) {
+                        NbtList::Compound(mut get_name, item) => {
+                            get_name = name.clone();
+                            NbtList::Compound(get_name, item)
+                        },
+                        _ => panic!("WTF")
+                    };
+                    NbtItem::from(item)
+                },
                 [0x0B] => NbtItem::from(from_i32_array(value)),
                 [0x0C] => NbtItem::from(from_i64_array(value)),
                 _ => {
@@ -210,7 +219,7 @@ pub mod read_data {
             #[cfg(feature = "debug")]
             println!("compound: {:?}", map);
         }
-        NbtList::from(map)
+        NbtList::from((Arc::from(""), map))
     }
 }
 
@@ -276,6 +285,13 @@ impl TryFrom<Cursor<&[u8]>> for NbtItem {
                     break;
                 }
                 NbtStatus::Going(item) => {
+                    let item = match item {
+                        NbtItem::Array(NbtList::Compound(mut get_name, map)) => {
+                            get_name = name;
+                            NbtItem::Array(NbtList::Compound(get_name, map))
+                        }
+                        _ => item,
+                    };
                     items.push(item);
                     if !value.has_data_left().unwrap() {
                         break;

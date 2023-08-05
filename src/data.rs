@@ -26,7 +26,7 @@ pub enum NbtList {
     IntArray(Rc<RefCell<Vec<i32>>>),
     LongArray(Rc<RefCell<Vec<i64>>>),
     List(Rc<RefCell<Vec<NbtItem>>>),
-    Compound(Rc<RefCell<HashMap<Arc<str>, NbtItem>>>),
+    Compound(Arc<str>, Rc<RefCell<HashMap<Arc<str>, NbtItem>>>),
 }
 
 /// 基本 NBT 数据类型
@@ -85,9 +85,11 @@ impl From<Vec<NbtItem>> for NbtItem {
     fn from(value: Vec<NbtItem>) -> Self { Self::Array(NbtList::from(value)) }
 }
 
-impl From<HashMap<Arc<str>, NbtItem>> for NbtItem {
+type Compound = (Arc<str>, HashMap<Arc<str>, NbtItem>);
+
+impl From<Compound> for NbtItem {
     #[inline]
-    fn from(value: HashMap<Arc<str>, NbtItem>) -> Self { Self::Array(NbtList::from(value)) }
+    fn from(value: Compound) -> Self { Self::Array(NbtList::from(value)) }
 }
 
 impl From<Vec<bool>> for NbtItem {
@@ -110,10 +112,10 @@ impl From<Vec<NbtItem>> for NbtList {
     fn from(value: Vec<NbtItem>) -> Self { Self::List(Rc::new(RefCell::new(value))) }
 }
 
-impl From<HashMap<Arc<str>, NbtItem>> for NbtList {
+impl From<Compound> for NbtList {
     #[inline]
-    fn from(value: HashMap<Arc<str>, NbtItem>) -> Self {
-        Self::Compound(Rc::new(RefCell::new(value)))
+    fn from(value: Compound) -> Self {
+        Self::Compound(value.0, Rc::new(RefCell::new(value.1)))
     }
 }
 
