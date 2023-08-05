@@ -1,7 +1,7 @@
 use std::cell::RefCell;
+use std::rc::Rc;
 use std::collections::HashMap;
 use std::io::{Cursor, Read, Seek, SeekFrom};
-use std::rc::Rc;
 use std::sync::Arc;
 
 /// NBT 里除了字符串的长度量都是 i32
@@ -22,10 +22,10 @@ pub enum NbtItem {
 
 #[derive(Debug, Clone)]
 pub enum NbtList {
-    BoolArray(Rc<RefCell<Vec<bool>>>),
-    IntArray(Rc<RefCell<Vec<i32>>>),
-    LongArray(Rc<RefCell<Vec<i64>>>),
-    List(Rc<RefCell<Vec<NbtItem>>>),
+    BoolArray(Vec<bool>),
+    IntArray(Vec<i32>),
+    LongArray(Vec<i64>),
+    List(Vec<NbtItem>),
     Compound(Arc<str>, Rc<RefCell<HashMap<Arc<str>, NbtItem>>>),
 }
 
@@ -109,7 +109,7 @@ impl From<Vec<i64>> for NbtItem {
 
 impl From<Vec<NbtItem>> for NbtList {
     #[inline]
-    fn from(value: Vec<NbtItem>) -> Self { Self::List(Rc::new(RefCell::new(value))) }
+    fn from(value: Vec<NbtItem>) -> Self { Self::List(value) }
 }
 
 impl From<Compound> for NbtList {
@@ -121,17 +121,17 @@ impl From<Compound> for NbtList {
 
 impl From<Vec<bool>> for NbtList {
     #[inline]
-    fn from(value: Vec<bool>) -> Self { Self::BoolArray(Rc::new(RefCell::new(value))) }
+    fn from(value: Vec<bool>) -> Self { Self::BoolArray(value) }
 }
 
 impl From<Vec<i32>> for NbtList {
     #[inline]
-    fn from(value: Vec<i32>) -> Self { Self::IntArray(Rc::new(RefCell::new(value))) }
+    fn from(value: Vec<i32>) -> Self { Self::IntArray(value) }
 }
 
 impl From<Vec<i64>> for NbtList {
     #[inline]
-    fn from(value: Vec<i64>) -> Self { Self::LongArray(Rc::new(RefCell::new(value))) }
+    fn from(value: Vec<i64>) -> Self { Self::LongArray(value) }
 }
 
 macro_rules! export_data {
@@ -205,7 +205,7 @@ impl NbtValue {
         let mut buff = vec![0_u8; len as usize];
         _ = value.read(&mut buff).unwrap();
         let str = Arc::from(String::from_utf8(buff).unwrap());
-        #[cfg(feature = "debug")]
+        #[cfg(feature = "core_debug")]
         println!("-----string len: {} value: |{}|", len, str);
         Self::String(str)
     }

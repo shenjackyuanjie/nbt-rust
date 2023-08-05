@@ -164,7 +164,7 @@ pub mod read_data {
         // 进来直接是 values
         // loop 读取长度 name len name value value
         // 直到一个 End
-        #[cfg(feature = "debug")]
+        #[cfg(feature = "core_debug")]
         println!("compound at {} bytes", value.position());
         let mut map: HashMap<Arc<str>, NbtItem> = HashMap::new();
         loop {
@@ -177,7 +177,7 @@ pub mod read_data {
             // 读取 name
             // 直接调之前的方法读
             let name = NbtValue::from_string(value).as_string().unwrap();
-            #[cfg(feature = "debug")]
+            #[cfg(feature = "core_debug")]
             println!("compound type tag {:?} with name: {:?}", type_tag, name);
             // 读取 value
             let nbt_value: NbtItem = match type_tag {
@@ -216,7 +216,7 @@ pub mod read_data {
             };
             // 读取完了，放进去
             map.insert(name, nbt_value);
-            #[cfg(feature = "debug")]
+            #[cfg(feature = "core_debug")]
             println!("compound: {:?}", map);
         }
         NbtList::from((Arc::from(""), map))
@@ -274,7 +274,7 @@ impl TryFrom<Cursor<&[u8]>> for NbtItem {
                     ),
                 )),
             };
-            #[cfg(feature = "debug")]
+            #[cfg(feature = "core_debug")]
             println!(
                 "==type_code: {:?} reader pos: {:?}",
                 buff,

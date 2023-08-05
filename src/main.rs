@@ -1,16 +1,32 @@
 #![feature(buf_read_has_data_left)]
 
+use std::io::Read;
+
 mod data;
 mod read;
 
 fn main() {
     println!("Hello, world!");
     small_read_test();
-    big_read_test();
+    // big_read_test();
+    cli_read_test();
 }
 
 // bincode-org/bincode: A binary encoder / decoder implementation in Rust.
 // https://github.com/bincode-org/bincode
+
+fn cli_read_test() {
+    // 从 CLI 读取文件名
+    let filename = std::env::args().nth(1).unwrap();
+    // 打开文件
+    let mut file = std::fs::File::open(filename).unwrap();
+    // 转为 &[u8]
+    let mut buff: Vec<u8> = Vec::new();
+    println!("file size: {}", file.metadata().unwrap().len());
+    _ = file.read_to_end(&mut buff).unwrap();
+    // 读取数据
+    read_test(&buff);
+}
 
 fn small_read_test() {
     let data: [u8; 0x21] = [
@@ -123,8 +139,17 @@ fn big_read_test() {
 }
 
 fn read_test(data: &[u8]) {
+    let len = data.len();
     let cursor: std::io::Cursor<&[u8]> = std::io::Cursor::new(data);
+    #[cfg(feature = "debug")]
     println!("data: {:?}", data);
+    let start_time = std::time::Instant::now();
     let nbt_data = data::NbtItem::try_from(cursor).unwrap();
+    let end_time = std::time::Instant::now();
+    println!("time: {:?}", end_time - start_time);
+    println!("speed: {:?} (bytes/sec)", len as f64 / (end_time - start_time).as_secs_f64());
+    println!("{:?} (kb/sec)", len as f64 / (end_time - start_time).as_secs_f64() / 1024.0);
+    println!("{:?} (mb/sec)", len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0);
+    #[cfg(feature = "core_debug")]
     println!("nbt_data: {:#?}", nbt_data);
 }
