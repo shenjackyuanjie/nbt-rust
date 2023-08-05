@@ -9,7 +9,7 @@ pub type NbtLength = i32;
 
 /// NBT 里的字符串独树一帜的把自己的长度用一个u32表示
 /// 不如说为啥别的不用 u32 呢
-pub type StringLength = u32;
+pub type StringLength = u16;
 
 /// Reader
 pub type Reader<'a> = Cursor<&'a [u8]>;
@@ -112,7 +112,9 @@ impl From<Vec<NbtItem>> for NbtList {
 
 impl From<HashMap<Arc<str>, NbtItem>> for NbtList {
     #[inline]
-    fn from(value: HashMap<Arc<str>, NbtItem>) -> Self { Self::Compound(Rc::new(RefCell::new(value))) }
+    fn from(value: HashMap<Arc<str>, NbtItem>) -> Self {
+        Self::Compound(Rc::new(RefCell::new(value)))
+    }
 }
 
 impl From<Vec<bool>> for NbtList {
@@ -194,13 +196,16 @@ impl NbtValue {
 
     /// 直接读取
     pub fn from_string(value: &mut Reader) -> Self {
-        let len: StringLength = Self::from_i32(value).as_i32().unwrap() as StringLength;
+        let len: StringLength = Self::from_i16(value).as_i16().unwrap() as StringLength;
         if len == 0 {
             return Self::String(Arc::from(""));
         }
         let mut buff = vec![0_u8; len as usize];
         _ = value.read(&mut buff).unwrap();
-        Self::String(Arc::from(String::from_utf8(buff).unwrap()))
+        let str = Arc::from(String::from_utf8(buff).unwrap());
+        #[cfg(feature = "debug")]
+        println!("-----string len: {} value: |{}|", len, str);
+        Self::String(str)
     }
 
     /// 读取一个有类型无名称的值 (List)

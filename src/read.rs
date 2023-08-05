@@ -1,6 +1,6 @@
 use crate::data::{NbtItem, NbtList, NbtValue, Reader};
 use std::convert::From;
-use std::io::{Cursor, Read};
+use std::io::{BufRead, Cursor, Read};
 
 /// 输出类型标识符
 /// 类型标识符
@@ -164,17 +164,21 @@ pub mod read_data {
         // 进来直接是 values
         // loop 读取长度 name len name value value
         // 直到一个 End
+        #[cfg(feature = "debug")]
+        println!("reading compound {} bytes", value.position());
         let mut map: HashMap<Arc<str>, NbtItem> = HashMap::new();
         loop {
+            // 读取 name
+            // 直接调之前的方法读
+            let name = NbtValue::from_string(value).as_string().unwrap();
             let mut type_tag = [0_u8; 1];
             _ = value.read(&mut type_tag).unwrap();
+            #[cfg(feature = "debug")]
+            println!("compound type tag {:?} with name: {:?}", type_tag, name);
             if type_tag == [0x00] {
                 // End
                 break;
             }
-            // 读取 name
-            // 直接调之前的方法读
-            let name = NbtValue::from_string(value).as_string().unwrap();
             // 读取 value
             let nbt_value: NbtItem = match type_tag {
                 [0x01] => NbtItem::Value(NbtValue::from_bool(value)),
@@ -203,6 +207,8 @@ pub mod read_data {
             };
             // 读取完了，放进去
             map.insert(name, nbt_value);
+            #[cfg(feature = "debug")]
+            println!("compound: {:?}", map);
         }
         NbtList::from(map)
     }
@@ -229,10 +235,13 @@ impl TryFrom<Cursor<&[u8]>> for NbtItem {
     fn try_from(in_value: Reader) -> Result<NbtItem, Self::Error> {
         let mut value: Reader = in_value.clone();
         let mut items: Vec<NbtItem> = Vec::new();
+        #[cfg(feature = "debug")]
+        println!("reader pos: {:?}", value.position());
         loop {
             // 读取类型
             let mut buff = [0_u8; 1];
             _ = value.read(&mut buff).unwrap();
+            let name = NbtValue::from_string(&mut value).as_string().unwrap();
             let type_code: NbtStatus = match buff {
                 [0x00] => NbtStatus::End,
                 [0x01] => NbtStatus::Going(NbtItem::Value(NbtValue::from_bool(&mut value))),
@@ -256,12 +265,21 @@ impl TryFrom<Cursor<&[u8]>> for NbtItem {
                     ),
                 )),
             };
+            #[cfg(feature = "debug")]
+            println!(
+                "==type_code: {:?} reader pos: {:?}",
+                buff,
+                value.position()
+            );
             match type_code {
                 NbtStatus::End => {
                     break;
                 }
                 NbtStatus::Going(item) => {
                     items.push(item);
+                    if !value.has_data_left().unwrap() {
+                        break;
+                    }
                 }
                 NbtStatus::Error(e) => {
                     return Err(e);
