@@ -19,14 +19,14 @@ pub mod read_data {
     /// 直接读取长度和值 不带名称
     /// 反正名字都在外面读过
     #[inline]
-    pub fn from_bool_array(value: &mut Reader) -> Vec<bool> {
+    pub fn from_i8_array(value: &mut Reader) -> Vec<i8> {
         // 读取长度
         let mut buff = [0_u8; 4];
         _ = value.read(&mut buff).unwrap();
         let len = NbtLength::from_be_bytes(buff);
         let mut vec = Vec::with_capacity(len as usize);
         for _ in 0..len {
-            vec.push(NbtValue::from_bool(value).as_bool().unwrap());
+            vec.push(NbtValue::from_i8(value).as_i8().unwrap());
         }
         vec
     }
@@ -77,7 +77,7 @@ pub mod read_data {
             }
             [0x01] => {
                 for _ in 0..len {
-                    vec.push(NbtItem::Value(NbtValue::from_bool(value)));
+                    vec.push(NbtItem::Value(NbtValue::from_i8(value)));
                 }
             }
             [0x02] => {
@@ -108,7 +108,7 @@ pub mod read_data {
             [0x07] => {
                 // ByteArray
                 for _ in 0..len {
-                    vec.push(NbtItem::from(from_bool_array(value)));
+                    vec.push(NbtItem::from(from_i8_array(value)));
                 }
             }
             [0x08] => {
@@ -181,13 +181,13 @@ pub mod read_data {
             println!("compound type tag {:?} with name: {:?}", type_tag, name);
             // 读取 value
             let nbt_value: NbtItem = match type_tag {
-                [0x01] => NbtItem::Value(NbtValue::from_bool(value)),
+                [0x01] => NbtItem::Value(NbtValue::from_i8(value)),
                 [0x02] => NbtItem::Value(NbtValue::from_i16(value)),
                 [0x03] => NbtItem::Value(NbtValue::from_i32(value)),
                 [0x04] => NbtItem::Value(NbtValue::from_i64(value)),
                 [0x05] => NbtItem::Value(NbtValue::from_f32(value)),
                 [0x06] => NbtItem::Value(NbtValue::from_f64(value)),
-                [0x07] => NbtItem::from(from_bool_array(value)),
+                [0x07] => NbtItem::from(from_i8_array(value)),
                 [0x08] => NbtItem::Value(NbtValue::from_string(value)),
                 [0x09] => NbtItem::from(from_nbt_list(value)),
                 [0x0A] => {
@@ -195,11 +195,11 @@ pub mod read_data {
                         NbtList::Compound(mut get_name, item) => {
                             get_name = name.clone();
                             NbtList::Compound(get_name, item)
-                        },
-                        _ => panic!("WTF")
+                        }
+                        _ => panic!("WTF"),
                     };
                     NbtItem::from(item)
-                },
+                }
                 [0x0B] => NbtItem::from(from_i32_array(value)),
                 [0x0C] => NbtItem::from(from_i64_array(value)),
                 _ => {
@@ -223,7 +223,7 @@ pub mod read_data {
     }
 }
 
-use read_data::{from_bool_array, from_compound, from_i32_array, from_i64_array, from_nbt_list};
+use read_data::{from_compound, from_i32_array, from_i64_array, from_i8_array, from_nbt_list};
 
 pub enum NbtStatus {
     /// 读取到了 End
@@ -253,13 +253,13 @@ impl TryFrom<Cursor<&[u8]>> for NbtItem {
             let name = NbtValue::from_string(&mut value).as_string().unwrap();
             let type_code: NbtStatus = match buff {
                 [0x00] => NbtStatus::End,
-                [0x01] => NbtStatus::Going(NbtItem::Value(NbtValue::from_bool(&mut value))),
+                [0x01] => NbtStatus::Going(NbtItem::Value(NbtValue::from_i8(&mut value))),
                 [0x02] => NbtStatus::Going(NbtItem::Value(NbtValue::from_i16(&mut value))),
                 [0x03] => NbtStatus::Going(NbtItem::Value(NbtValue::from_i32(&mut value))),
                 [0x04] => NbtStatus::Going(NbtItem::Value(NbtValue::from_i64(&mut value))),
                 [0x05] => NbtStatus::Going(NbtItem::Value(NbtValue::from_f32(&mut value))),
                 [0x06] => NbtStatus::Going(NbtItem::Value(NbtValue::from_f64(&mut value))),
-                [0x07] => NbtStatus::Going(NbtItem::from(from_bool_array(&mut value))),
+                [0x07] => NbtStatus::Going(NbtItem::from(from_i8_array(&mut value))),
                 [0x08] => NbtStatus::Going(NbtItem::Value(NbtValue::from_string(&mut value))),
                 [0x09] => NbtStatus::Going(NbtItem::from(from_nbt_list(&mut value))),
                 [0x0A] => NbtStatus::Going(NbtItem::from(from_compound(&mut value))),
@@ -275,11 +275,7 @@ impl TryFrom<Cursor<&[u8]>> for NbtItem {
                 )),
             };
             #[cfg(feature = "core_debug")]
-            println!(
-                "==type_code: {:?} reader pos: {:?}",
-                buff,
-                value.position()
-            );
+            println!("==type_code: {:?} reader pos: {:?}", buff, value.position());
             match type_code {
                 NbtStatus::End => {
                     break;

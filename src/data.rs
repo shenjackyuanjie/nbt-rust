@@ -1,7 +1,7 @@
 use std::cell::RefCell;
-use std::rc::Rc;
 use std::collections::HashMap;
 use std::io::{Cursor, Read, Seek, SeekFrom};
+use std::rc::Rc;
 use std::sync::Arc;
 
 /// NBT 里除了字符串的长度量都是 i32
@@ -14,6 +14,8 @@ pub type StringLength = u16;
 /// Reader
 pub type Reader<'a> = Cursor<&'a [u8]>;
 
+pub type RawData<'data> = &'data [u8];
+
 #[derive(Debug, Clone)]
 pub enum NbtItem {
     Value(NbtValue),
@@ -22,7 +24,7 @@ pub enum NbtItem {
 
 #[derive(Debug, Clone)]
 pub enum NbtList {
-    BoolArray(Vec<bool>),
+    BoolArray(Vec<i8>),
     IntArray(Vec<i32>),
     LongArray(Vec<i64>),
     List(Vec<NbtItem>),
@@ -36,7 +38,7 @@ pub enum NbtValue {
     /// 标志着一个 NBT Compound/List 的结束
     End,
     /// 0x01
-    Byte(bool),
+    Byte(i8),
     /// 0x02
     Short(i16),
     /// 0x03
@@ -92,9 +94,9 @@ impl From<Compound> for NbtItem {
     fn from(value: Compound) -> Self { Self::Array(NbtList::from(value)) }
 }
 
-impl From<Vec<bool>> for NbtItem {
+impl From<Vec<i8>> for NbtItem {
     #[inline]
-    fn from(value: Vec<bool>) -> Self { Self::Array(NbtList::from(value)) }
+    fn from(value: Vec<i8>) -> Self { Self::Array(NbtList::from(value)) }
 }
 
 impl From<Vec<i32>> for NbtItem {
@@ -114,14 +116,12 @@ impl From<Vec<NbtItem>> for NbtList {
 
 impl From<Compound> for NbtList {
     #[inline]
-    fn from(value: Compound) -> Self {
-        Self::Compound(value.0, Rc::new(RefCell::new(value.1)))
-    }
+    fn from(value: Compound) -> Self { Self::Compound(value.0, Rc::new(RefCell::new(value.1))) }
 }
 
-impl From<Vec<bool>> for NbtList {
+impl From<Vec<i8>> for NbtList {
     #[inline]
-    fn from(value: Vec<bool>) -> Self { Self::BoolArray(value) }
+    fn from(value: Vec<i8>) -> Self { Self::BoolArray(value) }
 }
 
 impl From<Vec<i32>> for NbtList {
@@ -147,13 +147,13 @@ macro_rules! export_data {
 }
 
 macro_rules! read_data {
-    ($name:ident, $nbt_name:ident, bool, 1) => {
+    ($name:ident, $nbt_name:ident, $type:ty, 1) => {
         /// 直接读取值 不带类型数据和名称
         #[inline]
         pub fn $name(value: &mut Reader) -> Self {
             let mut buff = [0_u8];
             _ = value.read(&mut buff).unwrap();
-            Self::$nbt_name(buff[0] != 0)
+            Self::$nbt_name(buff[0] as $type)
         }
     };
     ($name:ident, $nbt_name:ident, $type:ty, $len:expr) => {
@@ -175,7 +175,7 @@ impl NbtValue {
         }
     }
 
-    export_data!(as_bool, Byte, bool);
+    export_data!(as_i8, Byte, i8);
     export_data!(as_i16, Short, i16);
     export_data!(as_i32, Int, i32);
     export_data!(as_i64, Long, i64);
@@ -189,7 +189,7 @@ impl NbtValue {
         Self::End
     }
 
-    read_data!(from_bool, Byte, bool, 1);
+    read_data!(from_i8, Byte, i8, 1);
     read_data!(from_i16, Short, i16, 2);
     read_data!(from_i32, Int, i32, 4);
     read_data!(from_i64, Long, i64, 8);
@@ -216,7 +216,7 @@ impl NbtValue {
         _ = value.read(&mut value_type).unwrap();
         match value_type {
             [0x00] => Some(Self::End),
-            [0x01] => Some(Self::from_bool(value)),
+            [0x01] => Some(Self::from_i8(value)),
             [0x02] => Some(Self::from_i16(value)),
             [0x03] => Some(Self::from_i32(value)),
             [0x04] => Some(Self::from_i64(value)),
@@ -238,7 +238,7 @@ impl NbtValue {
             [0x00] => Some((Self::End, Arc::from(""))),
             [0x01] => {
                 let name = Self::from_string(value).as_string().unwrap();
-                Some((Self::from_bool(value), name))
+                Some((Self::from_i8(value), name))
             }
             [0x02] => {
                 let name = Self::from_string(value).as_string().unwrap();
