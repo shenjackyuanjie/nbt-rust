@@ -14,9 +14,9 @@ use std::rc::Rc;
 /// (0x0C) Vec<i64>
 pub mod read {
     use crate::data::{NbtItem, NbtLength, NbtList, NbtValue, Reader};
-    use std::cell::RefCell;
     use std::io::Read;
-    use std::rc::Rc;
+    use std::collections::HashMap;
+    use std::sync::Arc;
 
     /// 直接读取长度和值 不带名称
     /// 反正名字都在外面读过
@@ -62,6 +62,7 @@ pub mod read {
     }
 
     /// 直接读取长度和值 不带名称
+    /// 主要是为了可以直接递归 (
     pub fn read_nbt_list(value: &mut Reader) -> Vec<NbtItem> {
         // 读取长度
         let mut buff = [0_u8; 4];
@@ -73,6 +74,7 @@ pub mod read {
         _ = value.read(&mut type_buff).unwrap();
         match type_buff {
             [0x00] => {
+                // End
                 todo!()
             }
             [0x01] => {
@@ -128,6 +130,9 @@ pub mod read {
             [0x0A] => {
                 // Compound
                 // 他甚至不告诉你有多少个元素，要命
+                for _ in 0..len {
+                    vec.push(NbtItem::Array(NbtList::from(from_compound(value))));
+                }
             }
             [0x0B] => {
                 // IntArray
