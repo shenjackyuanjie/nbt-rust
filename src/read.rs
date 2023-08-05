@@ -1,8 +1,6 @@
 use crate::data::{NbtItem, NbtLength, NbtList, NbtValue, Reader};
-use std::cell::RefCell;
-use std::convert::{From, Into};
+use std::convert::From;
 use std::io::{Cursor, Read};
-use std::rc::Rc;
 
 /// 输出类型标识符
 /// 类型标识符
@@ -110,7 +108,7 @@ pub mod read {
             [0x07] => {
                 // ByteArray
                 for _ in 0..len {
-                    vec.push(NbtItem::Array(NbtList::from(from_bool_array(value))));
+                    vec.push(NbtItem::from(from_bool_array(value)));
                 }
             }
             [0x08] => {
@@ -124,26 +122,26 @@ pub mod read {
                 // 要命 (虽说没 Compound 那么麻烦)
                 // 直接递归就行
                 for _ in 0..len {
-                    vec.push(NbtItem::Array(NbtList::from(read_nbt_list(value))));
+                    vec.push(NbtItem::from(read_nbt_list(value)));
                 }
             }
             [0x0A] => {
                 // Compound
                 // 他甚至不告诉你有多少个元素，要命
                 for _ in 0..len {
-                    vec.push(NbtItem::Array(NbtList::from(from_compound(value))));
+                    vec.push(NbtItem::from(from_compound(value)));
                 }
             }
             [0x0B] => {
                 // IntArray
                 for _ in 0..len {
-                    vec.push(NbtItem::Array(NbtList::from(from_i32_array(value))));
+                    vec.push(NbtItem::from(from_i32_array(value)));
                 }
             }
             [0x0C] => {
                 // LongArray
                 for _ in 0..len {
-                    vec.push(NbtItem::Array(NbtList::from(from_i64_array(value))));
+                    vec.push(NbtItem::from(from_i64_array(value)));
                 }
             }
             _ => {
