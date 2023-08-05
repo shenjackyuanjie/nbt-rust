@@ -34,22 +34,22 @@ pub enum NbtList {
 pub enum NbtValue {
     /// 0x00
     /// 标志着一个 NBT Compound/List 的结束
-    NbtEnd,
+    End,
     /// 0x01
-    NbtByte(bool),
+    Byte(bool),
     /// 0x02
-    NbtShort(i16),
+    Short(i16),
     /// 0x03
-    NbtInt(i32),
+    Int(i32),
     /// 0x04
-    NbtLong(i64),
+    Long(i64),
     /// 0x05
-    NbtFloat(f32),
+    Float(f32),
     /// 0x06
-    NbtDouble(f64),
+    Double(f64),
     /// 0x08
     /// 一个 UTF-8 编码的定长字符串
-    NbtString(Arc<str>),
+    String(Arc<str>),
 }
 
 impl NbtItem {
@@ -166,41 +166,41 @@ macro_rules! read_data {
 impl NbtValue {
     pub fn as_end(&self) -> Option<()> {
         match self {
-            Self::NbtEnd => Some(()),
+            Self::End => Some(()),
             _ => None,
         }
     }
 
-    export_data!(as_bool, NbtByte, bool);
-    export_data!(as_i16, NbtShort, i16);
-    export_data!(as_i32, NbtInt, i32);
-    export_data!(as_i64, NbtLong, i64);
-    export_data!(as_f32, NbtFloat, f32);
-    export_data!(as_f64, NbtDouble, f64);
-    export_data!(as_string, NbtString, Arc<str>);
+    export_data!(as_bool, Byte, bool);
+    export_data!(as_i16, Short, i16);
+    export_data!(as_i32, Int, i32);
+    export_data!(as_i64, Long, i64);
+    export_data!(as_f32, Float, f32);
+    export_data!(as_f64, Double, f64);
+    export_data!(as_string, String, Arc<str>);
 
     pub fn from_end(value: &mut Reader) -> Self {
         let mut buff = [0_u8];
         _ = value.read(&mut buff).unwrap();
-        Self::NbtEnd
+        Self::End
     }
 
-    read_data!(from_bool, NbtByte, bool, 1);
-    read_data!(from_i16, NbtShort, i16, 2);
-    read_data!(from_i32, NbtInt, i32, 4);
-    read_data!(from_i64, NbtLong, i64, 8);
-    read_data!(from_f32, NbtFloat, f32, 4);
-    read_data!(from_f64, NbtDouble, f64, 8);
+    read_data!(from_bool, Byte, bool, 1);
+    read_data!(from_i16, Short, i16, 2);
+    read_data!(from_i32, Int, i32, 4);
+    read_data!(from_i64, Long, i64, 8);
+    read_data!(from_f32, Float, f32, 4);
+    read_data!(from_f64, Double, f64, 8);
 
     /// 直接读取
     pub fn from_string(value: &mut Reader) -> Self {
         let len: StringLength = Self::from_i32(value).as_i32().unwrap() as StringLength;
         if len == 0 {
-            return Self::NbtString(Arc::from(""));
+            return Self::String(Arc::from(""));
         }
         let mut buff = vec![0_u8; len as usize];
         _ = value.read(&mut buff).unwrap();
-        Self::NbtString(Arc::from(String::from_utf8(buff).unwrap()))
+        Self::String(Arc::from(String::from_utf8(buff).unwrap()))
     }
 
     /// 读取一个有类型无名称的值 (List)
@@ -208,7 +208,7 @@ impl NbtValue {
         let mut value_type = [0_u8];
         _ = value.read(&mut value_type).unwrap();
         match value_type {
-            [0x00] => Some(Self::NbtEnd),
+            [0x00] => Some(Self::End),
             [0x01] => Some(Self::from_bool(value)),
             [0x02] => Some(Self::from_i16(value)),
             [0x03] => Some(Self::from_i32(value)),
@@ -228,7 +228,7 @@ impl NbtValue {
         let mut value_type = [0_u8];
         _ = value.read(&mut value_type).unwrap();
         match value_type {
-            [0x00] => Some((Self::NbtEnd, Arc::from(""))),
+            [0x00] => Some((Self::End, Arc::from(""))),
             [0x01] => {
                 let name = Self::from_string(value).as_string().unwrap();
                 Some((Self::from_bool(value), name))

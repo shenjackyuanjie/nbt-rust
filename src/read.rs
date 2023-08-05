@@ -10,7 +10,7 @@ use std::io::{Cursor, Read};
 /// (0x0A) Compound <xxxx>
 /// (0x0B) Vec<i32>
 /// (0x0C) Vec<i64>
-pub mod read {
+pub mod read_data {
     use crate::data::{NbtItem, NbtLength, NbtList, NbtValue, Reader};
     use std::collections::HashMap;
     use std::io::Read;
@@ -163,13 +163,13 @@ pub mod read {
     pub fn from_compound(value: &mut Reader) -> NbtList {
         // 进来直接是 values
         // loop 读取长度 name len name value value
-        // 直到一个 NbtEnd
+        // 直到一个 End
         let mut map: HashMap<Arc<str>, NbtItem> = HashMap::new();
         loop {
             let mut type_tag = [0_u8; 1];
             _ = value.read(&mut type_tag).unwrap();
             if type_tag == [0x00] {
-                // NbtEnd
+                // End
                 break;
             }
             // 读取 name
@@ -208,8 +208,10 @@ pub mod read {
     }
 }
 
+use read_data::{from_bool_array, from_compound, from_i32_array, from_i64_array, from_nbt_list};
+
 pub enum NbtStatus {
-    /// 读取到了 NbtEnd
+    /// 读取到了 End
     End,
     /// 继续中
     Going(NbtItem),
@@ -239,12 +241,12 @@ impl TryFrom<Cursor<&[u8]>> for NbtItem {
                 [0x04] => NbtStatus::Going(NbtItem::Value(NbtValue::from_i64(&mut value))),
                 [0x05] => NbtStatus::Going(NbtItem::Value(NbtValue::from_f32(&mut value))),
                 [0x06] => NbtStatus::Going(NbtItem::Value(NbtValue::from_f64(&mut value))),
-                [0x07] => NbtStatus::Going(NbtItem::from(read::from_bool_array(&mut value))),
+                [0x07] => NbtStatus::Going(NbtItem::from(from_bool_array(&mut value))),
                 [0x08] => NbtStatus::Going(NbtItem::Value(NbtValue::from_string(&mut value))),
-                [0x09] => NbtStatus::Going(NbtItem::from(read::from_nbt_list(&mut value))),
-                [0x0A] => NbtStatus::Going(NbtItem::from(read::from_compound(&mut value))),
-                [0x0B] => NbtStatus::Going(NbtItem::from(read::from_i32_array(&mut value))),
-                [0x0C] => NbtStatus::Going(NbtItem::from(read::from_i64_array(&mut value))),
+                [0x09] => NbtStatus::Going(NbtItem::from(from_nbt_list(&mut value))),
+                [0x0A] => NbtStatus::Going(NbtItem::from(from_compound(&mut value))),
+                [0x0B] => NbtStatus::Going(NbtItem::from(from_i32_array(&mut value))),
+                [0x0C] => NbtStatus::Going(NbtItem::from(from_i64_array(&mut value))),
                 _ => NbtStatus::Error(std::io::Error::new(
                     std::io::ErrorKind::InvalidData,
                     format!(
@@ -267,10 +269,10 @@ impl TryFrom<Cursor<&[u8]>> for NbtItem {
             }
         }
         // 理论上 长度应该为 2
-        return if items.len() >= 3 {
+        if items.len() >= 3 {
             Ok(NbtItem::Array(NbtList::from(items)))
         } else {
             Ok(items[0].clone())
-        };
+        }
     }
 }
