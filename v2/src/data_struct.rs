@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap, str::Bytes};
+use std::{borrow::Cow, collections::HashMap};
 
 /// NBT 里除了字符串的长度量都是 i32
 #[allow(unused)]
@@ -16,9 +16,7 @@ pub struct NbtData {
 
 #[allow(unused)]
 impl NbtData {
-    pub fn new(data: Vec<u8>) -> Self {
-        Self { head: 0, data }
-    }
+    pub fn new(data: Vec<u8>) -> Self { Self { head: 0, data } }
     pub fn get_mut(&mut self) -> &mut [u8] {
         let (_, data) = self.data.split_at_mut(self.head);
         data
@@ -92,16 +90,56 @@ impl NbtData {
     }
 }
 
-#[allow(unused)]
-pub struct RawData {
-    pub raw_data: Vec<u8>,
-    pub length: usize,
-}
-
-#[allow(unused)]
-impl RawData {
-    pub fn new(raw_data: Vec<u8>, length: usize) -> Self {
-        Self { raw_data, length }
+pub mod raw_reading {
+    /// 多少有点脱裤子放屁
+    pub fn slice_as_byte_array(slice: &[u8]) -> Vec<i8> {
+        slice.iter().map(|&x| x as i8).collect::<Vec<i8>>()
+    }
+    /// unsafe 从这里开始
+    pub fn slice_as_short_array(slice: &[u8]) -> Option<&[i16]> {
+        let length = if slice.len() % 2 != 0 {
+            return None;
+        } else {
+            (slice.len() / 2) as usize
+        };
+        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const i16, length) })
+    }
+    /// 开始 unsafe 了
+    /// unsafe rust, 小子!
+    pub fn slice_as_int_array(slice: &[u8]) -> Option<&[i32]> {
+        let length = if slice.len() % 4 != 0 {
+            return None;
+        } else {
+            (slice.len() / 4) as usize
+        };
+        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const i32, length) })
+    }
+    /// 这边也是 unsafe 捏
+    pub fn slice_as_long_array(slice: &[u8]) -> Option<&[i64]> {
+        let length = if slice.len() % 8 != 0 {
+            return None;
+        } else {
+            (slice.len() / 8) as usize
+        };
+        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const i64, length) })
+    }
+    /// 这边也是 unsafe 捏
+    pub fn slice_as_float_array(slice: &[u8]) -> Option<&[f32]> {
+        let length = if slice.len() % 4 != 0 {
+            return None;
+        } else {
+            (slice.len() / 4) as usize
+        };
+        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const f32, length) })
+    }
+    /// 这边也是 unsafe 捏
+    pub fn slice_as_double_array(slice: &[u8]) -> Option<&[f64]> {
+        let length = if slice.len() % 8 != 0 {
+            return None;
+        } else {
+            (slice.len() / 8) as usize
+        };
+        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const f64, length) })
     }
 }
 
@@ -123,11 +161,11 @@ pub enum Value<'value> {
     /// 8
     String(Cow<'value, str>),
     /// 7
-    ByteArray(RawData),
+    ByteArray(Vec<i8>),
     /// 11
-    IntArray(RawData),
+    IntArray(Vec<i32>),
     /// 12
-    LongArray(RawData),
+    LongArray(Vec<i64>),
     /// 9
     List(ListContent<'value>),
     /// 10
@@ -144,39 +182,27 @@ pub enum ListContent<'value> {
     FloatList(Vec<f32>),
     DoubleList(Vec<f64>),
     StringList(Vec<String>),
-    ByteArrayList(Vec<RawData>),
-    IntArrayList(Vec<RawData>),
-    LongArrayList(Vec<RawData>),
+    ByteArrayList(Vec<Vec<i8>>),
+    IntArrayList(Vec<Vec<i32>>),
+    LongArrayList(Vec<Vec<i64>>),
     CompoundList(Vec<HashMap<String, Value<'value>>>),
     ListList(Vec<ListContent<'value>>),
 }
 
-// #[allow(unused)]
+#[allow(unused)]
 impl<'value> Value<'value> {
     #[inline(always)]
-    pub fn read_byte(data: &mut NbtData) -> Self {
-        Self::Byte(data.read_byte())
-    }
+    pub fn read_byte(data: &mut NbtData) -> Self { Self::Byte(data.read_byte()) }
     #[inline(always)]
-    pub fn read_short(data: &mut NbtData) -> Self {
-        Self::Short(data.read_short())
-    }
+    pub fn read_short(data: &mut NbtData) -> Self { Self::Short(data.read_short()) }
     #[inline(always)]
-    pub fn read_int(data: &mut NbtData) -> Self {
-        Self::Int(data.read_int())
-    }
+    pub fn read_int(data: &mut NbtData) -> Self { Self::Int(data.read_int()) }
     #[inline(always)]
-    pub fn read_long(data: &mut NbtData) -> Self {
-        Self::Long(data.read_long())
-    }
+    pub fn read_long(data: &mut NbtData) -> Self { Self::Long(data.read_long()) }
     #[inline(always)]
-    pub fn read_float(data: &mut NbtData) -> Self {
-        Self::Float(data.read_float())
-    }
+    pub fn read_float(data: &mut NbtData) -> Self { Self::Float(data.read_float()) }
     #[inline(always)]
-    pub fn read_double(data: &mut NbtData) -> Self {
-        Self::Double(data.read_double())
-    }
+    pub fn read_double(data: &mut NbtData) -> Self { Self::Double(data.read_double()) }
     #[inline(always)]
     pub fn read_string(data: &mut NbtData) -> Self {
         let length = data.read_short();
@@ -191,56 +217,43 @@ impl<'value> Value<'value> {
         match type_id {
             0 => panic!("WTF, type_id = 0"),
             1 => {
-                let mut list = Vec::with_capacity(length as usize);
-                for _ in 0..length {
-                    list.push(data.read_byte());
-                }
+                let raw_data = data.read_bytes(length as usize);
+                let list = raw_reading::slice_as_byte_array(raw_data.as_slice());
                 Self::List(ListContent::ByteList(list))
             }
             2 => {
-                let mut list = Vec::with_capacity(length as usize);
-                for _ in 0..length {
-                    list.push(data.read_short());
-                }
+                let raw_data = data.read_bytes(length as usize * 2);
+                let list = raw_reading::slice_as_short_array(raw_data.as_slice()).unwrap().to_vec();
                 Self::List(ListContent::ShortList(list))
             }
             3 => {
-                let mut list = Vec::with_capacity(length as usize);
-                for _ in 0..length {
-                    list.push(data.read_int());
-                }
+                let raw_data = data.read_bytes(length as usize * 4);
+                let list = raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap().to_vec();
                 Self::List(ListContent::IntList(list))
             }
             4 => {
-                let mut list = Vec::with_capacity(length as usize);
-                for _ in 0..length {
-                    list.push(data.read_long());
-                }
+                let raw_data = data.read_bytes(length as usize * 8);
+                let list = raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap().to_vec();
                 Self::List(ListContent::LongList(list))
             }
             5 => {
-                let mut list = Vec::with_capacity(length as usize);
-                for _ in 0..length {
-                    list.push(data.read_float());
-                }
+                let raw_data = data.read_bytes(length as usize * 4);
+                let list = raw_reading::slice_as_float_array(raw_data.as_slice()).unwrap().to_vec();
                 Self::List(ListContent::FloatList(list))
             }
             6 => {
-                let mut list = Vec::with_capacity(length as usize);
-                for _ in 0..length {
-                    list.push(data.read_double());
-                }
+                let raw_data = data.read_bytes(length as usize * 8);
+                let list =
+                    raw_reading::slice_as_double_array(raw_data.as_slice()).unwrap().to_vec();
                 Self::List(ListContent::DoubleList(list))
             }
             7 => {
                 let mut list = Vec::with_capacity(length as usize);
                 for _ in 0..length {
                     let length = data.read_int();
-                    let value = data.read_bytes(length as usize);
-                    list.push(RawData {
-                        raw_data: value,
-                        length: length as usize,
-                    });
+                    let raw_data = data.read_bytes(length as usize);
+                    let value = raw_reading::slice_as_byte_array(raw_data.as_slice());
+                    list.push(value);
                 }
                 Self::List(ListContent::ByteArrayList(list))
             }
@@ -259,11 +272,109 @@ impl<'value> Value<'value> {
                 // 好好好, list 嵌套 list 是吧
                 let mut list = Vec::with_capacity(length as usize);
                 for _ in 0..length {
-                    // let inner_list = Self::read_list(data);
+                    let inner_list = Self::read_list(data);
+                    // list.push(inner_list);
                 }
                 Self::List(ListContent::ListList(list))
             }
+            10 => {
+                todo!("CompoundList, wait for Compound impl")
+            }
+            11 => {
+                let mut list = Vec::with_capacity(length as usize);
+                for _ in 0..length {
+                    let length = data.read_int();
+                    let raw_data = data.read_bytes(length as usize * 4);
+                    let value =
+                        raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap().to_vec();
+                    list.push(value);
+                }
+                Self::List(ListContent::IntArrayList(list))
+            }
+            12 => {
+                let mut list = Vec::with_capacity(length as usize);
+                for _ in 0..length {
+                    let length = data.read_int();
+                    let raw_data = data.read_bytes(length as usize * 8);
+                    let value =
+                        raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap().to_vec();
+                    list.push(value);
+                }
+                Self::List(ListContent::LongArrayList(list))
+            }
             _ => panic!("WTF, type_id = {}", type_id),
+        }
+    }
+    pub fn as_byte(&self) -> Option<i8> {
+        match self {
+            Self::Byte(value) => Some(*value),
+            _ => None,
+        }
+    }
+    pub fn as_short(&self) -> Option<i16> {
+        match self {
+            Self::Short(value) => Some(*value),
+            _ => None,
+        }
+    }
+    pub fn as_int(&self) -> Option<i32> {
+        match self {
+            Self::Int(value) => Some(*value),
+            _ => None,
+        }
+    }
+    pub fn as_long(&self) -> Option<i64> {
+        match self {
+            Self::Long(value) => Some(*value),
+            _ => None,
+        }
+    }
+    pub fn as_float(&self) -> Option<f32> {
+        match self {
+            Self::Float(value) => Some(*value),
+            _ => None,
+        }
+    }
+    pub fn as_double(&self) -> Option<f64> {
+        match self {
+            Self::Double(value) => Some(*value),
+            _ => None,
+        }
+    }
+    pub fn as_string(&self) -> Option<&str> {
+        match self {
+            Self::String(value) => Some(value.as_ref()),
+            _ => None,
+        }
+    }
+    pub fn as_list(&self) -> Option<&ListContent> {
+        match self {
+            Self::List(value) => Some(value),
+            _ => None,
+        }
+    }
+    pub fn as_compound(&self) -> Option<&HashMap<Cow<'value, str>, Value<'value>>> {
+        match self {
+            Self::Compound(value) => Some(value),
+            _ => None,
+        }
+    }
+    pub fn as_byte_array(&self) -> Option<&[i8]> {
+        match self {
+            Self::ByteArray(value) => Some(value),
+            _ => None,
+        }
+    }
+    pub fn as_int_array(&self) -> Option<&[i32]> {
+        match self {
+            Self::IntArray(value) => Some(value),
+            _ => None,
+        }
+    }
+    pub fn as_long_array(&self) -> Option<&[i64]> {
+        match self {
+            Self::LongArray(value) => Some(value),
+            _ => None,
         }
     }
 }
