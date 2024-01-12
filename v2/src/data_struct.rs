@@ -20,23 +20,34 @@ impl<'data> RawData<'data> {
     pub fn new(raw_data: &'data [u8], length: usize) -> Self { Self { raw_data, length } }
 }
 
-
 #[allow(unused)]
 pub enum Value<'value> {
+    // 还有一个 End: 0
+    /// 1
     Byte(i8),
+    /// 2
     Short(i16),
+    /// 3
     Int(i32),
+    /// 4
     Long(i64),
+    /// 5
     Float(f32),
+    /// 6
     Double(f64),
+    /// 8
     String(&'value str),
+    /// 7
     ByteArray(RawData<'value>),
+    /// 11
     IntArray(RawData<'value>),
+    /// 12
     LongArray(RawData<'value>),
-    List(Vec<Value<'value>>),
+    /// 9
+    List(Vec<ListContent<'value>>),
+    /// 10
     Compound(HashMap<&'value str, Value<'value>>),
 }
-
 
 #[allow(unused)]
 pub enum ListContent<'value> {
@@ -47,10 +58,10 @@ pub enum ListContent<'value> {
     FloatList(Vec<f32>),
     DoubleList(Vec<f64>),
     StringList(Vec<&'value str>),
-    ByteArrayList(Vec<Vec<i8>>),
-    IntArrayList(Vec<Vec<i32>>),
-    LongArrayList(Vec<Vec<i64>>),
-    CompoundList(Vec<HashMap<String,Value<'value>>>),
+    ByteArrayList(Vec<RawData<'value>>),
+    IntArrayList(Vec<RawData<'value>>),
+    LongArrayList(Vec<RawData<'value>>),
+    CompoundList(Vec<HashMap<String, Value<'value>>>),
     ListList(Vec<ListContent<'value>>),
 }
 
@@ -117,12 +128,11 @@ impl<'value> Value<'value> {
         Self::String(std::str::from_utf8(value).unwrap())
     }
     pub fn read_list(data: &mut [u8]) -> Self {
-        // 先读 name, 在读 内容类型
-        let (name, data) = data.split_at(2);
-        let name = u16::from_le_bytes([name[0], name[1]]);
-        let (name, data) = data.split_at(name as usize);
-        let name = std::str::from_utf8(name).unwrap();
+        // 内容类型
+        let (type_id, data) = data.split_at(1);
+        // 内容长度
         let (length, data) = data.split_at(4);
-
+        let length = i32::from_le_bytes([length[0], length[1], length[2], length[3]]);
+        todo!()
     }
 }
