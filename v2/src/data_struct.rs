@@ -306,7 +306,48 @@ impl<'value> Value<'value> {
             _ => panic!("WTF, type_id = {}", type_id),
         }
     }
-    pub fn read_compound(data: &mut NbtData) -> Self { todo!() }
+    pub fn read_compound(data: &mut NbtData) -> Self {
+        let mut type_id = 1;
+        let mut map = std::collections::HashMap::new();
+        while type_id != 0 {
+            type_id = data.read_byte();
+            let name_len = data.read_short();
+            let name = String::from_utf8(data.read_bytes(name_len as usize)).unwrap();
+            let value = match type_id {
+                0 => break,
+                1 => Self::read_byte(data),
+                2 => Self::read_short(data),
+                3 => Self::read_int(data),
+                4 => Self::read_long(data),
+                5 => Self::read_float(data),
+                6 => Self::read_double(data),
+                7 => {
+                    let length = data.read_int();
+                    let raw_data = data.read_bytes(length as usize);
+                    let value = raw_reading::slice_as_byte_array(raw_data.as_slice());
+                    Self::ByteArray(value)
+                }
+                8 => Self::read_string(data),
+                9 => Self::read_list(data),
+                10 => Self::read_compound(data),
+                11 => {
+                    let length = data.read_int();
+                    let raw_data = data.read_bytes(length as usize * 4);
+                    let value = raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap();
+                    Self::IntArray(value)
+                }
+                12 => {
+                    let length = data.read_int();
+                    let raw_data = data.read_bytes(length as usize * 8);
+                    let value = raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap();
+                    Self::LongArray(value)
+                }
+                _ => panic!("WTF, type_id = {}", type_id),
+            };
+            map.insert(name.into(), value);
+        }
+        Self::Compound(map)
+    }
     pub fn as_byte(&self) -> Option<i8> {
         match self {
             Self::Byte(value) => Some(*value),
