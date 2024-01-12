@@ -1,3 +1,4 @@
+use core::slice::SlicePattern;
 use std::collections::HashMap;
 
 /// NBT 里除了字符串的长度量都是 i32
@@ -83,10 +84,10 @@ impl NbtData {
         self.head += 8;
         value
     }
-    pub fn read_bytes(&mut self, length: usize) -> &[u8] {
-        let (_, data) = self.data.split_at_mut(self.head);
+    pub fn read_bytes(&mut self, length: usize) -> Vec<u8> {
+        let value = self.data[self.head..self.head + length].to_vec();
         self.head += length;
-        data
+        value
     }
 }
 
@@ -164,7 +165,7 @@ impl<'value> Value<'value> {
     pub fn read_string(data: &mut NbtData) -> Self {
         let length = data.read_short();
         let value = data.read_bytes(length as usize);
-        Self::String(std::str::from_utf8(value).unwrap())
+        Self::String(std::str::from_utf8(value.as_slice()).unwrap())
     }
     pub fn read_list(data: &mut NbtData) -> Self {
         // 内容类型
@@ -221,7 +222,7 @@ impl<'value> Value<'value> {
                     let length = data.read_int();
                     let value = data.read_bytes(length as usize);
                     list.push(RawData {
-                        raw_data: value,
+                        raw_data: value.as_slice(),
                         length: length as usize,
                     });
                 }
@@ -232,7 +233,7 @@ impl<'value> Value<'value> {
                 for _ in 0..length {
                     let length = data.read_int();
                     let value = data.read_bytes(length as usize);
-                    let value = std::str::from_utf8(value).unwrap();
+                    let value = std::str::from_utf8(value.as_slice()).unwrap();
                     list.push(value);
                 }
                 Self::List(ListContent::StringList(list))
