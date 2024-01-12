@@ -138,7 +138,7 @@ fn big_read_test() {
 fn read_test(data: Vec<u8>) {
     let len = data.len();
     let start_time = std::time::Instant::now();
-    let data = data_struct::Value::from_vec(data);
+    let _data = data_struct::Value::from_vec(data);
     let end_time = std::time::Instant::now();
     println!("===local nbt===");
     println!("time: {:?}", end_time - start_time);
@@ -147,6 +147,10 @@ fn read_test(data: Vec<u8>) {
     println!(
         "{:?} (mb/sec)",
         len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0
+    );
+    println!(
+        "{:?} (gb/sec)",
+        len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0 / 1024.0
     );
     // println!("{:?}", data);
 }

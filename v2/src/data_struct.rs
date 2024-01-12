@@ -5,7 +5,6 @@ pub struct NbtData {
     pub data: Vec<u8>,
 }
 
-
 impl NbtData {
     pub fn new(data: Vec<u8>) -> Self { Self { head: 0, data } }
     pub fn get_mut(&mut self) -> &mut [u8] {
@@ -140,7 +139,6 @@ pub mod raw_reading {
     }
 }
 
-
 #[derive(Debug)]
 pub enum Value<'value> {
     // 还有一个 End: 0
@@ -170,7 +168,6 @@ pub enum Value<'value> {
     Compound(Vec<(String, Value<'value>)>),
 }
 
-
 #[derive(Debug)]
 pub enum ListContent<'value> {
     ByteList(Vec<i8>),
@@ -186,7 +183,6 @@ pub enum ListContent<'value> {
     CompoundList(Vec<Vec<(String, Value<'value>)>>),
     ListList(Vec<ListContent<'value>>),
 }
-
 
 impl<'value> Value<'value> {
     #[inline(always)]
