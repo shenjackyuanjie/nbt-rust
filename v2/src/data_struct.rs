@@ -102,9 +102,7 @@ pub mod raw_reading {
         } else {
             (slice.len() / 2) as usize
         };
-        Some(unsafe {
-            Vec::from_raw_parts(slice.as_ptr() as *mut i16, length, length)
-        })
+        Some(unsafe { Vec::from_raw_parts(slice.as_ptr() as *mut i16, length, length) })
     }
     /// 开始 unsafe 了
     /// unsafe rust, 小子!
@@ -114,9 +112,7 @@ pub mod raw_reading {
         } else {
             (slice.len() / 4) as usize
         };
-        Some(unsafe {
-            Vec::from_raw_parts(slice.as_ptr() as *mut i32, 4, length)
-        })
+        Some(unsafe { Vec::from_raw_parts(slice.as_ptr() as *mut i32, 4, length) })
     }
     /// 这边也是 unsafe 捏
     pub fn slice_as_long_array(slice: &[u8]) -> Option<Vec<i64>> {
@@ -247,8 +243,7 @@ impl<'value> Value<'value> {
             }
             6 => {
                 let raw_data = data.read_bytes(length as usize * 8);
-                let list =
-                    raw_reading::slice_as_double_array(raw_data.as_slice()).unwrap();
+                let list = raw_reading::slice_as_double_array(raw_data.as_slice()).unwrap();
                 Self::List(ListContent::DoubleList(list))
             }
             7 => {
@@ -277,7 +272,11 @@ impl<'value> Value<'value> {
                 let mut list = Vec::with_capacity(length as usize);
                 for _ in 0..length {
                     let inner_list = Self::read_list(data);
-                    // list.push(inner_list);
+                    let value = match inner_list {
+                        Self::List(value) => value,
+                        _ => panic!("WTF, type_id = {}", type_id),
+                    };
+                    list.push(value);
                 }
                 Self::List(ListContent::ListList(list))
             }
@@ -289,8 +288,7 @@ impl<'value> Value<'value> {
                 for _ in 0..length {
                     let length = data.read_int();
                     let raw_data = data.read_bytes(length as usize * 4);
-                    let value =
-                        raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap();
+                    let value = raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap();
                     list.push(value);
                 }
                 Self::List(ListContent::IntArrayList(list))
@@ -300,8 +298,7 @@ impl<'value> Value<'value> {
                 for _ in 0..length {
                     let length = data.read_int();
                     let raw_data = data.read_bytes(length as usize * 8);
-                    let value =
-                        raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap();
+                    let value = raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap();
                     list.push(value);
                 }
                 Self::List(ListContent::LongArrayList(list))
@@ -309,6 +306,7 @@ impl<'value> Value<'value> {
             _ => panic!("WTF, type_id = {}", type_id),
         }
     }
+    pub fn read_compound(data: &mut NbtData) -> Self { todo!() }
     pub fn as_byte(&self) -> Option<i8> {
         match self {
             Self::Byte(value) => Some(*value),
