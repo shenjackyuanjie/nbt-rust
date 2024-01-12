@@ -1,20 +1,11 @@
 use std::borrow::Cow;
 
-/// NBT 里除了字符串的长度量都是 i32
-#[allow(unused)]
-pub type NbtLength = i32;
-
-/// NBT 里的字符串独树一帜的把自己的长度用一个u32表示
-/// 不如说为啥别的不用 u32 呢
-#[allow(unused)]
-pub type StringLength = u16;
-
 pub struct NbtData {
     pub head: usize,
     pub data: Vec<u8>,
 }
 
-#[allow(unused)]
+
 impl NbtData {
     pub fn new(data: Vec<u8>) -> Self { Self { head: 0, data } }
     pub fn get_mut(&mut self) -> &mut [u8] {
@@ -143,7 +134,7 @@ pub mod raw_reading {
     }
 }
 
-#[allow(unused)]
+
 #[derive(Debug)]
 pub enum Value<'value> {
     // 还有一个 End: 0
@@ -173,7 +164,7 @@ pub enum Value<'value> {
     Compound(Vec<(String, Value<'value>)>),
 }
 
-#[allow(unused)]
+
 #[derive(Debug)]
 pub enum ListContent<'value> {
     ByteList(Vec<i8>),
@@ -190,7 +181,7 @@ pub enum ListContent<'value> {
     ListList(Vec<ListContent<'value>>),
 }
 
-#[allow(unused)]
+
 impl<'value> Value<'value> {
     #[inline(always)]
     pub fn read_byte(data: &mut NbtData) -> Self { Self::Byte(data.read_byte()) }
