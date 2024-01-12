@@ -137,6 +137,7 @@ fn big_read_test() {
 
 fn read_test(data: Vec<u8>) {
     let len = data.len();
+    println!("file size: {}", len);
     let start_time = std::time::Instant::now();
     let _data = data_struct::Value::from_vec(data);
     let end_time = std::time::Instant::now();

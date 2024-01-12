@@ -84,7 +84,7 @@ pub mod raw_reading {
     /// 多少有点脱裤子放屁
     #[inline(always)]
     pub fn slice_as_byte_array(slice: &[u8]) -> Vec<i8> {
-        slice.iter().map(|&x| x as i8).collect::<Vec<i8>>()
+        unsafe { std::slice::from_raw_parts(slice.as_ptr() as *mut i8, slice.len()).to_vec() }
     }
     /// unsafe 从这里开始
     #[inline(always)]
@@ -312,7 +312,12 @@ impl<'value> Value<'value> {
                 break;
             }
             let name_len = data.read_short();
-            let name = String::from_utf8(data.read_bytes(name_len as usize)).unwrap();
+            let name = if name_len != 0 {
+                let name = String::from_utf8(data.read_bytes(name_len as usize)).unwrap();
+                name
+            } else {
+                String::new()
+            };
             let value = match type_id {
                 0 => break,
                 1 => Self::read_byte(data),
@@ -321,32 +326,38 @@ impl<'value> Value<'value> {
                 4 => Self::read_long(data),
                 5 => Self::read_float(data),
                 6 => Self::read_double(data),
-                7 => {
-                    let length = data.read_int();
-                    let raw_data = data.read_bytes(length as usize);
-                    let value = raw_reading::slice_as_byte_array(raw_data.as_slice());
-                    Self::ByteArray(value)
-                }
+                7 => Self::read_byte_array(data),
                 8 => Self::read_string(data),
                 9 => Self::read_list(data),
                 10 => Self::read_compound(data),
-                11 => {
-                    let length = data.read_int();
-                    let raw_data = data.read_bytes(length as usize * 4);
-                    let value = raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap();
-                    Self::IntArray(value)
-                }
-                12 => {
-                    let length = data.read_int();
-                    let raw_data = data.read_bytes(length as usize * 8);
-                    let value = raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap();
-                    Self::LongArray(value)
-                }
+                11 => Self::read_int_array(data),
+                12 => Self::read_long_array(data),
                 _ => panic!("WTF, type_id = {}", type_id),
             };
             list.push((name, value));
         }
         Self::Compound(list)
+    }
+    #[inline(always)]
+    pub fn read_byte_array(data: &mut NbtData) -> Self {
+        let length = data.read_int();
+        let raw_data = data.read_bytes(length as usize);
+        let value = raw_reading::slice_as_byte_array(raw_data.as_slice());
+        Self::ByteArray(value)
+    }
+    #[inline(always)]
+    pub fn read_int_array(data: &mut NbtData) -> Self {
+        let length = data.read_int();
+        let raw_data = data.read_bytes(length as usize * 4);
+        let value = raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap();
+        Self::IntArray(value)
+    }
+    #[inline(always)]
+    pub fn read_long_array(data: &mut NbtData) -> Self {
+        let length = data.read_int();
+        let raw_data = data.read_bytes(length as usize * 8);
+        let value = raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap();
+        Self::LongArray(value)
     }
     pub fn as_byte(&self) -> Option<i8> {
         match self {
