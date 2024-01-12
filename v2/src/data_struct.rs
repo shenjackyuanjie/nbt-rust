@@ -44,7 +44,7 @@ pub enum Value<'value> {
     /// 12
     LongArray(RawData<'value>),
     /// 9
-    List(Vec<ListContent<'value>>),
+    List(ListContent<'value>),
     /// 10
     Compound(HashMap<&'value str, Value<'value>>),
 }
@@ -127,12 +127,103 @@ impl<'value> Value<'value> {
         let (value, data) = data.split_at(length as usize);
         Self::String(std::str::from_utf8(value).unwrap())
     }
-    pub fn read_list(data: &mut [u8]) -> Self {
+    pub fn read_list(data: &'value mut [u8]) -> Self {
         // 内容类型
         let (type_id, data) = data.split_at(1);
+        let type_id = type_id[0];
         // 内容长度
-        let (length, data) = data.split_at(4);
+        let (length, mut data) = data.split_at(4);
         let length = i32::from_le_bytes([length[0], length[1], length[2], length[3]]);
-        todo!()
+        match type_id {
+            0 => panic!("WTF, type_id = 0"),
+            1 => {
+                let mut list = Vec::with_capacity(length as usize);
+                for _ in 0..length {
+                    let (value, data) = data.split_at(1);
+                    list.push(value[0] as i8);
+                }
+                Self::List(ListContent::ByteList(list))
+            }
+            2 => {
+                let mut list = Vec::with_capacity(length as usize);
+                for _ in 0..length {
+                    let (value, data) = data.split_at(2);
+                    list.push(i16::from_le_bytes([value[0], value[1]]));
+                }
+                Self::List(ListContent::ShortList(list))
+            }
+            3 => {
+                let mut list = Vec::with_capacity(length as usize);
+                for _ in 0..length {
+                    let (value, data) = data.split_at(4);
+                    list.push(i32::from_le_bytes([value[0], value[1], value[2], value[3]]));
+                }
+                Self::List(ListContent::IntList(list))
+            }
+            4 => {
+                let mut list = Vec::with_capacity(length as usize);
+                for _ in 0..length {
+                    let (value, data) = data.split_at(8);
+                    list.push(i64::from_le_bytes([
+                        value[0], value[1], value[2], value[3], value[4], value[5], value[6],
+                        value[7],
+                    ]));
+                }
+                Self::List(ListContent::LongList(list))
+            }
+            5 => {
+                let mut list = Vec::with_capacity(length as usize);
+                for _ in 0..length {
+                    let (value, data) = data.split_at(4);
+                    list.push(f32::from_le_bytes([value[0], value[1], value[2], value[3]]));
+                }
+                Self::List(ListContent::FloatList(list))
+            }
+            6 => {
+                let mut list = Vec::with_capacity(length as usize);
+                for _ in 0..length {
+                    let (value, data) = data.split_at(8);
+                    list.push(f64::from_le_bytes([
+                        value[0], value[1], value[2], value[3], value[4], value[5], value[6],
+                        value[7],
+                    ]))
+                }
+                Self::List(ListContent::DoubleList(list))
+            }
+            7 => {
+                let mut list = Vec::with_capacity(length as usize);
+                for _ in 0..length {
+                    let (len, data) = data.split_at(4);
+                    let len = i32::from_le_bytes([len[0], len[1], len[2], len[3]]);
+                    let (value, data) = data.split_at(len as usize);
+                    list.push(RawData {
+                        raw_data: value,
+                        length: len as usize,
+                    });
+                }
+                Self::List(ListContent::ByteArrayList(list))
+            }
+            8 => {
+                let mut list = Vec::with_capacity(length as usize);
+                for _ in 0..length {
+                    let (len, data) = data.split_at(2);
+                    let len = u16::from_le_bytes([len[0], len[1]]);
+                    let (value, data) = data.split_at(len as usize);
+                    let value = std::str::from_utf8(value).unwrap();
+                    list.push(value);
+                }
+                Self::List(ListContent::StringList(list))
+            }
+            9 => {
+                // 好好好, list 嵌套 list 是吧
+                let mut list = Vec::with_capacity(length as usize);
+                let mut data = data;
+                for _ in 0..length {
+                    let inner_list = Self::read_list(&mut data);
+                }
+                Self::List(ListContent::ListList(list))
+            }
+            _ => panic!("WTF, type_id = {}", type_id),
+        }
     }
 }
