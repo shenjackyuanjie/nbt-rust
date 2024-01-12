@@ -83,10 +83,12 @@ impl NbtData {
 
 pub mod raw_reading {
     /// 多少有点脱裤子放屁
+    #[inline(always)]
     pub fn slice_as_byte_array(slice: &[u8]) -> Vec<i8> {
         slice.iter().map(|&x| x as i8).collect::<Vec<i8>>()
     }
     /// unsafe 从这里开始
+    #[inline(always)]
     pub fn slice_as_short_array(slice: &[u8]) -> Option<Vec<i16>> {
         let length = if slice.len() % 2 != 0 {
             return None;
@@ -97,6 +99,7 @@ pub mod raw_reading {
     }
     /// 开始 unsafe 了
     /// unsafe rust, 小子!
+    #[inline(always)]
     pub fn slice_as_int_array(slice: &[u8]) -> Option<Vec<i32>> {
         let length = if slice.len() % 4 != 0 {
             return None;
@@ -106,6 +109,7 @@ pub mod raw_reading {
         Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *mut i32, length).to_vec() })
     }
     /// 这边也是 unsafe 捏
+    #[inline(always)]
     pub fn slice_as_long_array(slice: &[u8]) -> Option<Vec<i64>> {
         let length = if slice.len() % 8 != 0 {
             return None;
@@ -115,6 +119,7 @@ pub mod raw_reading {
         Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *mut i64, length).to_vec() })
     }
     /// 这边也是 unsafe 捏
+    #[inline(always)]
     pub fn slice_as_float_array(slice: &[u8]) -> Option<Vec<f32>> {
         let length = if slice.len() % 4 != 0 {
             return None;
@@ -124,6 +129,7 @@ pub mod raw_reading {
         Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *mut f32, length).to_vec() })
     }
     /// 这边也是 unsafe 捏
+    #[inline(always)]
     pub fn slice_as_double_array(slice: &[u8]) -> Option<Vec<f64>> {
         let length = if slice.len() % 8 != 0 {
             return None;
@@ -418,12 +424,14 @@ impl<'value> Value<'value> {
             _ => None,
         }
     }
+    #[inline(always)]
     pub fn into_list(self) -> Option<ListContent<'value>> {
         match self {
             Self::List(value) => Some(value),
             _ => None,
         }
     }
+    #[inline(always)]
     pub fn into_compound(self) -> Option<Vec<(String, Value<'value>)>> {
         match self {
             Self::Compound(value) => Some(value),
