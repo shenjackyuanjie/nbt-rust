@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::borrow::Cow;
 
 /// NBT 里除了字符串的长度量都是 i32
 #[allow(unused)]
@@ -31,12 +31,12 @@ impl NbtData {
         value
     }
     pub fn read_short(&mut self) -> i16 {
-        let value = i16::from_le_bytes([self.data[self.head], self.data[self.head + 1]]);
+        let value = i16::from_be_bytes([self.data[self.head], self.data[self.head + 1]]);
         self.head += 2;
         value
     }
     pub fn read_int(&mut self) -> i32 {
-        let value = i32::from_le_bytes([
+        let value = i32::from_be_bytes([
             self.data[self.head],
             self.data[self.head + 1],
             self.data[self.head + 2],
@@ -46,7 +46,7 @@ impl NbtData {
         value
     }
     pub fn read_long(&mut self) -> i64 {
-        let value = i64::from_le_bytes([
+        let value = i64::from_be_bytes([
             self.data[self.head],
             self.data[self.head + 1],
             self.data[self.head + 2],
@@ -60,7 +60,7 @@ impl NbtData {
         value
     }
     pub fn read_float(&mut self) -> f32 {
-        let value = f32::from_le_bytes([
+        let value = f32::from_be_bytes([
             self.data[self.head],
             self.data[self.head + 1],
             self.data[self.head + 2],
@@ -70,7 +70,7 @@ impl NbtData {
         value
     }
     pub fn read_double(&mut self) -> f64 {
-        let value = f64::from_le_bytes([
+        let value = f64::from_be_bytes([
             self.data[self.head],
             self.data[self.head + 1],
             self.data[self.head + 2],
@@ -102,7 +102,7 @@ pub mod raw_reading {
         } else {
             (slice.len() / 2) as usize
         };
-        Some(unsafe { Vec::from_raw_parts(slice.as_ptr() as *mut i16, length, length) })
+        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *mut i16, length).to_vec() })
     }
     /// 开始 unsafe 了
     /// unsafe rust, 小子!
@@ -112,7 +112,7 @@ pub mod raw_reading {
         } else {
             (slice.len() / 4) as usize
         };
-        Some(unsafe { Vec::from_raw_parts(slice.as_ptr() as *mut i32, 4, length) })
+        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *mut i32, length).to_vec() })
     }
     /// 这边也是 unsafe 捏
     pub fn slice_as_long_array(slice: &[u8]) -> Option<Vec<i64>> {
@@ -121,7 +121,7 @@ pub mod raw_reading {
         } else {
             (slice.len() / 8) as usize
         };
-        Some(unsafe { Vec::from_raw_parts(slice.as_ptr() as *mut i64, 8, length) })
+        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *mut i64, length).to_vec() })
     }
     /// 这边也是 unsafe 捏
     pub fn slice_as_float_array(slice: &[u8]) -> Option<Vec<f32>> {
@@ -130,7 +130,7 @@ pub mod raw_reading {
         } else {
             (slice.len() / 4) as usize
         };
-        Some(unsafe { Vec::from_raw_parts(slice.as_ptr() as *mut f32, 4, length) })
+        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *mut f32, length).to_vec() })
     }
     /// 这边也是 unsafe 捏
     pub fn slice_as_double_array(slice: &[u8]) -> Option<Vec<f64>> {
@@ -139,11 +139,12 @@ pub mod raw_reading {
         } else {
             (slice.len() / 8) as usize
         };
-        Some(unsafe { Vec::from_raw_parts(slice.as_ptr() as *mut f64, 8, length) })
+        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *mut f64, length).to_vec() })
     }
 }
 
 #[allow(unused)]
+#[derive(Debug)]
 pub enum Value<'value> {
     // 还有一个 End: 0
     /// 1
@@ -169,11 +170,11 @@ pub enum Value<'value> {
     /// 9
     List(ListContent<'value>),
     /// 10
-    Compound(HashMap<Cow<'value, str>, Value<'value>>),
+    Compound(Vec<(String, Value<'value>)>),
 }
 
 #[allow(unused)]
-#[allow(unused)]
+#[derive(Debug)]
 pub enum ListContent<'value> {
     ByteList(Vec<i8>),
     ShortList(Vec<i16>),
@@ -185,7 +186,7 @@ pub enum ListContent<'value> {
     ByteArrayList(Vec<Vec<i8>>),
     IntArrayList(Vec<Vec<i32>>),
     LongArrayList(Vec<Vec<i64>>),
-    CompoundList(Vec<HashMap<String, Value<'value>>>),
+    CompoundList(Vec<Vec<(String, Value<'value>)>>),
     ListList(Vec<ListContent<'value>>),
 }
 
@@ -272,16 +273,19 @@ impl<'value> Value<'value> {
                 let mut list = Vec::with_capacity(length as usize);
                 for _ in 0..length {
                     let inner_list = Self::read_list(data);
-                    let value = match inner_list {
-                        Self::List(value) => value,
-                        _ => panic!("WTF, type_id = {}", type_id),
-                    };
+                    let value = inner_list.into_list().unwrap();
                     list.push(value);
                 }
                 Self::List(ListContent::ListList(list))
             }
             10 => {
-                todo!("CompoundList, wait for Compound impl")
+                let mut list = Vec::with_capacity(length as usize);
+                for _ in 0..length {
+                    let inner_compound = Self::read_compound(data);
+                    let value = inner_compound.into_compound().unwrap();
+                    list.push(value);
+                }
+                Self::List(ListContent::CompoundList(list))
             }
             11 => {
                 let mut list = Vec::with_capacity(length as usize);
@@ -308,9 +312,12 @@ impl<'value> Value<'value> {
     }
     pub fn read_compound(data: &mut NbtData) -> Self {
         let mut type_id = 1;
-        let mut map = std::collections::HashMap::new();
+        let mut list = vec![];
         while type_id != 0 {
             type_id = data.read_byte();
+            if type_id == 0 {
+                break;
+            }
             let name_len = data.read_short();
             let name = String::from_utf8(data.read_bytes(name_len as usize)).unwrap();
             let value = match type_id {
@@ -344,9 +351,9 @@ impl<'value> Value<'value> {
                 }
                 _ => panic!("WTF, type_id = {}", type_id),
             };
-            map.insert(name.into(), value);
+            list.push((name, value));
         }
-        Self::Compound(map)
+        Self::Compound(list)
     }
     pub fn as_byte(&self) -> Option<i8> {
         match self {
@@ -396,28 +403,49 @@ impl<'value> Value<'value> {
             _ => None,
         }
     }
-    pub fn as_compound(&self) -> Option<&HashMap<Cow<'value, str>, Value<'value>>> {
+    pub fn as_compound(&self) -> Option<&Vec<(String, Value<'value>)>> {
         match self {
             Self::Compound(value) => Some(value),
             _ => None,
         }
     }
-    pub fn as_byte_array(&self) -> Option<&[i8]> {
+    pub fn as_byte_array(&self) -> Option<&Vec<i8>> {
         match self {
             Self::ByteArray(value) => Some(value),
             _ => None,
         }
     }
-    pub fn as_int_array(&self) -> Option<&[i32]> {
+    pub fn as_int_array(&self) -> Option<&Vec<i32>> {
         match self {
             Self::IntArray(value) => Some(value),
             _ => None,
         }
     }
-    pub fn as_long_array(&self) -> Option<&[i64]> {
+    pub fn as_long_array(&self) -> Option<&Vec<i64>> {
         match self {
             Self::LongArray(value) => Some(value),
             _ => None,
         }
+    }
+    pub fn into_list(self) -> Option<ListContent<'value>> {
+        match self {
+            Self::List(value) => Some(value),
+            _ => None,
+        }
+    }
+    pub fn into_compound(self) -> Option<Vec<(String, Value<'value>)>> {
+        match self {
+            Self::Compound(value) => Some(value),
+            _ => None,
+        }
+    }
+    pub fn from_vec(data: Vec<u8>) -> Self {
+        let mut nbt_data = NbtData::new(data);
+        let _type_id = nbt_data.read_byte();
+        let _name_len = nbt_data.read_short();
+        println!("{} {}", _type_id, _name_len);
+        let name = String::from_utf8(nbt_data.read_bytes(_name_len as usize)).unwrap();
+        println!("{}", name);
+        Value::read_compound(&mut nbt_data)
     }
 }
