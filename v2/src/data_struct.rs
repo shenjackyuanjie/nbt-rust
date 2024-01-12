@@ -1,5 +1,4 @@
-use core::slice::SlicePattern;
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap, str::Bytes};
 
 /// NBT 里除了字符串的长度量都是 i32
 #[allow(unused)]
@@ -17,7 +16,9 @@ pub struct NbtData {
 
 #[allow(unused)]
 impl NbtData {
-    pub fn new(data: Vec<u8>) -> Self { Self { head: 0, data } }
+    pub fn new(data: Vec<u8>) -> Self {
+        Self { head: 0, data }
+    }
     pub fn get_mut(&mut self) -> &mut [u8] {
         let (_, data) = self.data.split_at_mut(self.head);
         data
@@ -92,14 +93,16 @@ impl NbtData {
 }
 
 #[allow(unused)]
-pub struct RawData<'data> {
-    pub raw_data: &'data [u8],
+pub struct RawData {
+    pub raw_data: Vec<u8>,
     pub length: usize,
 }
 
 #[allow(unused)]
-impl<'data> RawData<'data> {
-    pub fn new(raw_data: &'data [u8], length: usize) -> Self { Self { raw_data, length } }
+impl RawData {
+    pub fn new(raw_data: Vec<u8>, length: usize) -> Self {
+        Self { raw_data, length }
+    }
 }
 
 #[allow(unused)]
@@ -118,19 +121,20 @@ pub enum Value<'value> {
     /// 6
     Double(f64),
     /// 8
-    String(&'value str),
+    String(Cow<'value, str>),
     /// 7
-    ByteArray(RawData<'value>),
+    ByteArray(RawData),
     /// 11
-    IntArray(RawData<'value>),
+    IntArray(RawData),
     /// 12
-    LongArray(RawData<'value>),
+    LongArray(RawData),
     /// 9
     List(ListContent<'value>),
     /// 10
-    Compound(HashMap<&'value str, Value<'value>>),
+    Compound(HashMap<Cow<'value, str>, Value<'value>>),
 }
 
+#[allow(unused)]
 #[allow(unused)]
 pub enum ListContent<'value> {
     ByteList(Vec<i8>),
@@ -139,10 +143,10 @@ pub enum ListContent<'value> {
     LongList(Vec<i64>),
     FloatList(Vec<f32>),
     DoubleList(Vec<f64>),
-    StringList(Vec<&'value str>),
-    ByteArrayList(Vec<RawData<'value>>),
-    IntArrayList(Vec<RawData<'value>>),
-    LongArrayList(Vec<RawData<'value>>),
+    StringList(Vec<String>),
+    ByteArrayList(Vec<RawData>),
+    IntArrayList(Vec<RawData>),
+    LongArrayList(Vec<RawData>),
     CompoundList(Vec<HashMap<String, Value<'value>>>),
     ListList(Vec<ListContent<'value>>),
 }
@@ -150,22 +154,34 @@ pub enum ListContent<'value> {
 // #[allow(unused)]
 impl<'value> Value<'value> {
     #[inline(always)]
-    pub fn read_byte(data: &mut NbtData) -> Self { Self::Byte(data.read_byte()) }
+    pub fn read_byte(data: &mut NbtData) -> Self {
+        Self::Byte(data.read_byte())
+    }
     #[inline(always)]
-    pub fn read_short(data: &mut NbtData) -> Self { Self::Short(data.read_short()) }
+    pub fn read_short(data: &mut NbtData) -> Self {
+        Self::Short(data.read_short())
+    }
     #[inline(always)]
-    pub fn read_int(data: &mut NbtData) -> Self { Self::Int(data.read_int()) }
+    pub fn read_int(data: &mut NbtData) -> Self {
+        Self::Int(data.read_int())
+    }
     #[inline(always)]
-    pub fn read_long(data: &mut NbtData) -> Self { Self::Long(data.read_long()) }
+    pub fn read_long(data: &mut NbtData) -> Self {
+        Self::Long(data.read_long())
+    }
     #[inline(always)]
-    pub fn read_float(data: &mut NbtData) -> Self { Self::Float(data.read_float()) }
+    pub fn read_float(data: &mut NbtData) -> Self {
+        Self::Float(data.read_float())
+    }
     #[inline(always)]
-    pub fn read_double(data: &mut NbtData) -> Self { Self::Double(data.read_double()) }
+    pub fn read_double(data: &mut NbtData) -> Self {
+        Self::Double(data.read_double())
+    }
     #[inline(always)]
     pub fn read_string(data: &mut NbtData) -> Self {
         let length = data.read_short();
         let value = data.read_bytes(length as usize);
-        Self::String(std::str::from_utf8(value.as_slice()).unwrap())
+        Self::String(std::str::from_utf8(value.as_slice()).unwrap().to_owned().into())
     }
     pub fn read_list(data: &mut NbtData) -> Self {
         // 内容类型
@@ -222,7 +238,7 @@ impl<'value> Value<'value> {
                     let length = data.read_int();
                     let value = data.read_bytes(length as usize);
                     list.push(RawData {
-                        raw_data: value.as_slice(),
+                        raw_data: value,
                         length: length as usize,
                     });
                 }
@@ -232,8 +248,9 @@ impl<'value> Value<'value> {
                 let mut list = Vec::with_capacity(length as usize);
                 for _ in 0..length {
                     let length = data.read_int();
-                    let value = data.read_bytes(length as usize);
-                    let value = std::str::from_utf8(value.as_slice()).unwrap();
+                    let value = std::str::from_utf8(data.read_bytes(length as usize).as_slice())
+                        .unwrap()
+                        .to_owned();
                     list.push(value);
                 }
                 Self::List(ListContent::StringList(list))
