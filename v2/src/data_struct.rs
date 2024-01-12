@@ -96,50 +96,54 @@ pub mod raw_reading {
         slice.iter().map(|&x| x as i8).collect::<Vec<i8>>()
     }
     /// unsafe 从这里开始
-    pub fn slice_as_short_array(slice: &[u8]) -> Option<&[i16]> {
+    pub fn slice_as_short_array(slice: &[u8]) -> Option<Vec<i16>> {
         let length = if slice.len() % 2 != 0 {
             return None;
         } else {
             (slice.len() / 2) as usize
         };
-        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const i16, length) })
+        Some(unsafe {
+            Vec::from_raw_parts(slice.as_ptr() as *mut i16, length, length)
+        })
     }
     /// 开始 unsafe 了
     /// unsafe rust, 小子!
-    pub fn slice_as_int_array(slice: &[u8]) -> Option<&[i32]> {
+    pub fn slice_as_int_array(slice: &[u8]) -> Option<Vec<i32>> {
         let length = if slice.len() % 4 != 0 {
             return None;
         } else {
             (slice.len() / 4) as usize
         };
-        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const i32, length) })
+        Some(unsafe {
+            Vec::from_raw_parts(slice.as_ptr() as *mut i32, 4, length)
+        })
     }
     /// 这边也是 unsafe 捏
-    pub fn slice_as_long_array(slice: &[u8]) -> Option<&[i64]> {
+    pub fn slice_as_long_array(slice: &[u8]) -> Option<Vec<i64>> {
         let length = if slice.len() % 8 != 0 {
             return None;
         } else {
             (slice.len() / 8) as usize
         };
-        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const i64, length) })
+        Some(unsafe { Vec::from_raw_parts(slice.as_ptr() as *mut i64, 8, length) })
     }
     /// 这边也是 unsafe 捏
-    pub fn slice_as_float_array(slice: &[u8]) -> Option<&[f32]> {
+    pub fn slice_as_float_array(slice: &[u8]) -> Option<Vec<f32>> {
         let length = if slice.len() % 4 != 0 {
             return None;
         } else {
             (slice.len() / 4) as usize
         };
-        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const f32, length) })
+        Some(unsafe { Vec::from_raw_parts(slice.as_ptr() as *mut f32, 4, length) })
     }
     /// 这边也是 unsafe 捏
-    pub fn slice_as_double_array(slice: &[u8]) -> Option<&[f64]> {
+    pub fn slice_as_double_array(slice: &[u8]) -> Option<Vec<f64>> {
         let length = if slice.len() % 8 != 0 {
             return None;
         } else {
             (slice.len() / 8) as usize
         };
-        Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const f64, length) })
+        Some(unsafe { Vec::from_raw_parts(slice.as_ptr() as *mut f64, 8, length) })
     }
 }
 
@@ -223,28 +227,28 @@ impl<'value> Value<'value> {
             }
             2 => {
                 let raw_data = data.read_bytes(length as usize * 2);
-                let list = raw_reading::slice_as_short_array(raw_data.as_slice()).unwrap().to_vec();
+                let list = raw_reading::slice_as_short_array(raw_data.as_slice()).unwrap();
                 Self::List(ListContent::ShortList(list))
             }
             3 => {
                 let raw_data = data.read_bytes(length as usize * 4);
-                let list = raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap().to_vec();
+                let list = raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap();
                 Self::List(ListContent::IntList(list))
             }
             4 => {
                 let raw_data = data.read_bytes(length as usize * 8);
-                let list = raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap().to_vec();
+                let list = raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap();
                 Self::List(ListContent::LongList(list))
             }
             5 => {
                 let raw_data = data.read_bytes(length as usize * 4);
-                let list = raw_reading::slice_as_float_array(raw_data.as_slice()).unwrap().to_vec();
+                let list = raw_reading::slice_as_float_array(raw_data.as_slice()).unwrap();
                 Self::List(ListContent::FloatList(list))
             }
             6 => {
                 let raw_data = data.read_bytes(length as usize * 8);
                 let list =
-                    raw_reading::slice_as_double_array(raw_data.as_slice()).unwrap().to_vec();
+                    raw_reading::slice_as_double_array(raw_data.as_slice()).unwrap();
                 Self::List(ListContent::DoubleList(list))
             }
             7 => {
@@ -286,7 +290,7 @@ impl<'value> Value<'value> {
                     let length = data.read_int();
                     let raw_data = data.read_bytes(length as usize * 4);
                     let value =
-                        raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap().to_vec();
+                        raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap();
                     list.push(value);
                 }
                 Self::List(ListContent::IntArrayList(list))
@@ -297,7 +301,7 @@ impl<'value> Value<'value> {
                     let length = data.read_int();
                     let raw_data = data.read_bytes(length as usize * 8);
                     let value =
-                        raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap().to_vec();
+                        raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap();
                     list.push(value);
                 }
                 Self::List(ListContent::LongArrayList(list))
