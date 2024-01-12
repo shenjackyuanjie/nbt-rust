@@ -217,9 +217,8 @@ impl<'value> Value<'value> {
             9 => {
                 // 好好好, list 嵌套 list 是吧
                 let mut list = Vec::with_capacity(length as usize);
-                let mut data = data;
                 for _ in 0..length {
-                    let inner_list = Self::read_list(&mut data);
+                    let inner_list = Self::read_list(data);
                 }
                 Self::List(ListContent::ListList(list))
             }
