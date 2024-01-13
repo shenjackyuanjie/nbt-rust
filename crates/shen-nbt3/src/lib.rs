@@ -1,83 +1,45 @@
-use std::{borrow::Cow};
+use std::borrow::Cow;
 #[cfg(feature = "internal_opt")]
 use std::intrinsics::unlikely;
 
-pub struct NbtData {
-    pub head: usize,
-    pub data: Vec<u8>,
+use byte::{BytesExt, BE};
+
+pub struct NbtData<'value> {
+    pub offset: usize,
+    pub data: &'value mut [u8],
 }
 
-impl NbtData {
-    pub fn new(data: Vec<u8>) -> Self { Self { head: 0, data } }
+impl<'value> NbtData<'value> {
+    pub fn new(data: &'value mut [u8]) -> Self { Self { offset: 0, data } }
     pub fn get_mut(&mut self) -> &mut [u8] {
-        let (_, data) = self.data.split_at_mut(self.head);
+        let (_, data) = self.data.split_at_mut(self.offset);
         data
     }
     pub fn push_head(&mut self, length: usize) -> usize {
-        self.head += length;
-        self.head
+        self.offset += length;
+        self.offset
     }
     pub fn read_byte(&mut self) -> i8 {
-        let value = self.data[self.head] as i8;
-        self.head += 1;
-        value
+        self.data.read_with::<i8>(&mut self.offset, BE).unwrap()
     }
     pub fn read_short(&mut self) -> i16 {
-        let value = i16::from_be_bytes([self.data[self.head], self.data[self.head + 1]]);
-        self.head += 2;
-        value
+        self.data.read_with::<i16>(&mut self.offset, BE).unwrap()
     }
     pub fn read_int(&mut self) -> i32 {
-        let value = i32::from_be_bytes([
-            self.data[self.head],
-            self.data[self.head + 1],
-            self.data[self.head + 2],
-            self.data[self.head + 3],
-        ]);
-        self.head += 4;
-        value
+        self.data.read_with::<i32>(&mut self.offset, BE).unwrap()
     }
     pub fn read_long(&mut self) -> i64 {
-        let value = i64::from_be_bytes([
-            self.data[self.head],
-            self.data[self.head + 1],
-            self.data[self.head + 2],
-            self.data[self.head + 3],
-            self.data[self.head + 4],
-            self.data[self.head + 5],
-            self.data[self.head + 6],
-            self.data[self.head + 7],
-        ]);
-        self.head += 8;
-        value
+        self.data.read_with::<i64>(&mut self.offset, BE).unwrap()
     }
     pub fn read_float(&mut self) -> f32 {
-        let value = f32::from_be_bytes([
-            self.data[self.head],
-            self.data[self.head + 1],
-            self.data[self.head + 2],
-            self.data[self.head + 3],
-        ]);
-        self.head += 4;
-        value
+        self.data.read_with::<f32>(&mut self.offset, BE).unwrap()
     }
     pub fn read_double(&mut self) -> f64 {
-        let value = f64::from_be_bytes([
-            self.data[self.head],
-            self.data[self.head + 1],
-            self.data[self.head + 2],
-            self.data[self.head + 3],
-            self.data[self.head + 4],
-            self.data[self.head + 5],
-            self.data[self.head + 6],
-            self.data[self.head + 7],
-        ]);
-        self.head += 8;
-        value
+        self.data.read_with::<f64>(&mut self.offset, BE).unwrap()
     }
     pub fn read_bytes(&mut self, length: usize) -> Vec<u8> {
-        let value = self.data[self.head..self.head + length].to_vec();
-        self.head += length;
+        let value = self.data[self.offset..self.offset + length].to_vec();
+        self.offset += length;
         value
     }
 }
@@ -469,13 +431,13 @@ impl<'value> Value<'value> {
             _ => None,
         }
     }
-    pub fn from_vec(data: Vec<u8>) -> Self {
-        let mut nbt_data = NbtData::new(data);
+    pub fn from_vec(mut data: Vec<u8>) -> Self {
+        let mut nbt_data = NbtData::new(&mut data[..]);
         let _type_id = nbt_data.read_byte();
         let _name_len = nbt_data.read_short();
-        println!("{} {}", _type_id, _name_len);
-        let name = String::from_utf8(nbt_data.read_bytes(_name_len as usize)).unwrap();
-        println!("{}", name);
+        // println!("{} {}", _type_id, _name_len);
+        let _name = String::from_utf8(nbt_data.read_bytes(_name_len as usize)).unwrap();
+        // println!("{}", _name);
         Value::read_compound(&mut nbt_data)
     }
 }

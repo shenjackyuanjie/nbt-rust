@@ -1,0 +1,7 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "crates/shen-nbt1/Cargo.toml",
+        "crates/shen-nbt2/Cargo.toml",
+        "crates/shen-nbt3/Cargo.toml",
+    ]
+}

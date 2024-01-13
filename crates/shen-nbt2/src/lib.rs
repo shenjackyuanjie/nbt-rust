@@ -1,4 +1,4 @@
-use std::{borrow::Cow};
+use std::borrow::Cow;
 #[cfg(feature = "internal_opt")]
 use std::intrinsics::unlikely;
 
