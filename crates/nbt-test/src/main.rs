@@ -9,17 +9,6 @@ fn main() {
     cli_read_test();
 }
 
-fn cli_read_test() {
-    let mut args = std::env::args();
-    // 如果有, 取出
-    if let Some(arg) = args.nth(1) {
-        let data = std::fs::read(arg).unwrap();
-        read_test(data);
-    } else {
-        println!("Usage: cargo run --release -- <file>");
-    }
-}
-
 fn small_read_test() {
     let data: [u8; 0x21] = [
         0x0A, 0x00, 0x0B, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x77, 0x6F, 0x72, 0x6C, 0x64, 0x08,
@@ -202,4 +191,51 @@ fn read_test(in_data: Vec<u8>) {
             let _nbt_data: fastnbt::Value = fastnbt::from_bytes(data.as_slice()).unwrap();
         }, "fastnbt", len
     );
+}
+
+
+fn cli_read_test() {
+    let mut args = std::env::args();
+    // 如果有, 取出
+    if let Some(arg) = args.nth(1) {
+        let data = std::fs::read(&arg).unwrap();
+        // read_test(data);
+        let len = data.len();
+        test_lib!(
+            {
+                let cursor: shen_nbt1::data::Reader = std::io::Cursor::new(data.as_slice());
+                let _nbt_data = shen_nbt1::data::NbtItem::try_from(cursor).unwrap();
+            }, "nbt v1", len
+        );
+    
+        let data = std::fs::read(&arg).unwrap();
+        test_lib!(
+            {
+                let _nbt_data = shen_nbt2::Value::from_vec(data);
+            }, "nbt v2", len
+        );
+    
+        let data = std::fs::read(&arg).unwrap();
+        test_lib!(
+            {
+                let _nbt_data = shen_nbt3::Value::from_vec(data);
+            }, "nbt v3", len
+        );
+    
+        let data = std::fs::read(&arg).unwrap();
+        test_lib!(
+            {
+                let _nbt_data = shen_nbt4::Value::from_vec(data);
+            }, "nbt v4", len
+        );
+    
+        let data = std::fs::read(&arg).unwrap();
+        test_lib!(
+            {
+                let _nbt_data: fastnbt::Value = fastnbt::from_bytes(data.as_slice()).unwrap();
+            }, "fastnbt", len
+        );
+    } else {
+        println!("Usage: cargo run --release -- <file>");
+    }
 }
