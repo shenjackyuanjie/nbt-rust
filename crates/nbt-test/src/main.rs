@@ -168,9 +168,9 @@ fn read_test(in_data: Vec<u8>) {
     println!("data: {:?}", data);
 
     let data = in_data.clone();
-    let data2 = in_data.clone();
-    let data3 = in_data.clone();
-    let data4 = in_data.clone();
+    // let data2 = in_data.clone();
+    // let data3 = in_data.clone();
+    // let data4 = in_data.clone();
     std::thread::sleep(std::time::Duration::from_secs(1));
     test_lib!(
         {
@@ -181,19 +181,19 @@ fn read_test(in_data: Vec<u8>) {
 
     test_lib!(
         {
-            let _nbt_data = shen_nbt2::Value::from_vec(data2);
+            let _nbt_data = shen_nbt2::Value::from_vec(data.as_slice().to_vec());
         }, "nbt v2", len
     );
 
     test_lib!(
         {
-            let _nbt_data = shen_nbt3::Value::from_vec(data3);
+            let _nbt_data = shen_nbt3::Value::from_vec(data.as_slice().to_vec());
         }, "nbt v3", len
     );
 
     test_lib!(
         {
-            let _nbt_data = shen_nbt4::Value::from_vec(data4);
+            let _nbt_data = shen_nbt4::Value::from_vec(data.as_slice().to_vec());
         }, "nbt v4", len
     );
 
