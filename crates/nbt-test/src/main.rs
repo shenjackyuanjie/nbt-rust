@@ -1,41 +1,23 @@
-#![feature(buf_read_has_data_left)]
-
-use crate::data::Reader;
-use std::io::Read;
-
-mod data;
-mod read;
-
 fn main() {
-    println!("Hello, world!");
+    println!("Hello, nbt!");
     // sleep 1s
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    println!("====== small test ======");
     small_read_test();
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    println!("====== big test ======");
     big_read_test();
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    println!("====== cli test ======");
     cli_read_test();
-    std::thread::sleep(std::time::Duration::from_secs(2));
 }
 
-// bincode-org/bincode: A binary encoder / decoder implementation in Rust.
-// https://github.com/bincode-org/bincode
-
 fn cli_read_test() {
-    let mut buff: Vec<u8> = Vec::new();
-    // 从 CLI 读取文件名
-    let filename = std::env::args().nth(1).unwrap();
-    // 打开文件
-    {
-        let mut file = std::fs::File::open(filename).unwrap();
-        // 转为 &[u8]
-        std::thread::sleep(std::time::Duration::from_secs(2));
-        println!("file size: {}", file.metadata().unwrap().len());
-        _ = file.read_to_end(&mut buff).unwrap();
-        std::thread::sleep(std::time::Duration::from_secs(2));
+    let mut args = std::env::args();
+    // 如果有, 取出
+    if let Some(arg) = args.nth(1) {
+        let data = std::fs::read(arg).unwrap();
+        read_test(data);
+    } else {
+        println!("Usage: cargo run --release -- <file>");
     }
-    // 读取数据
-    read_test(buff);
 }
 
 fn small_read_test() {
@@ -156,44 +138,68 @@ fn big_read_test() {
     read_test(data.to_vec());
 }
 
-fn read_test(data: Vec<u8>) {
-    let len = data.len();
+
+macro_rules! test_lib {
+    ($func: block, $name: expr, $len: expr) => {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        let start_time = std::time::Instant::now();
+        $func
+        let end_time = std::time::Instant::now();
+        println!("=== {} ===", $name);
+        print!("time: {:?}", end_time - start_time);
+        println!("  speed: {:?} (bytes/sec)", $len as f64 / (end_time - start_time).as_secs_f64());
+        println!("{:?} (kb/sec)", $len as f64 / (end_time - start_time).as_secs_f64() / 1024.0);
+        println!(
+            "{:?} (mb/sec)",
+            $len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0
+        );
+        println!(
+            "{:?} (gb/sec)",
+            $len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0 / 1024.0
+        );
+        #[cfg(feature = "core_debug")]
+        println!("nbt_data: {:#?}", nbt_data);
+    };
+}
+
+fn read_test(in_data: Vec<u8>) {
+    let len = in_data.len();
     #[cfg(feature = "debug")]
     println!("data: {:?}", data);
-    let cursor: Reader = std::io::Cursor::new(data.as_slice());
 
-    std::thread::sleep(std::time::Duration::from_secs(2));
-    let start_time = std::time::Instant::now();
-
-    let nbt_data = data::NbtItem::try_from(cursor).unwrap();
-
-    let end_time = std::time::Instant::now();
-    println!("===local nbt===");
-    println!("time: {:?}", end_time - start_time);
-    println!("speed: {:?} (bytes/sec)", len as f64 / (end_time - start_time).as_secs_f64());
-    println!("{:?} (kb/sec)", len as f64 / (end_time - start_time).as_secs_f64() / 1024.0);
-    println!(
-        "{:?} (mb/sec)",
-        len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0
-    );
-    #[cfg(feature = "core_debug")]
-    println!("nbt_data: {:#?}", nbt_data);
-
-    std::thread::sleep(std::time::Duration::from_secs(2));
-    let start_time = std::time::Instant::now();
-
-    let nbt_data: fastnbt::Value = fastnbt::from_bytes(data.as_slice()).unwrap();
-
-    let end_time = std::time::Instant::now();
-    println!("===fastnbt===");
-    println!("time: {:?}", end_time - start_time);
-    println!("speed: {:?} (bytes/sec)", len as f64 / (end_time - start_time).as_secs_f64());
-    println!("{:?} (kb/sec)", len as f64 / (end_time - start_time).as_secs_f64() / 1024.0);
-    println!(
-        "{:?} (mb/sec)",
-        len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0
+    let data = in_data.clone();
+    let data2 = in_data.clone();
+    let data3 = in_data.clone();
+    let data4 = in_data.clone();
+    std::thread::sleep(std::time::Duration::from_secs(1));
+    test_lib!(
+        {
+            let cursor: shen_nbt1::data::Reader = std::io::Cursor::new(data.as_slice());
+            let _nbt_data = shen_nbt1::data::NbtItem::try_from(cursor).unwrap();
+        }, "nbt v1", len
     );
 
-    #[cfg(feature = "core_debug")]
-    println!("nbt_data: {:#?}", nbt_data);
+    test_lib!(
+        {
+            let _nbt_data = shen_nbt2::Value::from_vec(data2);
+        }, "nbt v2", len
+    );
+
+    test_lib!(
+        {
+            let _nbt_data = shen_nbt3::Value::from_vec(data3);
+        }, "nbt v3", len
+    );
+
+    test_lib!(
+        {
+            let _nbt_data = shen_nbt4::Value::from_vec(data4);
+        }, "nbt v4", len
+    );
+
+    test_lib!(
+        {
+            let _nbt_data: fastnbt::Value = fastnbt::from_bytes(data.as_slice()).unwrap();
+        }, "fastnbt", len
+    );
 }

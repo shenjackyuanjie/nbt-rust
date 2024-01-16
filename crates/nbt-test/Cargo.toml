@@ -1,0 +1,21 @@
+[package]
+name = "nbt-test"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = []
+debug = []
+core_debug = []
+internal_opt = []
+
+
+[dependencies]
+fastnbt = "2.4.4"
+shen-nbt1 = { path = "../shen-nbt1" }
+shen-nbt2 = { path = "../shen-nbt2" }
+shen-nbt3 = { path = "../shen-nbt3" }
+shen-nbt4 = { path = "../shen-nbt4" }
+

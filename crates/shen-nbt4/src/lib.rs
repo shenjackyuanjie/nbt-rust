@@ -182,7 +182,7 @@ pub enum Value<'value> {
     /// 12
     LongArray(Vec<i64>),
     /// 9
-    List(Vec<Value>),
+    List(Vec<Value<'value>>),
     /// 10
     Compound(Vec<(String, Value<'value>)>),
 }
@@ -216,31 +216,37 @@ impl<'value> Value<'value> {
             1 => {
                 let raw_data = data.read_bytes(length as usize);
                 let list = raw_reading::slice_as_byte_array(raw_data.as_slice());
+                let list = list.iter().map(|x| Self::Byte(*x)).collect();
                 Self::List(list)
             }
             2 => {
                 let raw_data = data.read_bytes(length as usize * 2);
                 let list = raw_reading::slice_as_short_array(raw_data.as_slice()).unwrap();
+                let list = list.iter().map(|x| Self::Short(*x)).collect();
                 Self::List(list)
             }
             3 => {
                 let raw_data = data.read_bytes(length as usize * 4);
                 let list = raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap();
+                let list = list.iter().map(|x| Self::Int(*x)).collect();
                 Self::List(list)
             }
             4 => {
                 let raw_data = data.read_bytes(length as usize * 8);
                 let list = raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap();
+                let list = list.iter().map(|x| Self::Long(*x)).collect();
                 Self::List(list)
             }
             5 => {
                 let raw_data = data.read_bytes(length as usize * 4);
                 let list = raw_reading::slice_as_float_array(raw_data.as_slice()).unwrap();
+                let list = list.iter().map(|x| Self::Float(*x)).collect();
                 Self::List(list)
             }
             6 => {
                 let raw_data = data.read_bytes(length as usize * 8);
                 let list = raw_reading::slice_as_double_array(raw_data.as_slice()).unwrap();
+                let list = list.iter().map(|x| Self::Double(*x)).collect();
                 Self::List(list)
             }
             7 => {
@@ -249,6 +255,7 @@ impl<'value> Value<'value> {
                     let length = data.read_int();
                     let raw_data = data.read_bytes(length as usize);
                     let value = raw_reading::slice_as_byte_array(raw_data.as_slice());
+                    let value = Self::ByteArray(value);
                     list.push(value);
                 }
                 Self::List(list)
@@ -260,6 +267,7 @@ impl<'value> Value<'value> {
                     let value = std::str::from_utf8(data.read_bytes(length as usize).as_slice())
                         .unwrap()
                         .to_owned();
+                    let value = Self::String(value.into());
                     list.push(value);
                 }
                 Self::List(list)
@@ -270,6 +278,7 @@ impl<'value> Value<'value> {
                 for _ in 0..length {
                     let inner_list = Self::read_list(data);
                     let value = inner_list.into_list().unwrap();
+                    let value = Self::List(value);
                     list.push(value);
                 }
                 Self::List(list)
@@ -279,6 +288,7 @@ impl<'value> Value<'value> {
                 for _ in 0..length {
                     let inner_compound = Self::read_compound(data);
                     let value = inner_compound.into_compound().unwrap();
+                    let value = Self::Compound(value);
                     list.push(value);
                 }
                 Self::List(list)
@@ -289,6 +299,7 @@ impl<'value> Value<'value> {
                     let length = data.read_int();
                     let raw_data = data.read_bytes(length as usize * 4);
                     let value = raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap();
+                    let value = Self::IntArray(value);
                     list.push(value);
                 }
                 Self::List(list)
@@ -299,6 +310,7 @@ impl<'value> Value<'value> {
                     let length = data.read_int();
                     let raw_data = data.read_bytes(length as usize * 8);
                     let value = raw_reading::slice_as_long_array(raw_data.as_slice()).unwrap();
+                    let value = Self::LongArray(value);
                     list.push(value);
                 }
                 Self::List(list)
@@ -409,7 +421,7 @@ impl<'value> Value<'value> {
             _ => None,
         }
     }
-    pub fn as_list(&self) -> Option<&ListContent> {
+    pub fn as_list(&self) -> Option<&Vec<Value<'value>>> {
         match self {
             Self::List(value) => Some(value),
             _ => None,
@@ -440,7 +452,7 @@ impl<'value> Value<'value> {
         }
     }
     #[inline(always)]
-    pub fn into_list(self) -> Option<ListContent<'value>> {
+    pub fn into_list(self) -> Option<Vec<Value<'value>>> {
         match self {
             Self::List(value) => Some(value),
             _ => None,

@@ -3,5 +3,7 @@
         "crates/shen-nbt1/Cargo.toml",
         "crates/shen-nbt2/Cargo.toml",
         "crates/shen-nbt3/Cargo.toml",
+        "crates/shen-nbt4/Cargo.toml",
+        "crates/nbt-test/Cargo.toml",
     ]
 }
