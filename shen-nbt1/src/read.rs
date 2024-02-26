@@ -1,5 +1,4 @@
 use crate::data::{NbtItem, NbtList, NbtValue, Reader};
-use std::convert::From;
 use std::io::{BufRead, Cursor, Read};
 
 /// 输出类型标识符

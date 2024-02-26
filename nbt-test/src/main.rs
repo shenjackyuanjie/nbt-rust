@@ -192,7 +192,6 @@ fn test_fastnbt(data: Vec<u8>) {
 }
 
 fn read_test(in_data: Vec<u8>) {
-    let len = in_data.len();
     #[cfg(feature = "debug")]
     println!("data: {:?}", data);
 
@@ -219,44 +218,65 @@ fn cli_read_test() {
     let mut args = std::env::args();
     // 如果有, 取出
     if let Some(arg) = args.nth(1) {
-        let data = std::fs::read(&arg).unwrap();
+        let read_data = std::fs::read(&arg).unwrap();
         // read_test(data);
-        let len = data.len();
-        test_lib!(
-            {
-                let cursor: shen_nbt1::data::Reader = std::io::Cursor::new(data.as_slice());
-                let nbt_data = shen_nbt1::data::NbtItem::try_from(cursor).unwrap();
+        let len = read_data.len();
+        let data = read_data;
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        let start_time = std::time::Instant::now();
+        let nbt_data = shen_nbt4::Value::from_vec(data);
+        let end_time = std::time::Instant::now();
+        println!("=== shen nbt 4 ===");
+        print!("time: {:?}", end_time - start_time);
+        println!("  speed: {:?} (bytes/sec)", len as f64 / (end_time - start_time).as_secs_f64());
+        println!("{:?} (kb/sec)", len as f64 / (end_time - start_time).as_secs_f64() / 1024.0);
+        println!(
+            "{:?} (mb/sec)",
+            len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0
+        );
+        println!(
+            "{:?} (gb/sec)",
+            len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0 / 1024.0
+        );
+        #[cfg(feature = "core_debug")]
+        println!("nbt_data: {:#?}", nbt_data);
+        println!("nbt len {}", nbt_data.as_byte().is_some());
+        // test_lib!(
+        //     {
+        //         let cursor: shen_nbt1::data::Reader = std::io::Cursor::new(data.as_slice());
+        //         let nbt_data = shen_nbt1::data::NbtItem::try_from(cursor).unwrap();
                 
-            }, "nbt v1", len
-        );
+        //     }, "nbt v1", len
+        // );
     
-        let data2 = std::fs::read(&arg).unwrap();
-        test_lib!(
-            {
-                let nbt_data = shen_nbt2::Value::from_vec(data2);
-            }, "nbt v2", len
-        );
+        // let data2 = std::fs::read(&arg).unwrap();
+        // test_lib!(
+        //     {
+        //         let nbt_data = shen_nbt2::Value::from_vec(data2);
+        //     }, "nbt v2", len
+        // );
     
-        let data3 = std::fs::read(&arg).unwrap();
-        test_lib!(
-            {
-                let nbt_data = shen_nbt3::Value::from_vec(data3);
-            }, "nbt v3", len
-        );
+        // let data3 = std::fs::read(&arg).unwrap();
+        // test_lib!(
+        //     {
+        //         let nbt_data = shen_nbt3::Value::from_vec(data3);
+        //     }, "nbt v3", len
+        // );
     
-        let data4 = std::fs::read(&arg).unwrap();
-        test_lib!(
-            {
-                let nbt_data = shen_nbt4::Value::from_vec(data4);
-            }, "nbt v4", len
-        );
+        // let data4 = std::fs::read(&arg).unwrap();
+        // test_lib!(
+        //     {
+        //         let nbt_data = shen_nbt4::Value::from_vec(data);
+        //     }, "nbt v4", len
+        // );
     
-        let data5 = std::fs::read(&arg).unwrap();
-        test_lib!(
-            {
-                let nbt_data: fastnbt::Value = fastnbt::from_bytes(data5.as_slice()).unwrap();
-            }, "fastnbt", len
-        );
+        // let data5 = std::fs::read(&arg).unwrap();
+        // test_lib!(
+        //     {
+        //         let nbt_data: fastnbt::Value = fastnbt::from_bytes(data5.as_slice()).unwrap();
+        //     }, "fastnbt", len
+        // );
     } else {
         println!("Usage: cargo run --release -- <file>");
     }
