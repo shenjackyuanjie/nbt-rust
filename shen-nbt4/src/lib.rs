@@ -204,7 +204,7 @@ impl<'value> Value<'value> {
     pub fn read_string(data: &mut NbtData) -> Self {
         let length = data.read_short();
         let value = data.read_bytes(length as usize);
-        Self::String(std::str::from_utf8(value.as_slice()).unwrap().to_owned().into())
+        Self::String(String::from_utf8(value).unwrap().into())
     }
     pub fn read_list(data: &mut NbtData) -> Self {
         // 内容类型
