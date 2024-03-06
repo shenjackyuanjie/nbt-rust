@@ -3,6 +3,9 @@
 //     Little,
 // }
 
+#[cfg(test)]
+mod tests;
+
 /// 用于读取 NBT 数据
 pub struct NbtReader<'data> {
     /// NBT 数据
@@ -81,14 +84,16 @@ impl NbtReader<'_> {
     }
     pub fn read_int_array(&mut self, len: usize) -> &[i32] {
         unsafe {
+            let value = std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i32, len);
             self.cursor += len * 4;
-            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i32, len)
+            value
         }
     }
     pub fn read_long_array(&mut self, len: usize) -> &[i64] {
         unsafe {
+            let value = std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i64, len);
             self.cursor += len * 8;
-            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i64, len)
+            value
         }
     }
 
