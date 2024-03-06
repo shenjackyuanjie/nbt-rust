@@ -61,15 +61,54 @@ impl NbtReader<'_> {
     read!(read_u64, u64, 8);
     read!(read_f32, f32, 4, false);
     read!(read_f64, f64, 8, false);
-    pub fn read_bytes(&mut self, len: usize) -> &[u8] {
+    pub fn read_u8_array(&mut self, len: usize) -> &[u8] {
         let value = &self.data[self.cursor..self.cursor + len];
         self.cursor += len;
         value
     }
+    pub fn read_i8_array(&mut self, len: usize) -> &[i8] {
+        let value = unsafe {
+            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i8, len)
+        };
+        self.cursor += len;
+        value
+    }
+    pub fn read_string(&mut self, len: usize) -> String {
+        let value = String::from_utf8_lossy(&self.data[self.cursor..self.cursor + len]);
+        self.cursor += len;
+        value.into_owned()
+    }
+    pub fn read_byte_array(&mut self, len: usize) -> Vec<i8> {
+        let value = self.data[self.cursor..self.cursor + len].to_vec();
+        self.cursor += len;
+        value
+    }
+    pub fn read_int_array(&mut self, len: usize) -> Vec<i32> {
+        let mut value = Vec::with_capacity(len);
+        for _ in 0..len {
+            value.push(self.read_i32());
+        }
+        value
+    }
+    pub fn read_long_array(&mut self, len: usize) -> Vec<i64> {
+        let mut value = Vec::with_capacity(len);
+        for _ in 0..len {
+            value.push(self.read_i64());
+        }
+        value
+    }
+    pub fn read_byte_array_array(&mut self, len: usize) -> Vec<Vec<i8>> {
+        let mut value = Vec::with_capacity(len);
+        for _ in 0..len {
+            value.push(self.read_byte_array(self.read_u8() as usize));
+        }
+        value
+    }
+
 }
 
 #[derive(Debug, Clone)]
-pub enum NbtValue<'value> {
+pub enum NbtValue {
     // end: 0
     /// 1: Byte
     Byte(i8),
@@ -87,13 +126,15 @@ pub enum NbtValue<'value> {
     ByteArray(Vec<i8>),
     /// 8
     /// 或者叫 u8 array
-    String(&'value str),
+    String(String),
     /// 9
-    List(Vec<NbtValue<'value>>),
+    List(Vec<NbtValue>),
     /// 10
-    Compound(Vec<(String, NbtValue<'value>)>),
+    Compound(Vec<(String, NbtValue)>),
     /// 11
     IntArray(Vec<i32>),
     /// 12
     LongArray(Vec<i64>),
 }
+
+
