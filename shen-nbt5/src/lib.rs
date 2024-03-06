@@ -80,16 +80,16 @@ impl NbtReader<'_> {
         value.into_owned()
     }
     pub fn read_int_array(&mut self, len: usize) -> &[i32] {
-        let datas = self.read_u8_array(len * 4);
-        let value = unsafe {
-            std::slice::from_raw_parts(datas.as_ptr() as *const i32, len)
-        };
+        unsafe {
+            self.cursor += len * 4;
+            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i32, len)
+        }
     }
     pub fn read_long_array(&mut self, len: usize) -> &[i64] {
-        let datas = self.read_u8_array(len * 8);
-        let value = unsafe {
-            std::slice::from_raw_parts(datas.as_ptr() as *const i64, len)
-        };
+        unsafe {
+            self.cursor += len * 8;
+            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i64, len)
+        }
     }
 
 }
