@@ -61,6 +61,7 @@ impl NbtReader<'_> {
     read!(read_u64, u64, 8);
     read!(read_f32, f32, 4, false);
     read!(read_f64, f64, 8, false);
+
     pub fn read_u8_array(&mut self, len: usize) -> &[u8] {
         let value = &self.data[self.cursor..self.cursor + len];
         self.cursor += len;
@@ -78,31 +79,17 @@ impl NbtReader<'_> {
         self.cursor += len;
         value.into_owned()
     }
-    pub fn read_byte_array(&mut self, len: usize) -> Vec<i8> {
-        let value = self.data[self.cursor..self.cursor + len].to_vec();
-        self.cursor += len;
-        value
+    pub fn read_int_array(&mut self, len: usize) -> &[i32] {
+        let datas = self.read_u8_array(len * 4);
+        let value = unsafe {
+            std::slice::from_raw_parts(datas.as_ptr() as *const i32, len)
+        };
     }
-    pub fn read_int_array(&mut self, len: usize) -> Vec<i32> {
-        let mut value = Vec::with_capacity(len);
-        for _ in 0..len {
-            value.push(self.read_i32());
-        }
-        value
-    }
-    pub fn read_long_array(&mut self, len: usize) -> Vec<i64> {
-        let mut value = Vec::with_capacity(len);
-        for _ in 0..len {
-            value.push(self.read_i64());
-        }
-        value
-    }
-    pub fn read_byte_array_array(&mut self, len: usize) -> Vec<Vec<i8>> {
-        let mut value = Vec::with_capacity(len);
-        for _ in 0..len {
-            value.push(self.read_byte_array(self.read_u8() as usize));
-        }
-        value
+    pub fn read_long_array(&mut self, len: usize) -> &[i64] {
+        let datas = self.read_u8_array(len * 8);
+        let value = unsafe {
+            std::slice::from_raw_parts(datas.as_ptr() as *const i64, len)
+        };
     }
 
 }
