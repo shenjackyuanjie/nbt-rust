@@ -87,12 +87,12 @@ pub mod raw_reading {
     use std::intrinsics::unlikely;
 
     /// 多少有点脱裤子放屁
-    #[inline(always)]
+    
     pub fn slice_as_byte_array(slice: &[u8]) -> Vec<i8> {
         slice.to_vec().into_iter().map(|x| x as i8).collect()
     }
     /// unsafe 从这里开始
-    #[inline(always)]
+    
     pub fn slice_as_short_array(slice: &[u8]) -> Option<Vec<i16>> {
         #[cfg(feature = "internal_opt")]
         let length = if unlikely(slice.len() % 2 != 0) {
@@ -110,7 +110,7 @@ pub mod raw_reading {
     }
     /// 开始 unsafe 了
     /// unsafe rust, 小子!
-    #[inline(always)]
+    
     pub fn slice_as_int_array(slice: &[u8]) -> Option<Vec<i32>> {
         #[cfg(feature = "internal_opt")]
         let length = if unlikely(slice.len() % 4 != 0) {
@@ -127,7 +127,7 @@ pub mod raw_reading {
         Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *mut i32, length).to_vec() })
     }
     /// 这边也是 unsafe 捏
-    #[inline(always)]
+    
     pub fn slice_as_long_array(slice: &[u8]) -> Option<Vec<i64>> {
         let length = if slice.len() % 8 != 0 {
             return None;
@@ -137,7 +137,7 @@ pub mod raw_reading {
         Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *mut i64, length).to_vec() })
     }
     /// 这边也是 unsafe 捏
-    #[inline(always)]
+    
     pub fn slice_as_float_array(slice: &[u8]) -> Option<Vec<f32>> {
         let length = if slice.len() % 4 != 0 {
             return None;
@@ -147,7 +147,7 @@ pub mod raw_reading {
         Some(unsafe { std::slice::from_raw_parts(slice.as_ptr() as *mut f32, length).to_vec() })
     }
     /// 这边也是 unsafe 捏
-    #[inline(always)]
+    
     pub fn slice_as_double_array(slice: &[u8]) -> Option<Vec<f64>> {
         let length = if slice.len() % 8 != 0 {
             return None;
@@ -188,19 +188,19 @@ pub enum Value<'value> {
 }
 
 impl<'value> Value<'value> {
-    #[inline(always)]
+    
     pub fn read_byte(data: &mut NbtData) -> Self { Self::Byte(data.read_byte()) }
-    #[inline(always)]
+    
     pub fn read_short(data: &mut NbtData) -> Self { Self::Short(data.read_short()) }
-    #[inline(always)]
+    
     pub fn read_int(data: &mut NbtData) -> Self { Self::Int(data.read_int()) }
-    #[inline(always)]
+    
     pub fn read_long(data: &mut NbtData) -> Self { Self::Long(data.read_long()) }
-    #[inline(always)]
+    
     pub fn read_float(data: &mut NbtData) -> Self { Self::Float(data.read_float()) }
-    #[inline(always)]
+    
     pub fn read_double(data: &mut NbtData) -> Self { Self::Double(data.read_double()) }
-    #[inline(always)]
+    
     pub fn read_string(data: &mut NbtData) -> Self {
         let length = data.read_short();
         let value = data.read_bytes(length as usize);
@@ -358,21 +358,21 @@ impl<'value> Value<'value> {
         }
         Self::Compound(list)
     }
-    #[inline(always)]
+    
     pub fn read_byte_array(data: &mut NbtData) -> Self {
         let length = data.read_int();
         let raw_data = data.read_bytes(length as usize);
         let value = raw_reading::slice_as_byte_array(raw_data.as_slice());
         Self::ByteArray(value)
     }
-    #[inline(always)]
+    
     pub fn read_int_array(data: &mut NbtData) -> Self {
         let length = data.read_int();
         let raw_data = data.read_bytes(length as usize * 4);
         let value = raw_reading::slice_as_int_array(raw_data.as_slice()).unwrap();
         Self::IntArray(value)
     }
-    #[inline(always)]
+    
     pub fn read_long_array(data: &mut NbtData) -> Self {
         let length = data.read_int();
         let raw_data = data.read_bytes(length as usize * 8);
@@ -451,14 +451,14 @@ impl<'value> Value<'value> {
             _ => None,
         }
     }
-    #[inline(always)]
+    
     pub fn into_list(self) -> Option<Vec<Value<'value>>> {
         match self {
             Self::List(value) => Some(value),
             _ => None,
         }
     }
-    #[inline(always)]
+    
     pub fn into_compound(self) -> Option<Vec<(String, Value<'value>)>> {
         match self {
             Self::Compound(value) => Some(value),
