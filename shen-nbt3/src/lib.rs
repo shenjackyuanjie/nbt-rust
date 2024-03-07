@@ -19,18 +19,12 @@ impl<'value> NbtData<'value> {
         self.offset += length;
         self.offset
     }
-    pub fn read_byte(&mut self) -> i8 {
-        self.data.read_with::<i8>(&mut self.offset, BE).unwrap()
-    }
+    pub fn read_byte(&mut self) -> i8 { self.data.read_with::<i8>(&mut self.offset, BE).unwrap() }
     pub fn read_short(&mut self) -> i16 {
         self.data.read_with::<i16>(&mut self.offset, BE).unwrap()
     }
-    pub fn read_int(&mut self) -> i32 {
-        self.data.read_with::<i32>(&mut self.offset, BE).unwrap()
-    }
-    pub fn read_long(&mut self) -> i64 {
-        self.data.read_with::<i64>(&mut self.offset, BE).unwrap()
-    }
+    pub fn read_int(&mut self) -> i32 { self.data.read_with::<i32>(&mut self.offset, BE).unwrap() }
+    pub fn read_long(&mut self) -> i64 { self.data.read_with::<i64>(&mut self.offset, BE).unwrap() }
     pub fn read_float(&mut self) -> f32 {
         self.data.read_with::<f32>(&mut self.offset, BE).unwrap()
     }

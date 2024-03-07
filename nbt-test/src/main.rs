@@ -7,7 +7,6 @@ fn main() {
     cli_read_test();
 }
 
-
 fn big_read_test() {
     let data: [u8; 0x608] = [
         0x0A, 0x00, 0x05, 0x4C, 0x65, 0x76, 0x65, 0x6C, 0x04, 0x00, 0x08, 0x6C, 0x6F, 0x6E, 0x67,
@@ -117,7 +116,6 @@ fn big_read_test() {
     read_test(data.to_vec());
 }
 
-
 macro_rules! test_lib {
     ($func: block, $name: expr, $len: expr) => {
         std::thread::sleep(std::time::Duration::from_secs(1));
@@ -148,7 +146,9 @@ fn test_v1(data: Vec<u8>) {
         {
             let cursor: shen_nbt1::data::Reader = std::io::Cursor::new(data.as_slice());
             let _nbt_data = shen_nbt1::data::NbtItem::try_from(cursor).unwrap();
-        }, "nbt v1", len
+        },
+        "nbt v1",
+        len
     );
 }
 fn test_v2(data: Vec<u8>) {
@@ -157,7 +157,9 @@ fn test_v2(data: Vec<u8>) {
     test_lib!(
         {
             let _nbt_data = shen_nbt2::Value::from_vec(data);
-        }, "nbt v2", len
+        },
+        "nbt v2",
+        len
     );
 }
 
@@ -167,7 +169,9 @@ fn test_v3(data: Vec<u8>) {
     test_lib!(
         {
             let _nbt_data = shen_nbt3::Value::from_vec(data);
-        }, "nbt v3", len
+        },
+        "nbt v3",
+        len
     );
 }
 
@@ -177,7 +181,9 @@ fn test_v4(data: Vec<u8>) {
     test_lib!(
         {
             let _nbt_data = shen_nbt4::Value::from_vec(data);
-        }, "nbt v4", len
+        },
+        "nbt v4",
+        len
     );
 }
 
@@ -187,7 +193,9 @@ fn test_fastnbt(data: Vec<u8>) {
     test_lib!(
         {
             let _nbt_data: fastnbt::Value = fastnbt::from_bytes(data.as_slice()).unwrap();
-        }, "fastnbt", len
+        },
+        "fastnbt",
+        len
     );
 }
 
@@ -212,7 +220,6 @@ fn read_test(in_data: Vec<u8>) {
     let data = in_data.clone();
     test_fastnbt(data);
 }
-
 
 fn cli_read_test() {
     let mut args = std::env::args();
@@ -246,31 +253,31 @@ fn cli_read_test() {
         //     {
         //         let cursor: shen_nbt1::data::Reader = std::io::Cursor::new(data.as_slice());
         //         let nbt_data = shen_nbt1::data::NbtItem::try_from(cursor).unwrap();
-                
+
         //     }, "nbt v1", len
         // );
-    
+
         // let data2 = std::fs::read(&arg).unwrap();
         // test_lib!(
         //     {
         //         let nbt_data = shen_nbt2::Value::from_vec(data2);
         //     }, "nbt v2", len
         // );
-    
+
         // let data3 = std::fs::read(&arg).unwrap();
         // test_lib!(
         //     {
         //         let nbt_data = shen_nbt3::Value::from_vec(data3);
         //     }, "nbt v3", len
         // );
-    
+
         // let data4 = std::fs::read(&arg).unwrap();
         // test_lib!(
         //     {
         //         let nbt_data = shen_nbt4::Value::from_vec(data);
         //     }, "nbt v4", len
         // );
-    
+
         // let data5 = std::fs::read(&arg).unwrap();
         // test_lib!(
         //     {

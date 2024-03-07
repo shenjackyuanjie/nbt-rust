@@ -19,10 +19,13 @@ pub struct NbtReader<'data> {
 macro_rules! read {
     ($name:ident, $ty:ty, $size:literal) => {
         #[doc = concat!("读取 ", stringify!($ty), " 类型 ", $size, " 长度的数据")]
+        ///
+        #[doc = "转换大小端"]
         pub fn $name(&mut self) -> $ty {
             unsafe {
                 // 使用 std::ptr::read_unaligned 解决未对齐地址问题
-                let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
+                let value =
+                    std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
                 self.cursor += std::mem::size_of::<$ty>();
                 value.to_be()
             }
@@ -30,10 +33,13 @@ macro_rules! read {
     };
     ($name:ident, $ty:ty, $size:literal, false) => {
         #[doc = concat!("读取 ", stringify!($ty), " 类型 ", $size, " 长度的数据")]
+        ///
+        #[doc = "不转换大小端"]
         pub fn $name(&mut self) -> $ty {
             unsafe {
                 // 使用 std::ptr::read_unaligned 解决未对齐地址问题
-                let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
+                let value =
+                    std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
                 self.cursor += std::mem::size_of::<$ty>();
                 value
             }
@@ -48,16 +54,16 @@ impl NbtReader<'_> {
             // endian: Endian::Big,
         }
     }
-    pub fn read_i8(&mut self) -> i8 {
-        let value = self.data[self.cursor] as i8;
-        self.cursor += 1;
-        value
-    }
+    /// 读取一个 u8 类型的数据
+    #[inline]
     pub fn read_u8(&mut self) -> u8 {
         let value = self.data[self.cursor];
         self.cursor += 1;
         value
     }
+    /// 读取一个 i8 类型的数据
+    #[inline]
+    pub fn read_i8(&mut self) -> i8 { self.read_u8() as i8 }
     read!(read_i16_unchecked, i16, 2);
     read!(read_u16_unchecked, u16, 2);
     read!(read_i32_unchecked, i32, 4);
@@ -87,7 +93,8 @@ impl NbtReader<'_> {
     pub fn read_int_array(&mut self, len: usize) -> &[i32] {
         unsafe {
             println!("data: {:?}", self.data);
-            let value = std::slice::from_raw_parts_mut(self.data[self.cursor..].as_ptr() as *mut i32, len);
+            let value =
+                std::slice::from_raw_parts_mut(self.data[self.cursor..].as_ptr() as *mut i32, len);
             for n in &mut *value {
                 *n = n.to_be();
             }
@@ -99,7 +106,8 @@ impl NbtReader<'_> {
     pub fn read_long_array(&mut self, len: usize) -> &[i64] {
         unsafe {
             println!("data: {:?}", self.data);
-            let value = std::slice::from_raw_parts_mut(self.data[self.cursor..].as_ptr() as *mut i64, len);
+            let value =
+                std::slice::from_raw_parts_mut(self.data[self.cursor..].as_ptr() as *mut i64, len);
             for n in &mut *value {
                 *n = n.to_be();
             }
@@ -108,7 +116,6 @@ impl NbtReader<'_> {
             value
         }
     }
-
 }
 
 #[derive(Debug, Clone)]
@@ -140,5 +147,3 @@ pub enum NbtValue {
     /// 12
     LongArray(Vec<i64>),
 }
-
-
