@@ -2,17 +2,18 @@ use crate::{NbtReader, NbtValue};
 
 #[test]
 fn basic_init() {
-    let data = vec![0x01, 0x02, 0x03, 0x04];
-    let reader = NbtReader::new(&data);
+    let mut data = vec![0x01, 0x02, 0x03, 0x04];
+    let reader = NbtReader::new(&mut data);
     assert_eq!(reader.cursor, 0);
-    assert_eq!(reader.data, &data);
+    let same_data = vec![0x01, 0x02, 0x03, 0x04];
+    assert_eq!(reader.data, &same_data);
 }
 
 
 #[test]
 fn read_i8() {
-    let data = vec![0x01, 0x02, 0x03, 0x04];
-    let mut reader = NbtReader::new(&data);
+    let mut data = vec![0x01, 0x02, 0x03, 0x04];
+    let mut reader = NbtReader::new(&mut data);
     assert_eq!(reader.read_i8(), 0x01);
     assert_eq!(reader.cursor, 1);
     assert_eq!(reader.read_i8(), 0x02);
@@ -21,8 +22,8 @@ fn read_i8() {
 
 #[test]
 fn read_array() {
-    let data = vec![0x01, 0x02, 0x03, 0x04];
-    let mut reader = NbtReader::new(&data);
+    let mut data = vec![0x01, 0x02, 0x03, 0x04];
+    let mut reader = NbtReader::new(&mut data);
     assert_eq!(reader.read_u8_array(2), &[0x01, 0x02]);
     assert_eq!(reader.cursor, 2);
     assert_eq!(reader.read_i8_array(2), &[0x03, 0x04]);
@@ -30,9 +31,17 @@ fn read_array() {
 }
 
 #[test]
+fn read_int_array() {
+    let mut value = 1234567890_i32.to_be_bytes();
+    let mut reader = NbtReader::new(&mut value);
+    assert_eq!(reader.read_int_array(1), &[1234567890_i32]);
+    assert_eq!(reader.cursor, 4);
+}
+
+#[test]
 fn read_long_array() {
-    let data = vec![0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
-    let mut reader = NbtReader::new(&data);
-    assert_eq!(reader.read_long_array(1), &[i64::from_ne_bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08])]);
+    let mut value = 1234567890_i64.to_be_bytes();
+    let mut reader = NbtReader::new(&mut value);
+    assert_eq!(reader.read_long_array(1), &[1234567890_i64]);
     assert_eq!(reader.cursor, 8);
 }

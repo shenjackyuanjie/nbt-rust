@@ -9,7 +9,7 @@ mod tests;
 /// 用于读取 NBT 数据
 pub struct NbtReader<'data> {
     /// NBT 数据
-    pub data: &'data [u8],
+    pub data: &'data mut [u8],
     /// 当前读取的位置
     pub cursor: usize,
     // be/le
@@ -39,7 +39,7 @@ macro_rules! read {
     };
 }
 impl NbtReader<'_> {
-    pub fn new(data: &[u8]) -> NbtReader {
+    pub fn new(data: &mut [u8]) -> NbtReader {
         NbtReader {
             data,
             cursor: 0,
@@ -84,15 +84,25 @@ impl NbtReader<'_> {
     }
     pub fn read_int_array(&mut self, len: usize) -> &[i32] {
         unsafe {
-            let value = std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i32, len);
+            println!("data: {:?}", self.data);
+            let value = std::slice::from_raw_parts_mut(self.data[self.cursor..].as_ptr() as *mut i32, len);
+            for n in &mut *value {
+                *n = n.to_be();
+            }
             self.cursor += len * 4;
+            println!("data: {:?}", self.data);
             value
         }
     }
     pub fn read_long_array(&mut self, len: usize) -> &[i64] {
         unsafe {
-            let value = std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i64, len);
+            println!("data: {:?}", self.data);
+            let value = std::slice::from_raw_parts_mut(self.data[self.cursor..].as_ptr() as *mut i64, len);
+            for n in &mut *value {
+                *n = n.to_be();
+            }
             self.cursor += len * 8;
+            println!("data: {:?}", self.data);
             value
         }
     }
