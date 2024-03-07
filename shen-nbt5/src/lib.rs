@@ -21,7 +21,7 @@ macro_rules! read {
         #[doc = concat!("读取 ", stringify!($ty), " 类型 ", $size, " 长度的数据")]
         pub fn $name(&mut self) -> $ty {
             unsafe {
-                let value = *(self.data[self.cursor..].as_ptr() as *const $ty);
+                let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
                 self.cursor += std::mem::size_of::<$ty>();
                 value.to_be()
             }
@@ -31,7 +31,7 @@ macro_rules! read {
         #[doc = concat!("读取 ", stringify!($ty), " 类型 ", $size, " 长度的数据")]
         pub fn $name(&mut self) -> $ty {
             unsafe {
-                let value = *(self.data[self.cursor..].as_ptr() as *const $ty);
+                let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
                 self.cursor += std::mem::size_of::<$ty>();
                 value
             }
@@ -56,14 +56,14 @@ impl NbtReader<'_> {
         self.cursor += 1;
         value
     }
-    read!(read_i16, i16, 2);
-    read!(read_u16, u16, 2);
-    read!(read_i32, i32, 4);
-    read!(read_u32, u32, 4);
-    read!(read_i64, i64, 8);
-    read!(read_u64, u64, 8);
-    read!(read_f32, f32, 4, false);
-    read!(read_f64, f64, 8, false);
+    read!(read_i16_unchecked, i16, 2);
+    read!(read_u16_unchecked, u16, 2);
+    read!(read_i32_unchecked, i32, 4);
+    read!(read_u32_unchecked, u32, 4);
+    read!(read_i64_unchecked, i64, 8);
+    read!(read_u64_unchecked, u64, 8);
+    read!(read_f32_unchecked, f32, 4, false);
+    read!(read_f64_unchecked, f64, 8, false);
 
     pub fn read_u8_array(&mut self, len: usize) -> &[u8] {
         let value = &self.data[self.cursor..self.cursor + len];

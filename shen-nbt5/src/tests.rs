@@ -21,6 +21,21 @@ fn read_i8() {
 }
 
 #[test]
+fn read_one_datas() {
+    let mut datas = vec![0x01, 0x02, 0x03, 0x04, 0x05,
+                                  0x06, 0x07, 0x08, 0x09, 0x0A,
+                                  0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+                                  0x01, 0x02, 0x03, 0x04, 0x05,];
+    let mut reader = NbtReader::new(&mut datas);
+    assert_eq!(reader.read_i8(), 0x01);
+    assert_eq!(reader.read_u8(), 0x02);
+    assert_eq!(reader.read_i16_unchecked(), 0x0304);
+    assert_eq!(reader.read_u16_unchecked(), 0x0506);
+    assert_eq!(reader.read_i32_unchecked(), 0x0708090A);
+    assert_eq!(reader.read_i64_unchecked(), 0x0B0C0D0E0F010203);
+}
+
+#[test]
 fn read_array() {
     let mut data = vec![0x01, 0x02, 0x03, 0x04];
     let mut reader = NbtReader::new(&mut data);
