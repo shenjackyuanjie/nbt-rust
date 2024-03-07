@@ -21,6 +21,7 @@ macro_rules! read {
         #[doc = concat!("读取 ", stringify!($ty), " 类型 ", $size, " 长度的数据")]
         pub fn $name(&mut self) -> $ty {
             unsafe {
+                // 使用 std::ptr::read_unaligned 解决未对齐地址问题
                 let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
                 self.cursor += std::mem::size_of::<$ty>();
                 value.to_be()
@@ -31,6 +32,7 @@ macro_rules! read {
         #[doc = concat!("读取 ", stringify!($ty), " 类型 ", $size, " 长度的数据")]
         pub fn $name(&mut self) -> $ty {
             unsafe {
+                // 使用 std::ptr::read_unaligned 解决未对齐地址问题
                 let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
                 self.cursor += std::mem::size_of::<$ty>();
                 value
