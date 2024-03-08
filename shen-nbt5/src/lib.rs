@@ -16,36 +16,37 @@ pub struct NbtReader<'data> {
     // pub endian: Endian,
 }
 
-macro_rules! read {
+macro_rules! read_uncheck {
     ($name:ident, $ty:ty, $size:literal) => {
         #[doc = concat!("读取 ", stringify!($ty), " 类型 ", $size, " 长度的数据")]
         ///
         #[doc = "转换大小端"]
-        pub fn $name(&mut self) -> $ty {
-            unsafe {
-                // 使用 std::ptr::read_unaligned 解决未对齐地址问题
-                let value =
-                    std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
-                self.cursor += std::mem::size_of::<$ty>();
-                value.to_be()
-            }
-        }
-    };
-    ($name:ident, $ty:ty, $size:literal, false) => {
-        #[doc = concat!("读取 ", stringify!($ty), " 类型 ", $size, " 长度的数据")]
-        ///
-        #[doc = "不转换大小端"]
-        pub fn $name(&mut self) -> $ty {
-            unsafe {
-                // 使用 std::ptr::read_unaligned 解决未对齐地址问题
-                let value =
-                    std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
-                self.cursor += std::mem::size_of::<$ty>();
-                value
-            }
+        /// 
+        /// # 安全性
+        /// 允许未对齐的地址
+        /// 长度溢出会导致 UB
+        pub unsafe fn $name(&mut self) -> $ty {
+            // 使用 std::ptr::read_unaligned 解决未对齐地址问题
+            let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
+            self.cursor += std::mem::size_of::<$ty>();
+            value.to_be()
         }
     };
 }
+
+macro_rules! read {
+    ($name:ident, $ty:ty, $size:literal) => {
+        #[doc = concat!("读取 ", stringify!($ty), " 类型 ", $size, " 长度的数据")]
+        pub fn $name(&mut self) -> $ty {
+            let value = self.data[self.cursor..self.cursor + $size]
+                .iter()
+                .fold(0, |acc, &x| (acc << 8) | x as $ty);
+            self.cursor += $size;
+            value
+        }
+    };
+}
+
 impl NbtReader<'_> {
     pub fn new(data: &mut [u8]) -> NbtReader {
         NbtReader {
@@ -64,14 +65,35 @@ impl NbtReader<'_> {
     /// 读取一个 i8 类型的数据
     #[inline]
     pub fn read_i8(&mut self) -> i8 { self.read_u8() as i8 }
-    read!(read_i16_unchecked, i16, 2);
-    read!(read_u16_unchecked, u16, 2);
-    read!(read_i32_unchecked, i32, 4);
-    read!(read_u32_unchecked, u32, 4);
-    read!(read_i64_unchecked, i64, 8);
-    read!(read_u64_unchecked, u64, 8);
-    read!(read_f32_unchecked, f32, 4, false);
-    read!(read_f64_unchecked, f64, 8, false);
+    read_uncheck!(read_i16_unchecked, i16, 2);
+    read_uncheck!(read_u16_unchecked, u16, 2);
+    read_uncheck!(read_i32_unchecked, i32, 4);
+    read_uncheck!(read_u32_unchecked, u32, 4);
+    read_uncheck!(read_i64_unchecked, i64, 8);
+    read_uncheck!(read_u64_unchecked, u64, 8);
+    /// 读取一个 f32 类型的数据
+    /// 
+    /// 转换大小端
+    /// 
+    /// # 安全性
+    /// 允许未对齐的地址
+    /// 长度溢出会导致 UB
+    pub unsafe fn read_f32_unchecked(&mut self) -> f32 {
+            let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const u32);
+            self.cursor += 4;
+            f32::from_bits(value.to_be())
+    }
+    /// 读取一个 f64 类型的数据
+    /// 转换大小端
+    /// 
+    /// # 安全性
+    /// 允许未对齐的地址
+    /// 长度溢出会导致 UB
+    pub unsafe fn read_f64_unchecked(&mut self) -> f64 {
+            let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const u64);
+            self.cursor += 8;
+            f64::from_bits(value.to_be())
+    }
 
     pub fn read_u8_array(&mut self, len: usize) -> &[u8] {
         let value = &self.data[self.cursor..self.cursor + len];
