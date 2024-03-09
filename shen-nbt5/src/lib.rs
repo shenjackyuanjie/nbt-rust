@@ -33,9 +33,9 @@ pub enum NbtError {
     /// 根节点无名称
     RootWithoutName,
     /// 未知类型
-    UnknownTypeErr(u8),
+    UnknownType(u8),
     /// 名称读取错误
-    NameReadErr(String),
+    NameRead(String),
     /// 指针超出范围
     ///
     /// cursor, len, data.len()
@@ -43,8 +43,10 @@ pub enum NbtError {
     /// - 当前指针
     /// - 数据长度
     /// - 数据总长度
-    OutOfRangeErr(usize, usize, usize),
+    CursorOverflow(usize, usize, usize),
 }
+
+pub type NbtResult<T> = Result<T, NbtError>;
 
 impl std::fmt::Display for NbtError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -63,15 +65,15 @@ impl std::fmt::Display for NbtError {
             NbtError::RootWithoutName => {
                 write!(f, "根节点无名称, 是否应该使用 JavaNetAfter1_20_2 解析?")
             }
-            NbtError::UnknownTypeErr(n) => {
+            NbtError::UnknownType(n) => {
                 if *n == 0 {
                     write!(f, "未知类型: NBTEnd(0), 请检查数据是否正确")
                 } else {
                     write!(f, "未知类型: {}", n)
                 }
             }
-            NbtError::NameReadErr(s) => write!(f, "名称读取错误: {}", s),
-            NbtError::OutOfRangeErr(cursor, len, data_len) => write!(
+            NbtError::NameRead(s) => write!(f, "名称读取错误: {}", s),
+            NbtError::CursorOverflow(cursor, len, data_len) => write!(
                 f,
                 "指针超出范围: cursor: {}, len: {}, cursor+len: {}, data.len(): {}",
                 cursor,
@@ -308,7 +310,7 @@ impl NbtReader<'_> {
     #[inline]
     pub fn read_string(&mut self, len: usize) -> Result<String, NbtError> {
         if len + self.cursor > self.data.len() {
-            return Err(NbtError::OutOfRangeErr(self.cursor, len, self.data.len()));
+            return Err(NbtError::CursorOverflow(self.cursor, len, self.data.len()));
         }
         let value = String::from_utf8_lossy(&self.data[self.cursor..self.cursor + len]);
         self.cursor += len;
@@ -397,7 +399,7 @@ impl NbtReader<'_> {
     }
 
     /// 读取一个 NBT string
-    pub fn read_nbt_string(&mut self) -> Result<String, NbtError> {
+    pub fn read_nbt_string(&mut self) -> NbtResult<String> {
         let len = self.read_u16() as usize;
         self.read_string(len)
     }
@@ -462,19 +464,19 @@ impl NbtValue {
         .to_string()
     }
 
-    pub fn from_binary(data: &mut [u8]) -> NbtValue {
+    pub fn from_binary(data: &mut [u8]) -> NbtResult<NbtValue> {
         let reader = NbtReader::new(data);
-        NbtValue::from_reader_unchecked(reader)
+        Ok(NbtValue::from_reader(reader))
     }
 
-    fn read_nbt_compound(reader: &mut NbtReader) -> Vec<(String, NbtValue)> {
+    fn read_nbt_compound(reader: &mut NbtReader) -> NbtResult<Vec<(String, NbtValue)>> {
         let mut compound = Vec::with_capacity(10);
         loop {
             let tag_id = reader.read_u8();
             if tag_id == 0 {
                 break;
             }
-            let name = reader.read_nbt_string().unwrap();
+            let name = reader.read_nbt_string()?;
             let value = match tag_id {
                 1 => NbtValue::Byte(reader.read_i8()),
                 2 => NbtValue::Short(reader.read_i16()),
@@ -483,95 +485,50 @@ impl NbtValue {
                 5 => NbtValue::Float(reader.read_f32()),
                 6 => NbtValue::Double(reader.read_f64()),
                 7 => NbtValue::ByteArray(reader.read_nbt_i8_array()),
-                8 => NbtValue::String(reader.read_nbt_string().unwrap()),
-                9 => NbtValue::List(NbtValue::read_nbt_list(reader)),
-                10 => NbtValue::Compound(None, NbtValue::read_nbt_compound(reader)),
+                8 => NbtValue::String(reader.read_nbt_string()?),
+                9 => NbtValue::List(NbtValue::read_nbt_list(reader)?),
+                10 => NbtValue::Compound(None, NbtValue::read_nbt_compound(reader)?),
                 11 => NbtValue::IntArray(reader.read_nbt_i32_array()),
                 12 => NbtValue::LongArray(reader.read_nbt_i64_array()),
                 _ => unimplemented!(),
             };
             compound.push((name, value));
         }
-        compound
+        Ok(compound)
     }
 
-    fn read_nbt_list(reader: &mut NbtReader) -> Vec<NbtValue> {
+    fn read_nbt_list(reader: &mut NbtReader) -> NbtResult<Vec<NbtValue>> {
         let type_id = reader.read_u8();
         let len = reader.read_i32() as usize;
         let mut list = Vec::with_capacity(len);
-        match type_id {
-            1 => {
-                for _ in 0..len {
-                    list.push(NbtValue::Byte(reader.read_i8()));
-                }
-            }
-            2 => {
-                for _ in 0..len {
-                    list.push(NbtValue::Short(reader.read_i16()));
-                }
-            }
-            3 => {
-                for _ in 0..len {
-                    list.push(NbtValue::Int(reader.read_i32()));
-                }
-            }
-            4 => {
-                for _ in 0..len {
-                    list.push(NbtValue::Long(reader.read_i64()));
-                }
-            }
-            5 => {
-                for _ in 0..len {
-                    list.push(NbtValue::Float(reader.read_f32()));
-                }
-            }
-            6 => {
-                for _ in 0..len {
-                    list.push(NbtValue::Double(reader.read_f64()));
-                }
-            }
-            7 => {
-                for _ in 0..len {
-                    list.push(NbtValue::ByteArray(reader.read_nbt_i8_array()));
-                }
-            }
-            8 => {
-                for _ in 0..len {
-                    list.push(NbtValue::String(reader.read_nbt_string().unwrap()));
-                }
-            }
-            9 => {
-                for _ in 0..len {
-                    list.push(NbtValue::List(NbtValue::read_nbt_list(reader)));
-                }
-            }
-            10 => {
-                for _ in 0..len {
-                    list.push(NbtValue::Compound(None, NbtValue::read_nbt_compound(reader)));
-                }
-            }
-            11 => {
-                for _ in 0..len {
-                    list.push(NbtValue::IntArray(reader.read_nbt_i32_array()));
-                }
-            }
-            12 => {
-                for _ in 0..len {
-                    list.push(NbtValue::LongArray(reader.read_nbt_i64_array()));
-                }
-            }
-            _ => unimplemented!(),
+        for _ in 0..len {
+            let value = match type_id {
+                1 => NbtValue::Byte(reader.read_i8()),
+                2 => NbtValue::Short(reader.read_i16()),
+                3 => NbtValue::Int(reader.read_i32()),
+                4 => NbtValue::Long(reader.read_i64()),
+                5 => NbtValue::Float(reader.read_f32()),
+                6 => NbtValue::Double(reader.read_f64()),
+                7 => NbtValue::ByteArray(reader.read_nbt_i8_array()),
+                8 => NbtValue::String(reader.read_nbt_string()?),
+                9 => NbtValue::List(NbtValue::read_nbt_list(reader)?),
+                10 => NbtValue::Compound(None, NbtValue::read_nbt_compound(reader)?),
+                11 => NbtValue::IntArray(reader.read_nbt_i32_array()),
+                12 => NbtValue::LongArray(reader.read_nbt_i64_array()),
+                _ => unimplemented!(),
+            };
+            list.push(value);
         }
-        list
+        Ok(list)
     }
 
-    pub fn from_reader_unchecked(mut reader: NbtReader) -> NbtValue {
+    pub fn from_reader(mut reader: NbtReader) -> NbtValue {
         // 第一个 tag, 不可能是 0
         match reader.read_u8() {
-            9 => NbtValue::List(NbtValue::read_nbt_list(&mut reader)),
+            9 => NbtValue::List(NbtValue::read_nbt_list(&mut reader).unwrap()),
             10 => {
                 let name = reader.read_nbt_string().unwrap();
-                NbtValue::Compound(Some(name), NbtValue::read_nbt_compound(&mut reader))
+                NbtValue::Compound(Some(name), NbtValue::read_nbt_compound(&mut reader).unwrap())
             }
             x => {
                 panic!("根节点类型错误 {}", Self::type_id_as_name(x));
