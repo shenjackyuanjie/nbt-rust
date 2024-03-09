@@ -93,9 +93,14 @@ mod safe_test {
         let len = data.len();
         println!("{:?}", data);
         let mut reader = NbtReader::new(&mut data);
-        assert_eq!(reader.read_string(len), "Hello world!啊？");
+        assert_eq!(reader.read_string(len), Ok("Hello world!啊？".to_string()));
         assert_eq!(reader.cursor, 18);
     }
+}
+
+#[test]
+fn just_format() {
+    assert_eq!(NbtValue::type_id_as_name(15), "未知类型(15)");
 }
 
 /// unsafe 测试

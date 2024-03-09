@@ -23,6 +23,66 @@ pub enum NbtVersion {
     BedrockNetVarInt,
 }
 
+/// Error
+#[derive(Debug, Clone, PartialEq)]
+pub enum NbtError {
+    /// 未知错误
+    UnknownErr(String),
+    /// 根节点类型错误
+    WrongRootType(u8),
+    /// 根节点无名称
+    RootWithoutName,
+    /// 未知类型
+    UnknownTypeErr(u8),
+    /// 名称读取错误
+    NameReadErr(String),
+    /// 指针超出范围
+    ///
+    /// cursor, len, data.len()
+    /// 三个参数分别表示
+    /// - 当前指针
+    /// - 数据长度
+    /// - 数据总长度
+    OutOfRangeErr(usize, usize, usize),
+}
+
+impl std::fmt::Display for NbtError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            NbtError::UnknownErr(s) => write!(f, "未知错误: {}", s),
+            NbtError::WrongRootType(n) => {
+                match n {
+                    9 => {
+                        write!(f, "根节点为 NbtList(9) 类型, 是否应该使用 BedrockDisk/BedrockNetVarInt 解析?")
+                    }
+                    _ => {
+                        write!(f, "根节点类型错误: {}, 应为 NbtCompound/NbtList(bedrock only)", n)
+                    }
+                }
+            }
+            NbtError::RootWithoutName => {
+                write!(f, "根节点无名称, 是否应该使用 JavaNetAfter1_20_2 解析?")
+            }
+            NbtError::UnknownTypeErr(n) => {
+                if *n == 0 {
+                    write!(f, "未知类型: NBTEnd(0), 请检查数据是否正确")
+                } else {
+                    write!(f, "未知类型: {}", n)
+                }
+            }
+            NbtError::NameReadErr(s) => write!(f, "名称读取错误: {}", s),
+            NbtError::OutOfRangeErr(cursor, len, data_len) => write!(
+                f,
+                "指针超出范围: cursor: {}, len: {}, cursor+len: {}, data.len(): {}",
+                cursor,
+                len,
+                cursor + len,
+                data_len
+            ),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests;
 
@@ -246,10 +306,13 @@ impl NbtReader<'_> {
     ///
     /// 长度溢出会导致 panic
     #[inline]
-    pub fn read_string(&mut self, len: usize) -> String {
+    pub fn read_string(&mut self, len: usize) -> Result<String, NbtError> {
+        if len + self.cursor > self.data.len() {
+            return Err(NbtError::OutOfRangeErr(self.cursor, len, self.data.len()));
+        }
         let value = String::from_utf8_lossy(&self.data[self.cursor..self.cursor + len]);
         self.cursor += len;
-        value.into_owned()
+        Ok(value.into_owned())
     }
     /// 读取指定长度的 i32 数组
     ///
@@ -334,10 +397,9 @@ impl NbtReader<'_> {
     }
 
     /// 读取一个 NBT string
-    pub fn read_nbt_string(&mut self) -> String {
+    pub fn read_nbt_string(&mut self) -> Result<String, NbtError> {
         let len = self.read_u16() as usize;
-        let value = self.read_string(len);
-        value
+        self.read_string(len)
     }
 }
 
@@ -377,9 +439,32 @@ pub enum NbtValue {
 }
 
 impl NbtValue {
+    pub fn type_id_as_name(type_id: u8) -> String {
+        if type_id > 12 {
+            return format!("未知类型({})", type_id);
+        }
+        match type_id {
+            0 => "NBT_End(0)",
+            1 => "NBT_Byte(1)",
+            2 => "NBT_Short(2)",
+            3 => "NBT_Int(3)",
+            4 => "NBT_Long(4)",
+            5 => "NBT_Float(5)",
+            6 => "NBT_Double(6)",
+            7 => "NBT_ByteArray(7)",
+            8 => "NBT_String(8)",
+            9 => "NBT_List(9)",
+            10 => "NBT_Compound(10)",
+            11 => "NBT_IntArray(11)",
+            12 => "NBT_LongArray(12)",
+            _ => unreachable!(),
+        }
+        .to_string()
+    }
+
     pub fn from_binary(data: &mut [u8]) -> NbtValue {
         let reader = NbtReader::new(data);
-        NbtValue::from_reader(reader)
+        NbtValue::from_reader_unchecked(reader)
     }
 
     fn read_nbt_compound(reader: &mut NbtReader) -> Vec<(String, NbtValue)> {
@@ -389,7 +474,7 @@ impl NbtValue {
             if tag_id == 0 {
                 break;
             }
-            let name = reader.read_nbt_string();
+            let name = reader.read_nbt_string().unwrap();
             let value = match tag_id {
                 1 => NbtValue::Byte(reader.read_i8()),
                 2 => NbtValue::Short(reader.read_i16()),
@@ -398,7 +483,7 @@ impl NbtValue {
                 5 => NbtValue::Float(reader.read_f32()),
                 6 => NbtValue::Double(reader.read_f64()),
                 7 => NbtValue::ByteArray(reader.read_nbt_i8_array()),
-                8 => NbtValue::String(reader.read_nbt_string()),
+                8 => NbtValue::String(reader.read_nbt_string().unwrap()),
                 9 => NbtValue::List(NbtValue::read_nbt_list(reader)),
                 10 => NbtValue::Compound(None, NbtValue::read_nbt_compound(reader)),
                 11 => NbtValue::IntArray(reader.read_nbt_i32_array()),
@@ -452,7 +537,7 @@ impl NbtValue {
             }
             8 => {
                 for _ in 0..len {
-                    list.push(NbtValue::String(reader.read_nbt_string()));
+                    list.push(NbtValue::String(reader.read_nbt_string().unwrap()));
                 }
             }
             9 => {
@@ -480,26 +565,17 @@ impl NbtValue {
         list
     }
 
-    pub fn from_reader(mut reader: NbtReader) -> NbtValue {
+    pub fn from_reader_unchecked(mut reader: NbtReader) -> NbtValue {
         // 第一个 tag, 不可能是 0
         match reader.read_u8() {
-            0 => unreachable!(),
-            1 => NbtValue::Byte(reader.read_i8()),
-            2 => NbtValue::Short(reader.read_i16()),
-            3 => NbtValue::Int(reader.read_i32()),
-            4 => NbtValue::Long(reader.read_i64()),
-            5 => NbtValue::Float(reader.read_f32()),
-            6 => NbtValue::Double(reader.read_f64()),
-            7 => NbtValue::ByteArray(reader.read_nbt_i8_array()),
-            8 => NbtValue::String(reader.read_nbt_string()),
             9 => NbtValue::List(NbtValue::read_nbt_list(&mut reader)),
             10 => {
-                let name = reader.read_nbt_string();
+                let name = reader.read_nbt_string().unwrap();
                 NbtValue::Compound(Some(name), NbtValue::read_nbt_compound(&mut reader))
             }
-            11 => NbtValue::IntArray(reader.read_nbt_i32_array()),
-            12 => NbtValue::LongArray(reader.read_nbt_i64_array()),
-            _ => unimplemented!(),
+            x => {
+                panic!("根节点类型错误 {}", Self::type_id_as_name(x));
+            }
         }
     }
 }
