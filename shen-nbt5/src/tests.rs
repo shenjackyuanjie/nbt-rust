@@ -1,4 +1,4 @@
-use crate::{NbtReader, NbtValue};
+use crate::NbtReader;
 
 /// 生成测试数据
 pub fn gen_datas(len: usize) -> Vec<u8> {
@@ -19,20 +19,10 @@ fn basic_init() {
 }
 
 #[test]
-fn read_i8() {
+fn read_x8() {
     let mut data = vec![0x01, 0x02, 0x03, 0x04];
     let mut reader = NbtReader::new(&mut data);
     assert_eq!(reader.read_i8(), 0x01);
-    assert_eq!(reader.cursor, 1);
-    assert_eq!(reader.read_i8(), 0x02);
-    assert_eq!(reader.cursor, 2);
-}
-
-#[test]
-fn read_one_bytes() {
-    let mut data = vec![0x01, 0x02];
-    let mut reader = NbtReader::new(&mut data);
-    assert_eq!(reader.read_u8(), 0x01);
     assert_eq!(reader.cursor, 1);
     assert_eq!(reader.read_u8(), 0x02);
     assert_eq!(reader.cursor, 2);
@@ -42,13 +32,14 @@ fn read_one_bytes() {
 fn read_data_safe() {
     let mut data = vec![0x01, 0x02, 0x03, 0x04];
     let mut reader = NbtReader::new(&mut data);
-    assert_eq!(reader.read_u8(), 0x00);
+    assert_eq!(reader.read_u8(), 0x01);
     assert_eq!(reader.cursor, 1);
-    assert_eq!(reader.read_i8(), 0x01);
+    assert_eq!(reader.read_i8(), 0x02);
     assert_eq!(reader.cursor, 2);
-    assert_eq!(reader.read_u8(), 0x02);
+    assert_eq!(reader.read_u8(), 0x03);
     assert_eq!(reader.cursor, 3);
-
+    assert_eq!(reader.read_i8(), 0x04);
+    assert_eq!(reader.cursor, 4);
 }
 
 #[test]

@@ -34,13 +34,6 @@ macro_rules! read_uncheck {
     };
 }
 
-macro_rules! read {
-    ($name:ident, $ty:ty, $size:literal) => {
-        #[doc = concat!("读取 ", stringify!($ty), " 类型 ", $size, " 长度的数据")]
-        pub fn $name(&mut self) -> $ty { let buff = &self.data[self.cursor..self.cursor + $size]; }
-    };
-}
-
 impl NbtReader<'_> {
     pub fn new(data: &mut [u8]) -> NbtReader {
         NbtReader {
@@ -137,7 +130,7 @@ impl NbtReader<'_> {
     pub unsafe fn read_f32_unchecked(&mut self) -> f32 {
         let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const u32);
         self.cursor += 4;
-        f32::from_bits(value.to_be())
+        std::mem::transmute::<u32, f32>(value.to_be())
     }
     /// 读取一个 f64 类型的数据
     /// 转换大小端
@@ -148,7 +141,7 @@ impl NbtReader<'_> {
     pub unsafe fn read_f64_unchecked(&mut self) -> f64 {
         let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const u64);
         self.cursor += 8;
-        f64::from_bits(value.to_be())
+        std::mem::transmute::<u64, f64>(value.to_be())
     }
     /// 读取指定长度的 u8 数组
     ///
