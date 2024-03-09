@@ -4,10 +4,10 @@ pub enum Endian {
 }
 
 /// 后面也许会实现的
-/// 
+///
 /// 不同版本的 Nbt 数据细节不同
 /// 老要命了
-/// 
+///
 /// - `Java`
 ///   Java 版除了 1.20.2+(协议号) 及以后的网络 NBT 格式
 /// - `JavaNetAfter1_20_2`
@@ -57,12 +57,7 @@ macro_rules! read_uncheck {
 }
 
 impl NbtReader<'_> {
-    pub fn new(data: &mut [u8]) -> NbtReader {
-        NbtReader {
-            data,
-            cursor: 0,
-        }
-    }
+    pub fn new(data: &mut [u8]) -> NbtReader { NbtReader { data, cursor: 0 } }
     /// 向后滚动
     #[inline]
     pub fn roll_back(&mut self, len: usize) { self.cursor -= len; }
@@ -321,7 +316,6 @@ impl NbtReader<'_> {
     pub fn read_nbt_i8_array(&mut self) -> Vec<i8> {
         let len = self.read_i32() as usize;
         let value = unsafe { self.read_i8_array_unchecked(len) };
-        self.cursor += len;
         value
     }
 
@@ -329,7 +323,6 @@ impl NbtReader<'_> {
     pub fn read_nbt_i32_array(&mut self) -> Vec<i32> {
         let len = self.read_i32() as usize;
         let value = unsafe { self.read_i32_array_unchecked(len) };
-        self.cursor += len * 4;
         value
     }
 
@@ -337,7 +330,6 @@ impl NbtReader<'_> {
     pub fn read_nbt_i64_array(&mut self) -> Vec<i64> {
         let len = self.read_i32() as usize;
         let value = unsafe { self.read_i64_array_unchecked(len) };
-        self.cursor += len * 8;
         value
     }
 
@@ -349,7 +341,7 @@ impl NbtReader<'_> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum NbtValue {
     // end: 0
     /// 1: Byte
@@ -390,7 +382,57 @@ impl NbtValue {
         NbtValue::from_reader(reader)
     }
 
-    fn inner_read(reader: &mut NbtReader) -> NbtValue { todo!() }
+    fn read_nbt_compound(reader: &mut NbtReader) -> Vec<(String, NbtValue)> {
+        let mut compound = Vec::with_capacity(10);
+        loop {
+            let tag_id = reader.read_u8();
+            if tag_id == 0 {
+                break;
+            }
+            let name = reader.read_nbt_string();
+            let value = match tag_id {
+                1 => NbtValue::Byte(reader.read_i8()),
+                2 => NbtValue::Short(reader.read_i16()),
+                3 => NbtValue::Int(reader.read_i32()),
+                4 => NbtValue::Long(reader.read_i64()),
+                5 => NbtValue::Float(reader.read_f32()),
+                6 => NbtValue::Double(reader.read_f64()),
+                7 => NbtValue::ByteArray(reader.read_nbt_i8_array()),
+                8 => NbtValue::String(reader.read_nbt_string()),
+                9 => NbtValue::List(NbtValue::read_nbt_list(reader)),
+                10 => NbtValue::Compound(None, NbtValue::read_nbt_compound(reader)),
+                11 => NbtValue::IntArray(reader.read_nbt_i32_array()),
+                12 => NbtValue::LongArray(reader.read_nbt_i64_array()),
+                _ => unimplemented!(),
+            };
+            compound.push((name, value));
+        }
+        compound
+    }
+
+    fn read_nbt_list(reader: &mut NbtReader) -> Vec<NbtValue> {
+        let type_id = reader.read_u8();
+        let len = reader.read_i32() as usize;
+        let mut list = Vec::with_capacity(len);
+        for _ in 0..len {
+            list.push(match type_id {
+                1 => NbtValue::Byte(reader.read_i8()),
+                2 => NbtValue::Short(reader.read_i16()),
+                3 => NbtValue::Int(reader.read_i32()),
+                4 => NbtValue::Long(reader.read_i64()),
+                5 => NbtValue::Float(reader.read_f32()),
+                6 => NbtValue::Double(reader.read_f64()),
+                7 => NbtValue::ByteArray(reader.read_nbt_i8_array()),
+                8 => NbtValue::String(reader.read_nbt_string()),
+                9 => NbtValue::List(NbtValue::read_nbt_list(reader)),
+                10 => NbtValue::Compound(None, NbtValue::read_nbt_compound(reader)),
+                11 => NbtValue::IntArray(reader.read_nbt_i32_array()),
+                12 => NbtValue::LongArray(reader.read_nbt_i64_array()),
+                _ => unimplemented!(),
+            });
+        }
+        list
+    }
 
     pub fn from_reader(mut reader: NbtReader) -> NbtValue {
         // 第一个 tag, 不可能是 0
@@ -404,7 +446,11 @@ impl NbtValue {
             6 => NbtValue::Double(reader.read_f64()),
             7 => NbtValue::ByteArray(reader.read_nbt_i8_array()),
             8 => NbtValue::String(reader.read_nbt_string()),
-
+            9 => NbtValue::List(NbtValue::read_nbt_list(&mut reader)),
+            10 => {
+                let name = reader.read_nbt_string();
+                NbtValue::Compound(Some(name), NbtValue::read_nbt_compound(&mut reader))
+            }
             11 => NbtValue::IntArray(reader.read_nbt_i32_array()),
             12 => NbtValue::LongArray(reader.read_nbt_i64_array()),
             _ => unimplemented!(),

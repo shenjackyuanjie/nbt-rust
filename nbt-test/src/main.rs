@@ -187,6 +187,18 @@ fn test_v4(data: Vec<u8>) {
     );
 }
 
+fn test_v5(mut data: Vec<u8>) {
+    let len = data.len();
+    std::thread::sleep(std::time::Duration::from_secs(1));
+    test_lib!(
+        {
+            let _nbt_data = shen_nbt5::NbtValue::from_binary(data.as_mut_slice());
+        },
+        "nbt v5",
+        len
+    );
+}
+
 fn test_fastnbt(data: Vec<u8>) {
     let len = data.len();
     std::thread::sleep(std::time::Duration::from_secs(1));
@@ -218,6 +230,9 @@ fn read_test(in_data: Vec<u8>) {
     test_v4(data);
 
     let data = in_data.clone();
+    test_v5(data);
+
+    let data = in_data.clone();
     test_fastnbt(data);
 }
 
@@ -228,13 +243,14 @@ fn cli_read_test() {
         let read_data = std::fs::read(&arg).unwrap();
         // read_test(data);
         let len = read_data.len();
-        let data = read_data;
+        let mut data = read_data;
 
         std::thread::sleep(std::time::Duration::from_secs(1));
         let start_time = std::time::Instant::now();
-        let nbt_data = shen_nbt4::Value::from_vec(data);
+        // let nbt_data = shen_nbt4::Value::from_vec(data);
+        let nbt_data = shen_nbt5::NbtValue::from_binary(data.as_mut_slice());
         let end_time = std::time::Instant::now();
-        println!("=== shen nbt 4 ===");
+        println!("=== shen nbt 5 ===");
         print!("time: {:?}", end_time - start_time);
         println!("  speed: {:?} (bytes/sec)", len as f64 / (end_time - start_time).as_secs_f64());
         println!("{:?} (kb/sec)", len as f64 / (end_time - start_time).as_secs_f64() / 1024.0);
@@ -248,7 +264,7 @@ fn cli_read_test() {
         );
         #[cfg(feature = "core_debug")]
         println!("nbt_data: {:#?}", nbt_data);
-        println!("nbt len {}", nbt_data.as_byte().is_some());
+        // println!("nbt len {}", nbt_data.as_byte().is_some());
         // test_lib!(
         //     {
         //         let cursor: shen_nbt1::data::Reader = std::io::Cursor::new(data.as_slice());
