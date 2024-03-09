@@ -103,7 +103,7 @@ mod unsafe_test {
     }
 
     #[test]
-    fn read_int_array() {
+    fn read_i32_array() {
         let mut value = 1234567890_i32.to_be_bytes();
         let mut reader = NbtReader::new(&mut value);
         assert_eq!(reader.read_i32_array_unchecked(1), &[1234567890_i32]);
@@ -111,10 +111,10 @@ mod unsafe_test {
     }
 
     #[test]
-    fn read_long_array() {
+    fn read_i64_array() {
         let mut value = 1234567890_i64.to_be_bytes();
         let mut reader = NbtReader::new(&mut value);
-        assert_eq!(reader.read_i64_array(1), &[1234567890_i64]);
+        assert_eq!(reader.read_i64_array_unchecked(1), &[1234567890_i64]);
         assert_eq!(reader.cursor, 8);
     }
 }

@@ -25,6 +25,7 @@ macro_rules! read_uncheck {
         /// # 安全性
         /// 允许未对齐的地址
         /// 长度溢出会导致 UB
+        #[inline]
         pub unsafe fn $name(&mut self) -> $ty {
             // 使用 std::ptr::read_unaligned 解决未对齐地址问题
             let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
@@ -197,27 +198,37 @@ impl NbtReader<'_> {
         self.cursor += len;
         value.into_owned()
     }
-    pub fn read_i32_array_unchecked(&mut self, len: usize) -> &[i32] {
+    /// 读取指定长度的 i32 数组
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 UB
+    pub fn read_i32_array_unchecked(&mut self, len: usize) -> Vec<i32> {
         unsafe {
             let value =
-                std::slice::from_raw_parts_mut(self.data[self.cursor..].as_ptr() as *mut i32, len);
-            for n in &mut *value {
+                std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i32, len);
+            let mut value = value.to_vec();
+            for n in &mut value {
                 *n = n.to_be();
             }
             self.cursor += len * 4;
             value
         }
     }
-    pub fn read_i64_array(&mut self, len: usize) -> &[i64] {
+    /// 读取指定长度的 i64 数组
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 UB
+    pub fn read_i64_array_unchecked(&mut self, len: usize) -> Vec<i64> {
         unsafe {
-            println!("data: {:?}", self.data);
             let value =
-                std::slice::from_raw_parts_mut(self.data[self.cursor..].as_ptr() as *mut i64, len);
-            for n in &mut *value {
+                std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i64, len);
+            let mut value = value.to_vec();
+            for n in &mut value {
                 *n = n.to_be();
             }
             self.cursor += len * 8;
-            println!("data: {:?}", self.data);
             value
         }
     }
