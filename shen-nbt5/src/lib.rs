@@ -1,7 +1,7 @@
-// pub enum Endian {
-//     Big,
-//     Little,
-// }
+pub enum Endian {
+    Big,
+    Little,
+}
 
 #[cfg(test)]
 mod tests;
@@ -297,6 +297,44 @@ impl NbtReader<'_> {
         self.cursor += len * 8;
         value
     }
+
+    /// 读取一个 NBT byte array
+    pub fn read_nbt_i8_array(&mut self) -> Vec<i8> {
+        let len = self.read_i32() as usize;
+        let value = unsafe {
+            self.read_i8_array_unchecked(len)
+        };
+        self.cursor += len;
+        value
+    }
+    
+    /// 读取一个 NBT int array
+    pub fn read_nbt_i32_array(&mut self) -> Vec<i32> {
+        let len = self.read_i32() as usize;
+        let value = unsafe {
+            self.read_i32_array_unchecked(len)
+        };
+        self.cursor += len * 4;
+        value
+    }
+
+    /// 读取一个 NBT long array
+    pub fn read_nbt_i64_array(&mut self) -> Vec<i64> {
+        let len = self.read_i32() as usize;
+        let value = unsafe {
+            self.read_i64_array_unchecked(len)
+        };
+        self.cursor += len * 8;
+        value
+    }
+
+    /// 读取一个 NBT string
+    pub fn read_nbt_string(&mut self) -> String {
+        let len = self.read_u16() as usize;
+        let value = self.read_string(len);
+        value
+    }
+
 }
 
 #[derive(Debug, Clone)]
@@ -315,17 +353,22 @@ pub enum NbtValue {
     /// 6
     Double(f64),
     /// 7
+    /// 长度: i32
     ByteArray(Vec<i8>),
     /// 8
     /// 或者叫 u8 array
+    /// 长度: u16
     String(String),
     /// 9
+    /// 长度: i32
     List(Vec<NbtValue>),
     /// 10
-    Compound(Vec<(String, NbtValue)>),
+    Compound(Option<String>, Vec<(String, NbtValue)>),
     /// 11
+    /// 长度: i32
     IntArray(Vec<i32>),
     /// 12
+    /// 长度: i32
     LongArray(Vec<i64>),
 }
 
@@ -335,5 +378,25 @@ impl NbtValue {
         NbtValue::from_reader(reader)
     }
 
-    pub fn from_reader(reader: NbtReader) -> NbtValue { todo!() }
+    fn inner_read(reader: &mut NbtReader) -> NbtValue {
+        todo!()
+    }
+
+    pub fn from_reader(mut reader: NbtReader) -> NbtValue { 
+        // 第一个 tag, 不可能是 0
+        match reader.read_u8() {
+            0 => unreachable!(),
+            1 => NbtValue::Byte(reader.read_i8()),
+            2 => NbtValue::Short(reader.read_i16()),
+            3 => NbtValue::Int(reader.read_i32()),
+            4 => NbtValue::Long(reader.read_i64()),
+            5 => NbtValue::Float(reader.read_f32()),
+            6 => NbtValue::Double(reader.read_f64()),
+            7 => NbtValue::ByteArray(reader.read_nbt_i8_array()),
+            8 => NbtValue::String(reader.read_nbt_string()),
+
+            
+            _ => unimplemented!()
+        }
+    }
 }
