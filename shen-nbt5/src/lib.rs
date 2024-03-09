@@ -23,6 +23,10 @@ pub enum NbtVersion {
     BedrockNetVarInt,
 }
 
+// pub trait Nbt {
+
+// }
+
 /// Error
 #[derive(Debug, Clone, PartialEq)]
 pub enum NbtError {

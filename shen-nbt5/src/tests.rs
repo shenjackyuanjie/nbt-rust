@@ -247,7 +247,7 @@ mod nbt {
             Some("hello world".to_string()),
             vec![("name".to_string(), NbtValue::String("Bananrama".to_string()))],
         );
-        assert_eq!(data, correct_data)
+        assert_eq!(data, Ok(correct_data))
     }
 
     #[test]
