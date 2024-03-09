@@ -28,7 +28,8 @@ macro_rules! read_uncheck {
         #[inline]
         pub unsafe fn $name(&mut self) -> $ty {
             // 使用 std::ptr::read_unaligned 解决未对齐地址问题
-            let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const $ty);
+            let ptr = self.data.as_ptr().add(self.cursor) as *const $ty;
+            let value = std::ptr::read_unaligned(ptr);
             self.cursor += std::mem::size_of::<$ty>();
             value.to_be()
         }
@@ -43,6 +44,12 @@ impl NbtReader<'_> {
             // endian: Endian::Big,
         }
     }
+    /// 向后滚动
+    #[inline]
+    pub fn roll_back(&mut self, len: usize) { self.cursor -= len; }
+    /// 向前滚动
+    #[inline]
+    pub fn roll_down(&mut self, len: usize) { self.cursor += len; }
     /// 读取一个 u8 类型的数据
     #[inline]
     pub fn read_u8(&mut self) -> u8 {
@@ -99,7 +106,16 @@ impl NbtReader<'_> {
     ///
     /// 会在超出长度时 panic
     #[inline]
-    pub fn read_u32(&mut self) -> u32 { self.read_i32() as u32 }
+    pub fn read_u32(&mut self) -> u32 {
+        let value = u32::from_be_bytes([
+            self.data[self.cursor],
+            self.data[self.cursor + 1],
+            self.data[self.cursor + 2],
+            self.data[self.cursor + 3],
+        ]);
+        self.cursor += 4;
+        value
+    }
     /// 安全的读取 i64 类型的数据
     ///
     /// 转换大小端(大端)
@@ -126,7 +142,20 @@ impl NbtReader<'_> {
     ///
     /// 会在超出长度时 panic
     #[inline]
-    pub fn read_u64(&mut self) -> u64 { self.read_i64() as u64 }
+    pub fn read_u64(&mut self) -> u64 {
+        let value = u64::from_be_bytes([
+            self.data[self.cursor],
+            self.data[self.cursor + 1],
+            self.data[self.cursor + 2],
+            self.data[self.cursor + 3],
+            self.data[self.cursor + 4],
+            self.data[self.cursor + 5],
+            self.data[self.cursor + 6],
+            self.data[self.cursor + 7],
+        ]);
+        self.cursor += 8;
+        value
+    }
     /// 读取一个 f32 类型的数据
     ///
     /// 转换大小端
@@ -148,10 +177,10 @@ impl NbtReader<'_> {
     /// # 安全性
     /// 允许未对齐的地址
     /// 长度溢出会导致 UB
+    #[inline]
     pub unsafe fn read_f32_unchecked(&mut self) -> f32 {
-        let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const u32);
-        self.cursor += 4;
-        std::mem::transmute::<u32, f32>(value.to_be())
+        let value = self.read_u32_unchecked();
+        std::mem::transmute::<u32, f32>(value)
     }
     /// 读取一个 f64 类型的数据
     /// 转换大小端
@@ -159,10 +188,10 @@ impl NbtReader<'_> {
     /// # 安全性
     /// 允许未对齐的地址
     /// 长度溢出会导致 UB
+    #[inline]
     pub unsafe fn read_f64_unchecked(&mut self) -> f64 {
-        let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const u64);
-        self.cursor += 8;
-        std::mem::transmute::<u64, f64>(value.to_be())
+        let value = self.read_u64_unchecked();
+        std::mem::transmute::<u64, f64>(value)
     }
     /// 读取指定长度的 u8 数组
     ///
@@ -180,10 +209,20 @@ impl NbtReader<'_> {
     /// # 安全性
     ///
     /// 长度溢出会导致 UB
-    pub fn read_i8_array_unchecked(&mut self, len: usize) -> &[i8] {
-        let value = unsafe {
-            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i8, len)
-        };
+    #[inline]
+    pub unsafe fn read_i8_array_unchecked(&mut self, len: usize) -> Vec<i8> {
+        let value = std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i8, len);
+        self.cursor += len;
+        value.to_vec()
+    }
+    /// 读取指定长度的 i8 数组
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 panic
+    #[inline]
+    pub fn read_i8_array(&mut self, len: usize) -> Vec<i8> {
+        let value = self.data[self.cursor..self.cursor + len].iter().map(|&n| n as i8).collect();
         self.cursor += len;
         value
     }
@@ -203,34 +242,60 @@ impl NbtReader<'_> {
     /// # 安全性
     ///
     /// 长度溢出会导致 UB
-    pub fn read_i32_array_unchecked(&mut self, len: usize) -> Vec<i32> {
-        unsafe {
-            let value =
-                std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i32, len);
-            let mut value = value.to_vec();
-            for n in &mut value {
-                *n = n.to_be();
-            }
-            self.cursor += len * 4;
-            value
+    #[inline]
+    pub unsafe fn read_i32_array_unchecked(&mut self, len: usize) -> Vec<i32> {
+        let value =
+            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i32, len);
+        let mut value = value.to_vec();
+        for n in &mut value {
+            *n = n.to_be();
         }
+        self.cursor += len * 4;
+        value
+    }
+    /// 读取指定长度的 i32 数组
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 panic
+    #[inline]
+    pub fn read_i32_array(&mut self, len: usize) -> Vec<i32> {
+        let value = self.data[self.cursor..self.cursor + len * 4]
+            .chunks_exact(4)
+            .map(|n| i32::from_be_bytes(n[0..4].try_into().unwrap()))
+            .collect();
+        self.cursor += len * 4;
+        value
     }
     /// 读取指定长度的 i64 数组
     ///
     /// # 安全性
     ///
     /// 长度溢出会导致 UB
-    pub fn read_i64_array_unchecked(&mut self, len: usize) -> Vec<i64> {
-        unsafe {
-            let value =
-                std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i64, len);
-            let mut value = value.to_vec();
-            for n in &mut value {
-                *n = n.to_be();
-            }
-            self.cursor += len * 8;
-            value
+    #[inline]
+    pub unsafe fn read_i64_array_unchecked(&mut self, len: usize) -> Vec<i64> {
+        let value =
+            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i64, len);
+        let mut value = value.to_vec();
+        for n in &mut value {
+            *n = n.to_be();
         }
+        self.cursor += len * 8;
+        value
+    }
+    /// 读取指定长度的 i64 数组
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 panic
+    #[inline]
+    pub fn read_i64_array(&mut self, len: usize) -> Vec<i64> {
+        let value = self.data[self.cursor..self.cursor + len * 8]
+            .chunks_exact(8)
+            .map(|n| i64::from_be_bytes(n[0..8].try_into().unwrap()))
+            .collect();
+        self.cursor += len * 8;
+        value
     }
 }
 
@@ -262,4 +327,13 @@ pub enum NbtValue {
     IntArray(Vec<i32>),
     /// 12
     LongArray(Vec<i64>),
+}
+
+impl NbtValue {
+    pub fn from_binary(data: &mut [u8]) -> NbtValue {
+        let reader = NbtReader::new(data);
+        NbtValue::from_reader(reader)
+    }
+
+    pub fn from_reader(reader: NbtReader) -> NbtValue { todo!() }
 }
