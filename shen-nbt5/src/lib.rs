@@ -3,6 +3,26 @@ pub enum Endian {
     Little,
 }
 
+/// 后面也许会实现的
+/// 
+/// 不同版本的 Nbt 数据细节不同
+/// 老要命了
+/// 
+/// - `Java`
+///   Java 版除了 1.20.2+(协议号) 及以后的网络 NBT 格式
+/// - `JavaNetAfter1_20_2`
+///   1.20.2+(协议号 >= 764) 及以后的网络 NBT 格式
+/// - `BedrockDisk`
+///   基岩版 实际用于存储的 NBT 格式
+/// - `BedrockNetVarInt`
+///   基岩版 网络 NBT 格式
+pub enum NbtVersion {
+    Java,
+    JavaNetAfter1_20_2,
+    BedrockDisk,
+    BedrockNetVarInt,
+}
+
 #[cfg(test)]
 mod tests;
 
@@ -41,7 +61,6 @@ impl NbtReader<'_> {
         NbtReader {
             data,
             cursor: 0,
-            // endian: Endian::Big,
         }
     }
     /// 向后滚动
@@ -301,19 +320,15 @@ impl NbtReader<'_> {
     /// 读取一个 NBT byte array
     pub fn read_nbt_i8_array(&mut self) -> Vec<i8> {
         let len = self.read_i32() as usize;
-        let value = unsafe {
-            self.read_i8_array_unchecked(len)
-        };
+        let value = unsafe { self.read_i8_array_unchecked(len) };
         self.cursor += len;
         value
     }
-    
+
     /// 读取一个 NBT int array
     pub fn read_nbt_i32_array(&mut self) -> Vec<i32> {
         let len = self.read_i32() as usize;
-        let value = unsafe {
-            self.read_i32_array_unchecked(len)
-        };
+        let value = unsafe { self.read_i32_array_unchecked(len) };
         self.cursor += len * 4;
         value
     }
@@ -321,9 +336,7 @@ impl NbtReader<'_> {
     /// 读取一个 NBT long array
     pub fn read_nbt_i64_array(&mut self) -> Vec<i64> {
         let len = self.read_i32() as usize;
-        let value = unsafe {
-            self.read_i64_array_unchecked(len)
-        };
+        let value = unsafe { self.read_i64_array_unchecked(len) };
         self.cursor += len * 8;
         value
     }
@@ -334,7 +347,6 @@ impl NbtReader<'_> {
         let value = self.read_string(len);
         value
     }
-
 }
 
 #[derive(Debug, Clone)]
@@ -378,11 +390,9 @@ impl NbtValue {
         NbtValue::from_reader(reader)
     }
 
-    fn inner_read(reader: &mut NbtReader) -> NbtValue {
-        todo!()
-    }
+    fn inner_read(reader: &mut NbtReader) -> NbtValue { todo!() }
 
-    pub fn from_reader(mut reader: NbtReader) -> NbtValue { 
+    pub fn from_reader(mut reader: NbtReader) -> NbtValue {
         // 第一个 tag, 不可能是 0
         match reader.read_u8() {
             0 => unreachable!(),
@@ -395,8 +405,9 @@ impl NbtValue {
             7 => NbtValue::ByteArray(reader.read_nbt_i8_array()),
             8 => NbtValue::String(reader.read_nbt_string()),
 
-            
-            _ => unimplemented!()
+            11 => NbtValue::IntArray(reader.read_nbt_i32_array()),
+            12 => NbtValue::LongArray(reader.read_nbt_i64_array()),
+            _ => unimplemented!(),
         }
     }
 }
