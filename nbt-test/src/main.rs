@@ -249,7 +249,7 @@ fn cli_read_test() {
     // 如果有, 取出
     if let Some(arg) = args.nth(1) {
         let read_data = std::fs::read(&arg).unwrap();
-        // read_test(data);
+        // read_test(read_data);
         let len = read_data.len();
         let mut data = read_data;
 
@@ -259,7 +259,7 @@ fn cli_read_test() {
         let nbt_data = shen_nbt5::NbtValue::from_binary(data.as_mut_slice());
         let end_time = std::time::Instant::now();
         println!("=== shen nbt 5 ===");
-        print!("time: {:?}", end_time - start_time);
+        println!("time: {:?}", end_time - start_time);
         let raw_speed = len as f64 / (end_time - start_time).as_secs_f64();
         print_speed(raw_speed);
         #[cfg(feature = "core_debug")]

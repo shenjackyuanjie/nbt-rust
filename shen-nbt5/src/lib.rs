@@ -414,22 +414,68 @@ impl NbtValue {
         let type_id = reader.read_u8();
         let len = reader.read_i32() as usize;
         let mut list = Vec::with_capacity(len);
-        for _ in 0..len {
-            list.push(match type_id {
-                1 => NbtValue::Byte(reader.read_i8()),
-                2 => NbtValue::Short(reader.read_i16()),
-                3 => NbtValue::Int(reader.read_i32()),
-                4 => NbtValue::Long(reader.read_i64()),
-                5 => NbtValue::Float(reader.read_f32()),
-                6 => NbtValue::Double(reader.read_f64()),
-                7 => NbtValue::ByteArray(reader.read_nbt_i8_array()),
-                8 => NbtValue::String(reader.read_nbt_string()),
-                9 => NbtValue::List(NbtValue::read_nbt_list(reader)),
-                10 => NbtValue::Compound(None, NbtValue::read_nbt_compound(reader)),
-                11 => NbtValue::IntArray(reader.read_nbt_i32_array()),
-                12 => NbtValue::LongArray(reader.read_nbt_i64_array()),
-                _ => unimplemented!(),
-            });
+        match type_id {
+            1 => {
+                for _ in 0..len {
+                    list.push(NbtValue::Byte(reader.read_i8()));
+                }
+            }
+            2 => {
+                for _ in 0..len {
+                    list.push(NbtValue::Short(reader.read_i16()));
+                }
+            }
+            3 => {
+                for _ in 0..len {
+                    list.push(NbtValue::Int(reader.read_i32()));
+                }
+            }
+            4 => {
+                for _ in 0..len {
+                    list.push(NbtValue::Long(reader.read_i64()));
+                }
+            }
+            5 => {
+                for _ in 0..len {
+                    list.push(NbtValue::Float(reader.read_f32()));
+                }
+            }
+            6 => {
+                for _ in 0..len {
+                    list.push(NbtValue::Double(reader.read_f64()));
+                }
+            }
+            7 => {
+                for _ in 0..len {
+                    list.push(NbtValue::ByteArray(reader.read_nbt_i8_array()));
+                }
+            }
+            8 => {
+                for _ in 0..len {
+                    list.push(NbtValue::String(reader.read_nbt_string()));
+                }
+            }
+            9 => {
+                for _ in 0..len {
+                    list.push(NbtValue::List(NbtValue::read_nbt_list(reader)));
+                }
+            }
+            10 => {
+                for _ in 0..len {
+                    list.push(NbtValue::Compound(None, NbtValue::read_nbt_compound(reader)));
+                }
+            }
+            11 => {
+                for _ in 0..len {
+                    list.push(NbtValue::IntArray(reader.read_nbt_i32_array()));
+                }
+            }
+            12 => {
+                for _ in 0..len {
+                    list.push(NbtValue::LongArray(reader.read_nbt_i64_array()));
+                }
+            }
+            _ => unimplemented!(),
         }
         list
     }
