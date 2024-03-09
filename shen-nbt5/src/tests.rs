@@ -9,37 +9,78 @@ pub fn gen_datas(len: usize) -> Vec<u8> {
     datas
 }
 
-#[test]
-fn basic_init() {
-    let mut data = vec![0x01, 0x02, 0x03, 0x04];
-    let reader = NbtReader::new(&mut data);
-    assert_eq!(reader.cursor, 0);
-    let same_data = vec![0x01, 0x02, 0x03, 0x04];
-    assert_eq!(reader.data, &same_data);
+mod safe_test {
+    use super::*;
+
+    #[test]
+    fn basic_init() {
+        let mut data = vec![0x01, 0x02, 0x03, 0x04];
+        let reader = NbtReader::new(&mut data);
+        assert_eq!(reader.cursor, 0);
+        let same_data = vec![0x01, 0x02, 0x03, 0x04];
+        assert_eq!(reader.data, &same_data);
+    }
+
+    #[test]
+    fn read_x8() {
+        let mut data = vec![0x01, 0x02, 0x03, 0x04];
+        let mut reader = NbtReader::new(&mut data);
+        assert_eq!(reader.read_i8(), 0x01);
+        assert_eq!(reader.cursor, 1);
+        assert_eq!(reader.read_u8(), 0x02);
+        assert_eq!(reader.cursor, 2);
+    }
+
+    #[test]
+    fn read_x16() {
+        let mut data = vec![0x01, 0x02, 0x03, 0x04];
+        let mut reader = NbtReader::new(&mut data);
+        assert_eq!(reader.read_i16(), 0x0102);
+        assert_eq!(reader.cursor, 2);
+        assert_eq!(reader.read_u16(), 0x0304);
+        assert_eq!(reader.cursor, 4);
+    }
+
+    #[test]
+    fn read_x32() {
+        let mut data = vec![0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04];
+        let mut reader = NbtReader::new(&mut data);
+        assert_eq!(reader.read_i32(), 0x01020304);
+        assert_eq!(reader.cursor, 4);
+        assert_eq!(reader.read_u32(), 0x01020304);
+        assert_eq!(reader.cursor, 8);
+    }
+
+    #[test]
+    fn read_x64() {
+        let mut data = vec![
+            0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02,
+            0x03, 0x04,
+        ];
+        let mut reader = NbtReader::new(&mut data);
+        assert_eq!(reader.read_i64(), 0x0102030401020304);
+        assert_eq!(reader.cursor, 8);
+        assert_eq!(reader.read_u64(), 0x0102030401020304);
+        assert_eq!(reader.cursor, 16);
+    }
+
+    #[test]
+    fn read_fxx() {
+        let mut data = vec![
+            0x40, 0x49, 0x0f, 0xdb, 0x40, 0x49, 0x0f, 0xdb, 0x40, 0x49, 0x0f, 0xdb, 0x40, 0x49,
+            0x0f, 0xdb,
+        ];
+        let mut reader = NbtReader::new(&mut data);
+        println!("{}", f32::from_be_bytes([0x40, 0x49, 0x0f, 0xdb]));
+        assert_eq!(reader.read_f32(), 3.1415927);
+        assert_eq!(reader.cursor, 4);
+        assert_eq!(reader.read_f64(), 3.14159265);
+        assert_eq!(reader.cursor, 12);
+    }
 }
 
-#[test]
-fn read_x8() {
-    let mut data = vec![0x01, 0x02, 0x03, 0x04];
-    let mut reader = NbtReader::new(&mut data);
-    assert_eq!(reader.read_i8(), 0x01);
-    assert_eq!(reader.cursor, 1);
-    assert_eq!(reader.read_u8(), 0x02);
-    assert_eq!(reader.cursor, 2);
-}
-
-#[test]
-fn read_data_safe() {
-    let mut data = vec![0x01, 0x02, 0x03, 0x04];
-    let mut reader = NbtReader::new(&mut data);
-    assert_eq!(reader.read_u8(), 0x01);
-    assert_eq!(reader.cursor, 1);
-    assert_eq!(reader.read_i8(), 0x02);
-    assert_eq!(reader.cursor, 2);
-    assert_eq!(reader.read_u8(), 0x03);
-    assert_eq!(reader.cursor, 3);
-    assert_eq!(reader.read_i8(), 0x04);
-    assert_eq!(reader.cursor, 4);
+mod unsafe_test {
+    use super::*;
 }
 
 #[test]
@@ -48,7 +89,7 @@ fn read_array() {
     let mut reader = NbtReader::new(&mut data);
     assert_eq!(reader.read_u8_array(2), &[0x01, 0x02]);
     assert_eq!(reader.cursor, 2);
-    assert_eq!(reader.read_i8_array(2), &[0x03, 0x04]);
+    assert_eq!(reader.read_i8_array_unchecked(2), &[0x03, 0x04]);
     assert_eq!(reader.cursor, 4);
 }
 

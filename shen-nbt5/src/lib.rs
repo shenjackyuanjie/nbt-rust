@@ -124,6 +124,40 @@ impl NbtReader<'_> {
     ///
     /// 转换大小端
     ///
+    /// 会在超出长度时 panic
+    pub fn read_f32(&mut self) -> f32 {
+        let value = f32::from_be_bytes([
+            self.data[self.cursor],
+            self.data[self.cursor + 1],
+            self.data[self.cursor + 2],
+            self.data[self.cursor + 3],
+        ]);
+        self.cursor += 4;
+        value
+    }
+    /// 读取一个 f64 类型的数据
+    ///
+    /// 转换大小端
+    ///
+    /// 会在超出长度时 panic
+    pub fn read_f64(&mut self) -> f64 {
+        let value = f64::from_be_bytes([
+            self.data[self.cursor],
+            self.data[self.cursor + 1],
+            self.data[self.cursor + 2],
+            self.data[self.cursor + 3],
+            self.data[self.cursor + 4],
+            self.data[self.cursor + 5],
+            self.data[self.cursor + 6],
+            self.data[self.cursor + 7],
+        ]);
+        self.cursor += 8;
+        value
+    }
+    /// 读取一个 f32 类型的数据
+    ///
+    /// 转换大小端
+    ///
     /// # 安全性
     /// 允许未对齐的地址
     /// 长度溢出会导致 UB
@@ -158,7 +192,7 @@ impl NbtReader<'_> {
     /// # 安全性
     ///
     /// 长度溢出会导致 UB
-    pub fn read_i8_array(&mut self, len: usize) -> &[i8] {
+    pub fn read_i8_array_unchecked(&mut self, len: usize) -> &[i8] {
         let value = unsafe {
             std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i8, len)
         };
@@ -177,14 +211,12 @@ impl NbtReader<'_> {
     }
     pub fn read_i32_array_unchecked(&mut self, len: usize) -> &[i32] {
         unsafe {
-            println!("data: {:?}", self.data);
             let value =
                 std::slice::from_raw_parts_mut(self.data[self.cursor..].as_ptr() as *mut i32, len);
             for n in &mut *value {
                 *n = n.to_be();
             }
             self.cursor += len * 4;
-            println!("data: {:?}", self.data);
             value
         }
     }
