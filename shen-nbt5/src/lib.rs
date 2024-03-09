@@ -21,7 +21,7 @@ macro_rules! read_uncheck {
         #[doc = concat!("读取 ", stringify!($ty), " 类型 ", $size, " 长度的数据")]
         ///
         #[doc = "转换大小端"]
-        /// 
+        ///
         /// # 安全性
         /// 允许未对齐的地址
         /// 长度溢出会导致 UB
@@ -37,13 +37,7 @@ macro_rules! read_uncheck {
 macro_rules! read {
     ($name:ident, $ty:ty, $size:literal) => {
         #[doc = concat!("读取 ", stringify!($ty), " 类型 ", $size, " 长度的数据")]
-        pub fn $name(&mut self) -> $ty {
-            let value = self.data[self.cursor..self.cursor + $size]
-                .iter()
-                .fold(0, |acc, &x| (acc << 8) | x as $ty);
-            self.cursor += $size;
-            value
-        }
+        pub fn $name(&mut self) -> $ty { let buff = &self.data[self.cursor..self.cursor + $size]; }
     };
 }
 
@@ -71,35 +65,106 @@ impl NbtReader<'_> {
     read_uncheck!(read_u32_unchecked, u32, 4);
     read_uncheck!(read_i64_unchecked, i64, 8);
     read_uncheck!(read_u64_unchecked, u64, 8);
+    /// 安全的读取 i16 类型的数据
+    ///
+    /// 转换大小端(大端)
+    ///
+    /// 会在超出长度时 panic
+    pub fn read_i16(&mut self) -> i16 {
+        let value = i16::from_be_bytes([self.data[self.cursor], self.data[self.cursor + 1]]);
+        self.cursor += 2;
+        value
+    }
+    /// 安全的读取 u16 类型的数据
+    ///
+    /// 转换大小端(大端)
+    ///
+    /// 会在超出长度时 panic
+    pub fn read_u16(&mut self) -> u16 { self.read_i16() as u16 }
+    /// 安全的读取 i32 类型的数据
+    ///
+    /// 转换大小端(大端)
+    ///
+    /// 会在超出长度时 panic
+    pub fn read_i32(&mut self) -> i32 {
+        let value = i32::from_be_bytes([
+            self.data[self.cursor],
+            self.data[self.cursor + 1],
+            self.data[self.cursor + 2],
+            self.data[self.cursor + 3],
+        ]);
+        self.cursor += 4;
+        value
+    }
+    /// 安全的读取 u32 类型的数据
+    ///
+    /// 转换大小端(大端)
+    ///
+    /// 会在超出长度时 panic
+    pub fn read_u32(&mut self) -> u32 { self.read_i32() as u32 }
+    /// 安全的读取 i64 类型的数据
+    ///
+    /// 转换大小端(大端)
+    ///
+    /// 会在超出长度时 panic
+    pub fn read_i64(&mut self) -> i64 {
+        let value = i64::from_be_bytes([
+            self.data[self.cursor],
+            self.data[self.cursor + 1],
+            self.data[self.cursor + 2],
+            self.data[self.cursor + 3],
+            self.data[self.cursor + 4],
+            self.data[self.cursor + 5],
+            self.data[self.cursor + 6],
+            self.data[self.cursor + 7],
+        ]);
+        self.cursor += 8;
+        value
+    }
+    /// 安全的读取 u64 类型的数据
+    ///
+    /// 转换大小端(大端)
+    ///
+    /// 会在超出长度时 panic
+    pub fn read_u64(&mut self) -> u64 { self.read_i64() as u64 }
     /// 读取一个 f32 类型的数据
-    /// 
+    ///
     /// 转换大小端
-    /// 
+    ///
     /// # 安全性
     /// 允许未对齐的地址
     /// 长度溢出会导致 UB
     pub unsafe fn read_f32_unchecked(&mut self) -> f32 {
-            let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const u32);
-            self.cursor += 4;
-            f32::from_bits(value.to_be())
+        let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const u32);
+        self.cursor += 4;
+        f32::from_bits(value.to_be())
     }
     /// 读取一个 f64 类型的数据
     /// 转换大小端
-    /// 
+    ///
     /// # 安全性
     /// 允许未对齐的地址
     /// 长度溢出会导致 UB
     pub unsafe fn read_f64_unchecked(&mut self) -> f64 {
-            let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const u64);
-            self.cursor += 8;
-            f64::from_bits(value.to_be())
+        let value = std::ptr::read_unaligned(self.data[self.cursor..].as_ptr() as *const u64);
+        self.cursor += 8;
+        f64::from_bits(value.to_be())
     }
-
+    /// 读取指定长度的 u8 数组
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 panic
     pub fn read_u8_array(&mut self, len: usize) -> &[u8] {
         let value = &self.data[self.cursor..self.cursor + len];
         self.cursor += len;
         value
     }
+    /// 读取指定长度的 i8 数组
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 UB
     pub fn read_i8_array(&mut self, len: usize) -> &[i8] {
         let value = unsafe {
             std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i8, len)
@@ -107,12 +172,17 @@ impl NbtReader<'_> {
         self.cursor += len;
         value
     }
+    /// 读取指定长度的 utf-8 字符串
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 panic
     pub fn read_string(&mut self, len: usize) -> String {
         let value = String::from_utf8_lossy(&self.data[self.cursor..self.cursor + len]);
         self.cursor += len;
         value.into_owned()
     }
-    pub fn read_int_array(&mut self, len: usize) -> &[i32] {
+    pub fn read_i32_array_unchecked(&mut self, len: usize) -> &[i32] {
         unsafe {
             println!("data: {:?}", self.data);
             let value =
@@ -125,7 +195,7 @@ impl NbtReader<'_> {
             value
         }
     }
-    pub fn read_long_array(&mut self, len: usize) -> &[i64] {
+    pub fn read_i64_array(&mut self, len: usize) -> &[i64] {
         unsafe {
             println!("data: {:?}", self.data);
             let value =
