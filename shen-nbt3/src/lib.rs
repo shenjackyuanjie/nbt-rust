@@ -429,9 +429,7 @@ impl<'value> Value<'value> {
         let mut nbt_data = NbtData::new(&mut data[..]);
         let _type_id = nbt_data.read_byte();
         let _name_len = nbt_data.read_short();
-        // println!("{} {}", _type_id, _name_len);
         let _name = String::from_utf8(nbt_data.read_bytes(_name_len as usize)).unwrap();
-        // println!("{}", _name);
         Value::read_compound(&mut nbt_data)
     }
 }

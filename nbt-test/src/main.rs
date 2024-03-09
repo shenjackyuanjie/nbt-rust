@@ -116,24 +116,33 @@ fn big_read_test() {
     read_test(data.to_vec());
 }
 
+pub fn print_speed(speed: f64) {
+    println!("speed: {} (bytes/s)", speed);
+    let speeds = vec![
+        speed / 1024.0,
+        speed / 1024.0 / 1024.0,
+        speed / 1024.0 / 1024.0 / 1024.0,
+        speed / 1024.0 / 1024.0 / 1024.0 / 1024.0,
+    ];
+    // 只输出 > 1024 的
+    for (i, speed) in speeds.iter().enumerate() {
+        if *speed > 1.0 {
+            println!("{:?} ({}/s)", speed, ["KB", "MB", "GB", "TB"][i]);
+        }
+    }
+}
+
 macro_rules! test_lib {
     ($func: block, $name: expr, $len: expr) => {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_micros(100));
         let start_time = std::time::Instant::now();
         $func
         let end_time = std::time::Instant::now();
         println!("=== {} ===", $name);
-        print!("time: {:?}", end_time - start_time);
-        println!("  speed: {:?} (bytes/sec)", $len as f64 / (end_time - start_time).as_secs_f64());
-        println!("{:?} (kb/sec)", $len as f64 / (end_time - start_time).as_secs_f64() / 1024.0);
-        println!(
-            "{:?} (mb/sec)",
-            $len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0
-        );
-        println!(
-            "{:?} (gb/sec)",
-            $len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0 / 1024.0
-        );
+        println!("time: {:?}", end_time - start_time);
+        println!("speed: {:?} (bytes/sec)", $len as f64 / (end_time - start_time).as_secs_f64());
+        let raw_speed = $len as f64 / (end_time - start_time).as_secs_f64();
+        print_speed(raw_speed);
         #[cfg(feature = "core_debug")]
         println!("nbt_data: {:#?}", nbt_data);
     };
@@ -252,16 +261,8 @@ fn cli_read_test() {
         let end_time = std::time::Instant::now();
         println!("=== shen nbt 5 ===");
         print!("time: {:?}", end_time - start_time);
-        println!("  speed: {:?} (bytes/sec)", len as f64 / (end_time - start_time).as_secs_f64());
-        println!("{:?} (kb/sec)", len as f64 / (end_time - start_time).as_secs_f64() / 1024.0);
-        println!(
-            "{:?} (mb/sec)",
-            len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0
-        );
-        println!(
-            "{:?} (gb/sec)",
-            len as f64 / (end_time - start_time).as_secs_f64() / 1024.0 / 1024.0 / 1024.0
-        );
+        let raw_speed = len as f64 / (end_time - start_time).as_secs_f64();
+        print_speed(raw_speed);
         #[cfg(feature = "core_debug")]
         println!("nbt_data: {:#?}", nbt_data);
         // println!("nbt len {}", nbt_data.as_byte().is_some());
