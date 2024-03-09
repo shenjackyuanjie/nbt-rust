@@ -66,45 +66,55 @@ mod safe_test {
 
     #[test]
     fn read_fxx() {
-        let mut data = vec![
-            0x40, 0x49, 0x0f, 0xdb, 0x40, 0x49, 0x0f, 0xdb, 0x40, 0x49, 0x0f, 0xdb, 0x40, 0x49,
-            0x0f, 0xdb,
-        ];
+        let mut data = Vec::with_capacity(12);
+        data.extend_from_slice(&std::f32::consts::PI.to_be_bytes());
+        data.extend_from_slice(&std::f64::consts::PI.to_be_bytes());
+        println!("{:?}", data);
         let mut reader = NbtReader::new(&mut data);
-        println!("{}", f32::from_be_bytes([0x40, 0x49, 0x0f, 0xdb]));
-        assert_eq!(reader.read_f32(), 3.1415927);
+        assert_eq!(reader.read_f32(), std::f32::consts::PI);
         assert_eq!(reader.cursor, 4);
-        assert_eq!(reader.read_f64(), 3.14159265);
+        assert_eq!(reader.read_f64(), std::f64::consts::PI);
         assert_eq!(reader.cursor, 12);
+    }
+
+    #[test]
+    fn read_string() {
+        let mut data = Vec::with_capacity(20);
+        data.extend("Hello world!啊？".as_bytes());
+        let len = data.len();
+        println!("{:?}", data);
+        let mut reader = NbtReader::new(&mut data);
+        assert_eq!(reader.read_string(len), "Hello world!啊？");
+        assert_eq!(reader.cursor, 18);
     }
 }
 
 mod unsafe_test {
     use super::*;
-}
 
-#[test]
-fn read_array() {
-    let mut data = vec![0x01, 0x02, 0x03, 0x04];
-    let mut reader = NbtReader::new(&mut data);
-    assert_eq!(reader.read_u8_array(2), &[0x01, 0x02]);
-    assert_eq!(reader.cursor, 2);
-    assert_eq!(reader.read_i8_array_unchecked(2), &[0x03, 0x04]);
-    assert_eq!(reader.cursor, 4);
-}
+    #[test]
+    fn read_array() {
+        let mut data = vec![0x01, 0x02, 0x03, 0x04];
+        let mut reader = NbtReader::new(&mut data);
+        assert_eq!(reader.read_u8_array(2), &[0x01, 0x02]);
+        assert_eq!(reader.cursor, 2);
+        assert_eq!(reader.read_i8_array_unchecked(2), &[0x03, 0x04]);
+        assert_eq!(reader.cursor, 4);
+    }
 
-#[test]
-fn read_int_array() {
-    let mut value = 1234567890_i32.to_be_bytes();
-    let mut reader = NbtReader::new(&mut value);
-    assert_eq!(reader.read_i32_array_unchecked(1), &[1234567890_i32]);
-    assert_eq!(reader.cursor, 4);
-}
+    #[test]
+    fn read_int_array() {
+        let mut value = 1234567890_i32.to_be_bytes();
+        let mut reader = NbtReader::new(&mut value);
+        assert_eq!(reader.read_i32_array_unchecked(1), &[1234567890_i32]);
+        assert_eq!(reader.cursor, 4);
+    }
 
-#[test]
-fn read_long_array() {
-    let mut value = 1234567890_i64.to_be_bytes();
-    let mut reader = NbtReader::new(&mut value);
-    assert_eq!(reader.read_i64_array(1), &[1234567890_i64]);
-    assert_eq!(reader.cursor, 8);
+    #[test]
+    fn read_long_array() {
+        let mut value = 1234567890_i64.to_be_bytes();
+        let mut reader = NbtReader::new(&mut value);
+        assert_eq!(reader.read_i64_array(1), &[1234567890_i64]);
+        assert_eq!(reader.cursor, 8);
+    }
 }

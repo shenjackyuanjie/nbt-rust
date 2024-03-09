@@ -63,6 +63,7 @@ impl NbtReader<'_> {
     /// 转换大小端(大端)
     ///
     /// 会在超出长度时 panic
+    #[inline]
     pub fn read_i16(&mut self) -> i16 {
         let value = i16::from_be_bytes([self.data[self.cursor], self.data[self.cursor + 1]]);
         self.cursor += 2;
@@ -73,12 +74,14 @@ impl NbtReader<'_> {
     /// 转换大小端(大端)
     ///
     /// 会在超出长度时 panic
+    #[inline]
     pub fn read_u16(&mut self) -> u16 { self.read_i16() as u16 }
     /// 安全的读取 i32 类型的数据
     ///
     /// 转换大小端(大端)
     ///
     /// 会在超出长度时 panic
+    #[inline]
     pub fn read_i32(&mut self) -> i32 {
         let value = i32::from_be_bytes([
             self.data[self.cursor],
@@ -94,12 +97,14 @@ impl NbtReader<'_> {
     /// 转换大小端(大端)
     ///
     /// 会在超出长度时 panic
+    #[inline]
     pub fn read_u32(&mut self) -> u32 { self.read_i32() as u32 }
     /// 安全的读取 i64 类型的数据
     ///
     /// 转换大小端(大端)
     ///
     /// 会在超出长度时 panic
+    #[inline]
     pub fn read_i64(&mut self) -> i64 {
         let value = i64::from_be_bytes([
             self.data[self.cursor],
@@ -119,41 +124,22 @@ impl NbtReader<'_> {
     /// 转换大小端(大端)
     ///
     /// 会在超出长度时 panic
+    #[inline]
     pub fn read_u64(&mut self) -> u64 { self.read_i64() as u64 }
     /// 读取一个 f32 类型的数据
     ///
     /// 转换大小端
     ///
     /// 会在超出长度时 panic
-    pub fn read_f32(&mut self) -> f32 {
-        let value = f32::from_be_bytes([
-            self.data[self.cursor],
-            self.data[self.cursor + 1],
-            self.data[self.cursor + 2],
-            self.data[self.cursor + 3],
-        ]);
-        self.cursor += 4;
-        value
-    }
+    #[inline]
+    pub fn read_f32(&mut self) -> f32 { f32::from_bits(self.read_u32()) }
     /// 读取一个 f64 类型的数据
     ///
     /// 转换大小端
     ///
     /// 会在超出长度时 panic
-    pub fn read_f64(&mut self) -> f64 {
-        let value = f64::from_be_bytes([
-            self.data[self.cursor],
-            self.data[self.cursor + 1],
-            self.data[self.cursor + 2],
-            self.data[self.cursor + 3],
-            self.data[self.cursor + 4],
-            self.data[self.cursor + 5],
-            self.data[self.cursor + 6],
-            self.data[self.cursor + 7],
-        ]);
-        self.cursor += 8;
-        value
-    }
+    #[inline]
+    pub fn read_f64(&mut self) -> f64 { f64::from_bits(self.read_u64()) }
     /// 读取一个 f32 类型的数据
     ///
     /// 转换大小端
@@ -182,6 +168,7 @@ impl NbtReader<'_> {
     /// # 安全性
     ///
     /// 长度溢出会导致 panic
+    #[inline]
     pub fn read_u8_array(&mut self, len: usize) -> &[u8] {
         let value = &self.data[self.cursor..self.cursor + len];
         self.cursor += len;
@@ -204,6 +191,7 @@ impl NbtReader<'_> {
     /// # 安全性
     ///
     /// 长度溢出会导致 panic
+    #[inline]
     pub fn read_string(&mut self, len: usize) -> String {
         let value = String::from_utf8_lossy(&self.data[self.cursor..self.cursor + len]);
         self.cursor += len;
