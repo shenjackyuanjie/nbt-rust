@@ -140,7 +140,6 @@ macro_rules! test_lib {
         let end_time = std::time::Instant::now();
         println!("=== {} ===", $name);
         println!("time: {:?}", end_time - start_time);
-        println!("speed: {:?} (bytes/sec)", $len as f64 / (end_time - start_time).as_secs_f64());
         let raw_speed = $len as f64 / (end_time - start_time).as_secs_f64();
         print_speed(raw_speed);
         #[cfg(feature = "core_debug")]
