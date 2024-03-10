@@ -2,6 +2,19 @@
 
 一个 "全功能" 的 "快速" NBT 解析器
 
+目前进度
+
+- [ ] 读取
+  - [x] Java
+  - [x] JavaNetAfter1_20_2
+  - [x] BedrockDisk
+  - [ ] BedrockNetVarInt
+- [ ] 写入
+  - [ ] Java
+  - [ ] JavaNetAfter1_20_2
+  - [ ] BedrockDisk
+  - [ ] BedrockNetVarInt
+
 支持
 
 - `Java`

@@ -106,6 +106,10 @@ pub enum NbtError {
     /// - 数据长度
     /// - 数据总长度
     CursorOverflow(usize, usize, usize),
+    /// Varint 过大
+    VarIntTooBig(usize),
+    /// Varlong 过大
+    VarlongTooBig(usize),
 }
 
 pub type NbtResult<T> = Result<T, NbtError>;
@@ -143,6 +147,8 @@ impl std::fmt::Display for NbtError {
                 cursor + len,
                 data_len
             ),
+            NbtError::VarIntTooBig(n) => write!(f, "VarInt 过大: {} 最大长度为 5", n),
+            NbtError::VarlongTooBig(n) => write!(f, "VarLong 过大: {} 最大长度为 10", n),
         }
     }
 }

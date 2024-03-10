@@ -107,7 +107,7 @@ impl nbt_version::NbtReadTrait for nbt_version::Java {
 }
 
 /// 两个最好实现的就在这里了
-/// 
+///
 /// 网络 NBT: 1.20.2+ 的网络 NBT 根节点没有名字
 impl NbtReadTrait for JavaNetAfter1_20_2 {
     #[inline]
@@ -146,13 +146,144 @@ impl NbtReadTrait for JavaNetAfter1_20_2 {
 /// 基岩版的其实也还行, 就是有点麻烦
 ///
 /// 所有都是小端
-// impl NbtReadTrait for BedrockDisk {
-//     #[inline]
-//     fn read_nbt_string(reader: &mut NbtReader) -> NbtResult<String> {
-//         let len = reader.read_le_u16() as usize;
-//         reader.read_string(len)
-//     }
-// }
+impl NbtReadTrait for BedrockDisk {
+    #[inline]
+    fn read_nbt_string(reader: &mut NbtReader) -> NbtResult<String> {
+        let len = reader.read_le_u16() as usize;
+        reader.read_string(len)
+    }
+    #[inline]
+    fn read_i8_array(reader: &mut NbtReader) -> NbtResult<Vec<i8>> {
+        let len = reader.read_le_i32() as usize;
+        let value = reader.read_i8_array(len);
+        Ok(value)
+    }
+    #[inline]
+    fn read_i32_array(reader: &mut NbtReader) -> NbtResult<Vec<i32>> {
+        let len = reader.read_le_i32() as usize;
+        let value = reader.read_i32_array(len);
+        Ok(value)
+    }
+    #[inline]
+    fn read_i64_array(reader: &mut NbtReader) -> NbtResult<Vec<i64>> {
+        let len = reader.read_le_i32() as usize;
+        let value = reader.read_i64_array(len);
+        Ok(value)
+    }
+    #[inline]
+    fn read_compound(reader: &mut NbtReader) -> NbtResult<Vec<(String, NbtValue)>> {
+        let mut compound = Vec::with_capacity(10);
+        loop {
+            let tag_id = reader.read_u8();
+            if tag_id == 0 {
+                break;
+            }
+            let name = BedrockDisk::read_nbt_string(reader)?;
+            let value = match tag_id {
+                1 => NbtValue::Byte(reader.read_i8()),
+                2 => NbtValue::Short(reader.read_le_i16()),
+                3 => NbtValue::Int(reader.read_le_i32()),
+                4 => NbtValue::Long(reader.read_le_i64()),
+                5 => NbtValue::Float(reader.read_le_f32()),
+                6 => NbtValue::Double(reader.read_le_f64()),
+                7 => NbtValue::ByteArray(BedrockDisk::read_i8_array(reader)?),
+                8 => NbtValue::String(BedrockDisk::read_nbt_string(reader)?),
+                9 => NbtValue::List(BedrockDisk::read_list(reader)?),
+                10 => NbtValue::Compound(None, nbt_version::BedrockDisk::read_compound(reader)?),
+                11 => NbtValue::IntArray(BedrockDisk::read_i32_array(reader)?),
+                12 => NbtValue::LongArray(BedrockDisk::read_i64_array(reader)?),
+                _ => unimplemented!(),
+            };
+            compound.push((name, value));
+        }
+        Ok(compound)
+    }
+    #[inline]
+    fn read_list(reader: &mut NbtReader) -> NbtResult<Vec<NbtValue>> {
+        let type_id = reader.read_u8();
+        let len = reader.read_le_i32() as usize;
+        let mut list = Vec::with_capacity(len);
+        for _ in 0..len {
+            let value = match type_id {
+                1 => NbtValue::Byte(reader.read_i8()),
+                2 => NbtValue::Short(reader.read_le_i16()),
+                3 => NbtValue::Int(reader.read_le_i32()),
+                4 => NbtValue::Long(reader.read_le_i64()),
+                5 => NbtValue::Float(reader.read_le_f32()),
+                6 => NbtValue::Double(reader.read_le_f64()),
+                7 => NbtValue::ByteArray(BedrockDisk::read_i8_array(reader)?),
+                8 => NbtValue::String(BedrockDisk::read_nbt_string(reader)?),
+                9 => NbtValue::List(BedrockDisk::read_list(reader)?),
+                10 => NbtValue::Compound(None, nbt_version::BedrockDisk::read_compound(reader)?),
+                11 => NbtValue::IntArray(BedrockDisk::read_i32_array(reader)?),
+                12 => NbtValue::LongArray(BedrockDisk::read_i64_array(reader)?),
+                _ => unimplemented!(),
+            };
+            list.push(value);
+        }
+        Ok(list)
+    }
+
+    fn from_reader(mut reader: NbtReader) -> NbtResult<NbtValue> {
+        // 第一个 tag, 不可能是 0
+        match reader.read_u8() {
+            9 => {
+                // 基岩版的 NBT 根节点可以是一个 List
+                Ok(NbtValue::List(nbt_version::BedrockDisk::read_list(&mut reader)?))
+            }
+            10 => {
+                // 或者一个有名字的 Compound
+                let name = BedrockDisk::read_nbt_string(&mut reader)?;
+                Ok(NbtValue::Compound(
+                    Some(name),
+                    nbt_version::BedrockDisk::read_compound(&mut reader)?,
+                ))
+            }
+            // 别的不行
+            x => Err(NbtError::WrongRootType(x)),
+        }
+    }
+}
+
+/// 最痛苦的来了
+impl NbtReadTrait for BedrockNetVarInt {
+    fn read_nbt_string(reader: &mut NbtReader) -> NbtResult<String> {
+        let len = reader.read_var_i32()? as usize;
+        reader.read_string(len)
+    }
+    fn read_i8_array(reader: &mut NbtReader) -> NbtResult<Vec<i8>> {
+        let len = reader.read_var_i32()? as usize;
+        let value = reader.read_i8_array(len);
+        Ok(value)
+    }
+    fn read_i32_array(reader: &mut NbtReader) -> NbtResult<Vec<i32>> {
+        let len = reader.read_var_i32()? as usize;
+        let value = reader.read_i32_array(len);
+        Ok(value)
+    }
+    fn read_i64_array(reader: &mut NbtReader) -> NbtResult<Vec<i64>> {
+        let len = reader.read_var_i32()? as usize;
+        let value = reader.read_i64_array(len);
+        Ok(value)
+    }
+    fn read_compound(reader: &mut NbtReader) -> NbtResult<Vec<(String, NbtValue)>> { todo!() }
+    fn read_list(reader: &mut NbtReader) -> NbtResult<Vec<NbtValue>> { todo!() }
+    fn from_reader(mut reader: NbtReader) -> NbtResult<NbtValue> {
+        match reader.read_u8() {
+            9 => {
+                // 基岩版的 NBT 根节点可以是一个 List
+                Ok(NbtValue::List(BedrockNetVarInt::read_list(&mut reader)?))
+            }
+            10 => {
+                // 或者一个有名字的 Compound
+                let name = BedrockNetVarInt::read_nbt_string(&mut reader)?;
+                Ok(NbtValue::Compound(Some(name), BedrockNetVarInt::read_compound(&mut reader)?))
+            }
+            // 别的不行
+            x => Err(NbtError::WrongRootType(x)),
+        }
+    }
+}
 
 macro_rules! read_uncheck {
     ($be_name:ident, $le_name:ident, $ty:ty, $size:literal) => {
@@ -266,9 +397,51 @@ impl NbtReader<'_> {
         self.cursor += 4;
         value
     }
-    /// 安全的读取 i32 类型的数据
+    /// 安全的读取一个 Varint 数据
     ///
-    /// 转换大小端(小端)
+    /// 他有大小端区别吗? (其实是小端)
+    ///
+    /// 会在超出长度时 panic
+    #[inline]
+    pub fn read_var_i32(&mut self) -> NbtResult<i32> {
+        let mut value = 0;
+        let mut size = 0;
+        loop {
+            let byte = self.read_u8();
+            value |= ((byte & 0b0111_1111) as i32) << (size * 7);
+            size += 1;
+            if size > 5 {
+                return Err(NbtError::VarIntTooBig(value as usize));
+            }
+            if (byte & 0b1000_0000) == 0 {
+                break;
+            }
+        }
+        Ok(value)
+    }
+    /// 安全的读取一个 Varlong
+    ///
+    /// 他有大小端区别吗? (其实是小端) 
+    ///
+    /// 会在超出长度时 panic
+    #[inline]
+    pub fn read_var_i64(&mut self) -> NbtResult<i64> {
+        let mut value = 0;
+        let mut size = 0;
+        loop {
+            let byte = self.read_u8();
+            value |= ((byte & 0b0111_1111) as i64) << (size * 7);
+            size += 1;
+            if size > 10 {
+                return Err(NbtError::VarlongTooBig(value as usize));
+            }
+            if (byte & 0b1000_0000) == 0 {
+                break;
+            }
+        }
+        Ok(value)
+    }
+    /// 安全的读取一个小端 i32 数据
     ///
     /// 会在超出长度时 panic
     #[inline]
