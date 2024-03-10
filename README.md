@@ -1,12 +1,47 @@
 # nbt-rust
 
-nbt解析器 by shenjack
+一个 "全功能" 的 "快速" NBT 解析器
+
+支持
+
+- `Java`
+  - 也就是除了 1.20.2+ (协议号 >= 764) 之后的 网络传输用 NBT 格式
+  - 数据都是大端序
+  - 根节点必须有名称
+  - 根节点必须是一个 `NbtCompound(10)` 类型
+- `JavaNetAfter1_20_2`
+  - Java 版在 1.20.2 之后的网络传输用 NBT 格式
+  - 数据都是大端序
+  - 根节点没有名称
+  - 根节点必须是一个 `NbtCompound(10)` 类型
+- `BedrockDisk`
+  - 基岩版存在硬盘里的 NBT 格式
+  - 数据都是小端序
+  - 根节点必须有名称
+  - 根节点是 `NbtCompound(10)` 或者 `NbtList(9)` 类型
+- `BedrockNetVarInt`
+  - 基岩版用于网络传输的 NBT 格式
+
+  - ```text
+    这种格式比其他格式稍微复杂一些。与Java版本的big-endian格式的区别如下：
+
+    TAG_Short、TAG_Float和TAG_Double值被编码为其小端对应值
+    TAG_Int值以及TAG_List、TAG_Byte_Array、TAG_Int_Array和TAG_Long_Array的长度前缀均编码为使用ZigZag编码的VarInt
+    TAG_Long值使用ZigZag编码被编码为VarLong
+    所有字符串（标记名称和TAG_String值）都以普通的VarInt作为长度前缀
+
+    ---- https://wiki.vg/NBT
+    ```
+
 
 writen in rust!
 
-感谢 @神楽坂柚咲/伊欧/langyo
+## 感谢
 
+感谢 @langyo 和 @InfyniteHeap
 在编写过程中的帮助（
+
+感谢 [wiki.vg](https://wiki.vg/NBT) 存储的 NBT 格式的详细信息
 
 ## 概况
 

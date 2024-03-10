@@ -1,4 +1,4 @@
-use crate::{NbtReader, NbtValue};
+use crate::{NbtReader, NbtTypeConversion, NbtValue, nbt_version};
 
 /// 生成测试数据
 pub fn gen_datas(len: usize) -> Vec<u8> {
@@ -36,41 +36,57 @@ mod safe_test {
 
     #[test]
     fn read_x16() {
-        let mut data = vec![0x01, 0x02, 0x03, 0x04];
+        let mut data = vec![0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04];
         data.extend(i16::MIN.to_be_bytes());
         data.extend(i16::MAX.to_be_bytes());
         let mut reader = NbtReader::new(&mut data);
-        assert_eq!(reader.read_i16(), 0x0102);
+        assert_eq!(reader.read_be_i16(), 0x0102);
         assert_eq!(reader.cursor, 2);
-        assert_eq!(reader.read_u16(), 0x0304);
+        assert_eq!(reader.read_be_u16(), 0x0304);
         assert_eq!(reader.cursor, 4);
-        assert_eq!(reader.read_i16(), i16::MIN);
+        assert_eq!(reader.read_le_i16(), 0x0201);
         assert_eq!(reader.cursor, 6);
-        assert_eq!(reader.read_i16(), i16::MAX);
+        assert_eq!(reader.read_le_u16(), 0x0403);
         assert_eq!(reader.cursor, 8);
+        assert_eq!(reader.read_be_i16(), i16::MIN);
+        assert_eq!(reader.cursor, 10);
+        assert_eq!(reader.read_be_i16(), i16::MAX);
+        assert_eq!(reader.cursor, 12);
     }
 
     #[test]
     fn read_x32() {
-        let mut data = vec![0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04];
+        let mut data = vec![
+            0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02,
+            0x03, 0x04,
+        ];
         let mut reader = NbtReader::new(&mut data);
-        assert_eq!(reader.read_i32(), 0x01020304);
+        assert_eq!(reader.read_be_i32(), 0x01020304);
         assert_eq!(reader.cursor, 4);
-        assert_eq!(reader.read_u32(), 0x01020304);
+        assert_eq!(reader.read_be_u32(), 0x01020304);
         assert_eq!(reader.cursor, 8);
+        assert_eq!(reader.read_le_i32(), 0x04030201);
+        assert_eq!(reader.cursor, 12);
+        assert_eq!(reader.read_le_u32(), 0x04030201);
+        assert_eq!(reader.cursor, 16);
     }
 
     #[test]
     fn read_x64() {
         let mut data = vec![
             0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02,
-            0x03, 0x04,
+            0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04,
+            0x01, 0x02, 0x03, 0x04,
         ];
         let mut reader = NbtReader::new(&mut data);
-        assert_eq!(reader.read_i64(), 0x0102030401020304);
+        assert_eq!(reader.read_be_i64(), 0x0102030401020304);
         assert_eq!(reader.cursor, 8);
-        assert_eq!(reader.read_u64(), 0x0102030401020304);
+        assert_eq!(reader.read_be_u64(), 0x0102030401020304);
         assert_eq!(reader.cursor, 16);
+        assert_eq!(reader.read_le_i64(), 0x0403020104030201);
+        assert_eq!(reader.cursor, 24);
+        assert_eq!(reader.read_le_u64(), 0x0403020104030201);
+        assert_eq!(reader.cursor, 32);
     }
 
     #[test]
@@ -78,12 +94,18 @@ mod safe_test {
         let mut data = Vec::with_capacity(12);
         data.extend_from_slice(&std::f32::consts::PI.to_be_bytes());
         data.extend_from_slice(&std::f64::consts::PI.to_be_bytes());
+        data.extend_from_slice(&std::f32::consts::PI.to_le_bytes());
+        data.extend_from_slice(&std::f64::consts::PI.to_le_bytes());
         println!("{:?}", data);
         let mut reader = NbtReader::new(&mut data);
-        assert_eq!(reader.read_f32(), std::f32::consts::PI);
+        assert_eq!(reader.read_be_f32(), std::f32::consts::PI);
         assert_eq!(reader.cursor, 4);
-        assert_eq!(reader.read_f64(), std::f64::consts::PI);
+        assert_eq!(reader.read_be_f64(), std::f64::consts::PI);
         assert_eq!(reader.cursor, 12);
+        assert_eq!(reader.read_le_f32(), std::f32::consts::PI);
+        assert_eq!(reader.cursor, 16);
+        assert_eq!(reader.read_le_f64(), std::f64::consts::PI);
+        assert_eq!(reader.cursor, 24);
     }
 
     #[test]
@@ -100,7 +122,7 @@ mod safe_test {
 
 #[test]
 fn just_format() {
-    assert_eq!(NbtValue::type_id_as_name(15), "未知类型(15)");
+    assert_eq!(15_u8.as_nbt_type_name(), "未知类型(15)");
 }
 
 /// unsafe 测试
@@ -118,14 +140,14 @@ mod unsafe_test {
         let mut data = vec![0x01, 0x02, 0x03, 0x04];
         let mut reader = NbtReader::new(&mut data);
         unsafe {
-            let value = reader.read_i16_unchecked();
+            let value = reader.read_be_i16_unsafe();
             reader.roll_back(2);
-            let safe_value = reader.read_i16();
+            let safe_value = reader.read_be_i16();
             assert_eq!(value, safe_value);
             assert_eq!(reader.cursor, 2);
-            let value = reader.read_u16_unchecked();
+            let value = reader.read_be_u16_unsafe();
             reader.roll_back(2);
-            let safe_value = reader.read_u16();
+            let safe_value = reader.read_be_u16();
             assert_eq!(value, safe_value);
             assert_eq!(reader.cursor, 4);
         }
@@ -136,14 +158,14 @@ mod unsafe_test {
         let mut data = vec![0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04];
         let mut reader = NbtReader::new(&mut data);
         unsafe {
-            let value = reader.read_i32_unchecked();
+            let value = reader.read_be_i32_unsafe();
             reader.roll_back(4);
-            let safe_value = reader.read_i32();
+            let safe_value = reader.read_be_i32();
             assert_eq!(value, safe_value);
             assert_eq!(reader.cursor, 4);
-            let value = reader.read_u32_unchecked();
+            let value = reader.read_be_u32_unsafe();
             reader.roll_back(4);
-            let safe_value = reader.read_u32();
+            let safe_value = reader.read_be_u32();
             assert_eq!(value, safe_value);
             assert_eq!(reader.cursor, 8);
         }
@@ -153,20 +175,34 @@ mod unsafe_test {
     fn read_x64() {
         let mut data = vec![
             0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02,
-            0x03, 0x04,
+            0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04,
+            0x01, 0x02, 0x03, 0x04,
         ];
         let mut reader = NbtReader::new(&mut data);
         unsafe {
-            let value = reader.read_i64_unchecked();
+            let value = reader.read_be_i64_unsafe();
             reader.roll_back(8);
-            let safe_value = reader.read_i64();
+            let safe_value = reader.read_be_i64();
             assert_eq!(value, safe_value);
             assert_eq!(reader.cursor, 8);
-            let value = reader.read_u64_unchecked();
+
+            let value = reader.read_be_u64_unsafe();
             reader.roll_back(8);
-            let safe_value = reader.read_u64();
+            let safe_value = reader.read_be_u64();
             assert_eq!(value, safe_value);
             assert_eq!(reader.cursor, 16);
+
+            let value = reader.read_le_i64_unsafe();
+            reader.roll_back(8);
+            let safe_value = reader.read_le_i64();
+            assert_eq!(value, safe_value);
+            assert_eq!(reader.cursor, 24);
+
+            let value = reader.read_le_u64_unsafe();
+            reader.roll_back(8);
+            let safe_value = reader.read_le_u64();
+            assert_eq!(value, safe_value);
+            assert_eq!(reader.cursor, 32);
         }
     }
 
@@ -175,19 +211,34 @@ mod unsafe_test {
         let mut data = Vec::with_capacity(12);
         data.extend_from_slice(&std::f32::consts::PI.to_be_bytes());
         data.extend_from_slice(&std::f64::consts::PI.to_be_bytes());
+        data.extend_from_slice(&std::f32::consts::PI.to_le_bytes());
+        data.extend_from_slice(&std::f64::consts::PI.to_le_bytes());
         println!("{:?}", data);
         let mut reader = NbtReader::new(&mut data);
         unsafe {
-            let value = reader.read_f32_unchecked();
+            let value = reader.read_be_f32_unsafe();
             reader.roll_back(4);
-            let safe_value = reader.read_f32();
+            let safe_value = reader.read_be_f32();
             assert_eq!(value, safe_value);
             assert_eq!(reader.cursor, 4);
-            let value = reader.read_f64_unchecked();
+
+            let value = reader.read_be_f64_unsafe();
             reader.roll_back(8);
-            let safe_value = reader.read_f64();
+            let safe_value = reader.read_be_f64();
             assert_eq!(value, safe_value);
             assert_eq!(reader.cursor, 12);
+
+            let value = reader.read_le_f32_unsafe();
+            reader.roll_back(4);
+            let safe_value = reader.read_le_f32();
+            assert_eq!(value, safe_value);
+            assert_eq!(reader.cursor, 16);
+
+            let value = reader.read_le_f64_unsafe();
+            reader.roll_back(8);
+            let safe_value = reader.read_le_f64();
+            assert_eq!(value, safe_value);
+            assert_eq!(reader.cursor, 24);
         }
     }
 
@@ -196,7 +247,7 @@ mod unsafe_test {
         let mut data = gen_datas(100);
         let mut reader = NbtReader::new(&mut data);
         unsafe {
-            let value = reader.read_i8_array_unchecked(100);
+            let value = reader.read_i8_array_unsafe(100);
             reader.roll_back(100);
             let safe_value = reader.read_i8_array(100);
             assert_eq!(value, safe_value);
@@ -209,7 +260,7 @@ mod unsafe_test {
         let mut value = gen_datas(4 * 100);
         let mut reader = NbtReader::new(&mut value);
         unsafe {
-            let value = reader.read_i32_array_unchecked(100);
+            let value = reader.read_i32_array_unsafe(100);
             reader.roll_back(100 * 4);
             let safe_value = reader.read_i32_array(100);
             assert_eq!(value, safe_value);
@@ -222,7 +273,7 @@ mod unsafe_test {
         let mut value = gen_datas(8 * 100);
         let mut reader = NbtReader::new(&mut value);
         unsafe {
-            let value = reader.read_i64_array_unchecked(100);
+            let value = reader.read_i64_array_unsafe(100);
             reader.roll_back(100 * 8);
             let safe_value = reader.read_i64_array(100);
             assert_eq!(value, safe_value);
@@ -241,7 +292,7 @@ mod nbt {
             0x08, 0x00, 0x04, 0x6E, 0x61, 0x6D, 0x65, 0x00, 0x09, 0x42, 0x61, 0x6E, 0x61, 0x6E,
             0x72, 0x61, 0x6D, 0x61, 0x00,
         ];
-        let data = NbtValue::from_binary(&mut data);
+        let data = NbtValue::from_binary::<nbt_version::Java>(&mut data);
         println!("{:?}", data);
         let correct_data = NbtValue::Compound(
             Some("hello world".to_string()),
@@ -365,7 +416,7 @@ mod nbt {
             0x6F, 0x75, 0x62, 0x6C, 0x65, 0x54, 0x65, 0x73, 0x74, 0x3F, 0xDF, 0x8F, 0x6B, 0xBB,
             0xFF, 0x6A, 0x5E, 0x00,
         ];
-        let value = NbtValue::from_binary(&mut data);
+        let value = NbtValue::from_binary::<nbt_version::Java>(&mut data);
         println!("{:?}", value);
     }
 }

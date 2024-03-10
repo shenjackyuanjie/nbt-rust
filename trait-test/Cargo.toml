@@ -1,0 +1,8 @@
+[package]
+name = "trait-test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+byteorder = "1.5.0"
+varint-rs = "2.2.0"
