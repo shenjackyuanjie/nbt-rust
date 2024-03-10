@@ -27,6 +27,17 @@ mod tests;
 pub mod nbt_version {
     use super::{NbtReader, NbtResult, NbtValue};
 
+    pub trait NbtWriteTrait {
+        fn write_i8_array(writer: &mut Vec<u8>, data: &[i8]);
+        fn write_i32_array(writer: &mut Vec<u8>, data: &[i32]);
+        fn write_i64_array(writer: &mut Vec<u8>, data: &[i64]);
+        fn write_nbt_string(writer: &mut Vec<u8>, data: &str);
+        fn write_list(writer: &mut Vec<u8>, data: &[NbtValue]);
+        fn write_compound(writer: &mut Vec<u8>, data: &[(String, NbtValue)]);
+
+        fn to_writer(value: &NbtValue, writer: &mut Vec<u8>) -> NbtResult<()>;
+    }
+
     pub trait NbtReadTrait {
         fn read_i8_array(reader: &mut NbtReader) -> NbtResult<Vec<i8>>;
         fn read_i32_array(reader: &mut NbtReader) -> NbtResult<Vec<i32>>;
