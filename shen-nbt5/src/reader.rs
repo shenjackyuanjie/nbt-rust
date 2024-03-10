@@ -62,7 +62,7 @@ impl nbt_version::NbtReadTrait for nbt_version::Java {
                 10 => NbtValue::Compound(None, nbt_version::Java::read_compound(reader)?),
                 11 => NbtValue::IntArray(Java::read_i32_array(reader)?),
                 12 => NbtValue::LongArray(Java::read_i64_array(reader)?),
-                _ => unimplemented!(),
+                _ => return Err(NbtError::UnknownType(tag_id)),
             };
             compound.push((name, value));
         }
@@ -87,7 +87,7 @@ impl nbt_version::NbtReadTrait for nbt_version::Java {
                 10 => NbtValue::Compound(None, nbt_version::Java::read_compound(reader)?),
                 11 => NbtValue::IntArray(Java::read_i32_array(reader)?),
                 12 => NbtValue::LongArray(Java::read_i64_array(reader)?),
-                _ => unimplemented!(),
+                _ => return Err(NbtError::UnknownType(type_id)),
             };
             list.push(value);
         }
@@ -192,7 +192,7 @@ impl NbtReadTrait for BedrockDisk {
                 10 => NbtValue::Compound(None, nbt_version::BedrockDisk::read_compound(reader)?),
                 11 => NbtValue::IntArray(BedrockDisk::read_i32_array(reader)?),
                 12 => NbtValue::LongArray(BedrockDisk::read_i64_array(reader)?),
-                _ => unimplemented!(),
+                _ => return Err(NbtError::UnknownType(tag_id)),
             };
             compound.push((name, value));
         }
@@ -217,7 +217,7 @@ impl NbtReadTrait for BedrockDisk {
                 10 => NbtValue::Compound(None, nbt_version::BedrockDisk::read_compound(reader)?),
                 11 => NbtValue::IntArray(BedrockDisk::read_i32_array(reader)?),
                 12 => NbtValue::LongArray(BedrockDisk::read_i64_array(reader)?),
-                _ => unimplemented!(),
+                _ => return Err(NbtError::UnknownType(type_id)),
             };
             list.push(value);
         }
@@ -252,22 +252,71 @@ impl NbtReadTrait for BedrockNetVarInt {
         reader.read_string(len)
     }
     fn read_i8_array(reader: &mut NbtReader) -> NbtResult<Vec<i8>> {
-        let len = reader.read_var_i32()? as usize;
+        let len = reader.read_zigzag_var_i32()? as usize;
         let value = reader.read_i8_array(len);
         Ok(value)
     }
     fn read_i32_array(reader: &mut NbtReader) -> NbtResult<Vec<i32>> {
-        let len = reader.read_var_i32()? as usize;
+        let len = reader.read_zigzag_var_i32()? as usize;
         let value = reader.read_i32_array(len);
         Ok(value)
     }
     fn read_i64_array(reader: &mut NbtReader) -> NbtResult<Vec<i64>> {
-        let len = reader.read_var_i32()? as usize;
+        let len = reader.read_zigzag_var_i32()? as usize;
         let value = reader.read_i64_array(len);
         Ok(value)
     }
-    fn read_compound(reader: &mut NbtReader) -> NbtResult<Vec<(String, NbtValue)>> { todo!() }
-    fn read_list(reader: &mut NbtReader) -> NbtResult<Vec<NbtValue>> { todo!() }
+    fn read_compound(reader: &mut NbtReader) -> NbtResult<Vec<(String, NbtValue)>> {
+        let mut compound = Vec::with_capacity(10);
+        loop {
+            let tag_id = reader.read_u8();
+            if tag_id == 0 {
+                break;
+            }
+            let name = BedrockNetVarInt::read_nbt_string(reader)?;
+            let value = match tag_id {
+                1 => NbtValue::Byte(reader.read_i8()),
+                2 => NbtValue::Short(reader.read_le_i16()),
+                3 => NbtValue::Int(reader.read_zigzag_var_i32()?),
+                4 => NbtValue::Long(reader.read_zigzag_var_i64()?),
+                5 => NbtValue::Float(reader.read_le_f32()),
+                6 => NbtValue::Double(reader.read_le_f64()),
+                7 => NbtValue::ByteArray(BedrockNetVarInt::read_i8_array(reader)?),
+                8 => NbtValue::String(BedrockNetVarInt::read_nbt_string(reader)?),
+                9 => NbtValue::List(BedrockNetVarInt::read_list(reader)?),
+                10 => NbtValue::Compound(None, BedrockNetVarInt::read_compound(reader)?),
+                11 => NbtValue::IntArray(BedrockNetVarInt::read_i32_array(reader)?),
+                12 => NbtValue::LongArray(BedrockNetVarInt::read_i64_array(reader)?),
+                _ => return Err(NbtError::UnknownType(tag_id)),
+            };
+            compound.push((name, value));
+        }
+        Ok(compound)
+    }
+    fn read_list(reader: &mut NbtReader) -> NbtResult<Vec<NbtValue>> {
+        let type_id = reader.read_u8();
+        let len = reader.read_zigzag_var_i32()? as usize;
+        let mut list = Vec::with_capacity(len);
+        for _ in 0..len {
+            let value = match type_id {
+                1 => NbtValue::Byte(reader.read_i8()),
+                2 => NbtValue::Short(reader.read_le_i16()),
+                3 => NbtValue::Int(reader.read_zigzag_var_i32()?),
+                4 => NbtValue::Long(reader.read_zigzag_var_i64()?),
+                5 => NbtValue::Float(reader.read_le_f32()),
+                6 => NbtValue::Double(reader.read_le_f64()),
+                7 => NbtValue::ByteArray(BedrockNetVarInt::read_i8_array(reader)?),
+                8 => NbtValue::String(BedrockNetVarInt::read_nbt_string(reader)?),
+                9 => NbtValue::List(BedrockNetVarInt::read_list(reader)?),
+                10 => NbtValue::Compound(None, BedrockNetVarInt::read_compound(reader)?),
+                11 => NbtValue::IntArray(BedrockNetVarInt::read_i32_array(reader)?),
+                12 => NbtValue::LongArray(BedrockNetVarInt::read_i64_array(reader)?),
+                _ => return Err(NbtError::UnknownType(type_id)),
+            };
+            list.push(value);
+        }
+        Ok(list)
+    }
     fn from_reader(mut reader: NbtReader) -> NbtResult<NbtValue> {
         match reader.read_u8() {
             9 => {
@@ -440,6 +489,22 @@ impl NbtReader<'_> {
             }
         }
         Ok(value)
+    }
+    /// 安全的读取一个 zigzag 编码的 varint
+    /// 
+    /// 会在超出长度时 panic
+    #[inline]
+    pub fn read_zigzag_var_i32(&mut self) -> NbtResult<i32> {
+        let value = self.read_var_i32()?;
+        Ok((value >> 1) ^ (-(value & 1)))
+    }
+    /// 安全的读取一个 zigzag 编码的 varlong
+    /// 
+    /// 会在超出长度时 panic
+    #[inline]
+    pub fn read_zigzag_var_i64(&mut self) -> NbtResult<i64> {
+        let value = self.read_var_i64()?;
+        Ok((value >> 1) ^ (-(value & 1)))
     }
     /// 安全的读取一个小端 i32 数据
     ///

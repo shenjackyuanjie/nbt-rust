@@ -8,7 +8,7 @@
   - [x] Java
   - [x] JavaNetAfter1_20_2
   - [x] BedrockDisk
-  - [ ] BedrockNetVarInt
+  - [x] BedrockNetVarInt
 - [ ] 写入
   - [ ] Java
   - [ ] JavaNetAfter1_20_2
