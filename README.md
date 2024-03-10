@@ -9,11 +9,11 @@
   - [x] JavaNetAfter1_20_2
   - [x] BedrockDisk
   - [x] BedrockNetVarInt
-- [ ] 写入
+- [x] 写入
   - [x] Java
   - [x] JavaNetAfter1_20_2
-  - [ ] BedrockDisk
-  - [ ] BedrockNetVarInt
+  - [x] BedrockDisk
+  - [x] BedrockNetVarInt
 - [ ] `Serde` 支持
   - [ ] `Serialize`
   - [ ] `Deserialize`
