@@ -4,16 +4,21 @@
 
 目前进度
 
-- [ ] 读取
+- [x] 读取
   - [x] Java
   - [x] JavaNetAfter1_20_2
   - [x] BedrockDisk
   - [x] BedrockNetVarInt
 - [ ] 写入
-  - [ ] Java
-  - [ ] JavaNetAfter1_20_2
+  - [x] Java
+  - [x] JavaNetAfter1_20_2
   - [ ] BedrockDisk
   - [ ] BedrockNetVarInt
+- [ ] `Serde` 支持
+  - [ ] `Serialize`
+  - [ ] `Deserialize`
+  - [ ] `from_value`
+  - [ ] `to_value`
 
 支持
 

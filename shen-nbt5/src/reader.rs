@@ -7,8 +7,6 @@ pub struct NbtReader<'data> {
     pub data: &'data mut [u8],
     /// 当前读取的位置
     pub cursor: usize,
-    // be/le
-    // pub endian: Endian,
 }
 
 /// Java 版 绝大部分的 NBT 格式

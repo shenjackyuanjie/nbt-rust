@@ -298,7 +298,7 @@ mod nbt {
             Some("hello world".to_string()),
             vec![("name".to_string(), NbtValue::String("Bananrama".to_string()))],
         );
-        assert_eq!(data, Ok(correct_data))
+        assert_eq!(data, Ok(correct_data));
     }
 
     #[test]
@@ -314,6 +314,41 @@ mod nbt {
             vec![("name".to_string(), NbtValue::String("Bananrama".to_string()))],
         );
         assert_eq!(data, Ok(correct_data))
+    }
+
+    #[test]
+    fn hello_write() {
+        let data = NbtValue::Compound(
+            Some("hello world".to_string()),
+            vec![("name".to_string(), NbtValue::String("Bananrama".to_string()))],
+        );
+        // 写入
+        let mut buff: Vec<u8> = Vec::new();
+        data.write_to::<nbt_version::Java>(&mut buff).unwrap();
+        println!("{:?}", buff);
+        let data: [u8; 0x21] = [
+            0x0A, 0x00, 0x0B, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x77, 0x6F, 0x72, 0x6C, 0x64,
+            0x08, 0x00, 0x04, 0x6E, 0x61, 0x6D, 0x65, 0x00, 0x09, 0x42, 0x61, 0x6E, 0x61, 0x6E,
+            0x72, 0x61, 0x6D, 0x61, 0x00,
+        ];
+        assert_eq!(buff, data);
+    }
+
+    #[test]
+    fn hello_write_java_net() {
+        let data = NbtValue::Compound(
+            None,
+            vec![("name".to_string(), NbtValue::String("Bananrama".to_string()))],
+        );
+        // 写入
+        let mut buff: Vec<u8> = Vec::new();
+        data.write_to::<nbt_version::JavaNetAfter1_20_2>(&mut buff).unwrap();
+        println!("{:?}", buff);
+        let data: [u8; 20] = [
+            0x0A, 0x08, 0x00, 0x04, 0x6E, 0x61, 0x6D, 0x65, 0x00, 0x09, 0x42, 0x61, 0x6E, 0x61,
+            0x6E, 0x72, 0x61, 0x6D, 0x61, 0x00,
+        ];
+        assert_eq!(buff, data);
     }
 
     #[test]

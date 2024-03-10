@@ -1,4 +1,5 @@
 pub mod reader;
+pub mod writer;
 
 use reader::NbtReader;
 
@@ -32,10 +33,21 @@ pub mod nbt_version {
         fn write_i32_array(writer: &mut Vec<u8>, data: &[i32]);
         fn write_i64_array(writer: &mut Vec<u8>, data: &[i64]);
         fn write_nbt_string(writer: &mut Vec<u8>, data: &str);
-        fn write_list(writer: &mut Vec<u8>, data: &[NbtValue]);
-        fn write_compound(writer: &mut Vec<u8>, data: &[(String, NbtValue)]);
+        fn write_list(writer: &mut Vec<u8>, data: &[NbtValue]) -> NbtResult<()>;
+        fn write_compound(
+            writer: &mut Vec<u8>,
+            name: Option<&String>,
+            data: &[(String, NbtValue)],
+        ) -> NbtResult<()>;
 
-        fn to_writer(value: &NbtValue, writer: &mut Vec<u8>) -> NbtResult<()>;
+        fn write_to(value: &NbtValue, buff: &mut Vec<u8>) -> NbtResult<()>;
+        fn write_to_with_name(name: &str, value: &NbtValue, buff: &mut Vec<u8>) -> NbtResult<()>;
+
+        fn to_binary(value: &NbtValue) -> NbtResult<Vec<u8>> {
+            let mut buff = Vec::new();
+            Self::write_to(value, &mut buff)?;
+            Ok(buff)
+        }
     }
 
     pub trait NbtReadTrait {
@@ -121,6 +133,8 @@ pub enum NbtError {
     VarIntTooBig(usize),
     /// Varlong 过大
     VarlongTooBig(usize),
+    /// NbtList 中类型不同
+    ListTypeNotSame(Vec<NbtTypeId>),
 }
 
 pub type NbtResult<T> = Result<T, NbtError>;
@@ -129,16 +143,17 @@ impl std::fmt::Display for NbtError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             NbtError::UnknownErr(s) => write!(f, "未知错误: {}", s),
-            NbtError::WrongRootType(n) => {
-                match n {
-                    9 => {
-                        write!(f, "根节点为 NbtList(9) 类型, 是否应该使用 BedrockDisk/BedrockNetVarInt 解析?")
-                    }
-                    _ => {
-                        write!(f, "根节点类型错误: {}, 应为 NbtCompound/NbtList(bedrock only)", n)
-                    }
+            NbtError::WrongRootType(n) => match n {
+                9 => {
+                    write!(
+                        f,
+                        "根节点为 NbtList(9) 类型, 是否应该使用 BedrockDisk/BedrockNetVarInt?"
+                    )
                 }
-            }
+                _ => {
+                    write!(f, "根节点类型错误: {}, 应为 NbtCompound/NbtList(bedrock only)", n)
+                }
+            },
             NbtError::RootWithoutName => {
                 write!(f, "根节点无名称, 是否应该使用 JavaNetAfter1_20_2 解析?")
             }
@@ -160,6 +175,9 @@ impl std::fmt::Display for NbtError {
             ),
             NbtError::VarIntTooBig(n) => write!(f, "VarInt 过大: {} 最大长度为 5", n),
             NbtError::VarlongTooBig(n) => write!(f, "VarLong 过大: {} 最大长度为 10", n),
+            NbtError::ListTypeNotSame(types) => {
+                write!(f, "NbtList 中类型不同: {:?} 应相同", types)
+            }
         }
     }
 }
@@ -200,11 +218,49 @@ pub enum NbtValue {
 }
 
 impl NbtValue {
-    pub fn from_binary<T>(data: &mut [u8]) -> NbtResult<NbtValue>
+    pub fn from_binary<R>(data: &mut [u8]) -> NbtResult<NbtValue>
     where
-        T: nbt_version::NbtReadTrait,
+        R: nbt_version::NbtReadTrait,
     {
         let reader = NbtReader::new(data);
-        T::from_reader(reader)
+        R::from_reader(reader)
+    }
+
+    pub fn tag(&self) -> NbtTypeId {
+        match self {
+            NbtValue::Byte(_) => 1,
+            NbtValue::Short(_) => 2,
+            NbtValue::Int(_) => 3,
+            NbtValue::Long(_) => 4,
+            NbtValue::Float(_) => 5,
+            NbtValue::Double(_) => 6,
+            NbtValue::ByteArray(_) => 7,
+            NbtValue::String(_) => 8,
+            NbtValue::List(_) => 9,
+            NbtValue::Compound(_, _) => 10,
+            NbtValue::IntArray(_) => 11,
+            NbtValue::LongArray(_) => 12,
+        }
+    }
+
+    pub fn write_to<W>(&self, buff: &mut Vec<u8>) -> NbtResult<()>
+    where
+        W: nbt_version::NbtWriteTrait,
+    {
+        W::write_to(self, buff)
+    }
+
+    pub fn write_to_with_name<W>(&self, name: &str, buff: &mut Vec<u8>) -> NbtResult<()>
+    where
+        W: nbt_version::NbtWriteTrait,
+    {
+        W::write_to_with_name(name, self, buff)
+    }
+
+    pub fn to_binary<W>(&self) -> NbtResult<Vec<u8>>
+    where
+        W: nbt_version::NbtWriteTrait,
+    {
+        W::to_binary(self)
     }
 }
