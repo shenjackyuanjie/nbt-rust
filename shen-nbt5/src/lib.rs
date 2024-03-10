@@ -1,5 +1,11 @@
 pub mod reader;
+#[cfg(feature = "serde")]
+pub mod ser;
 pub mod writer;
+#[cfg(feature = "serde")]
+use serde;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use reader::NbtReader;
 
@@ -43,7 +49,7 @@ pub mod nbt_version {
         fn write_to(value: &NbtValue, buff: &mut Vec<u8>) -> NbtResult<()>;
         fn write_to_with_name(name: &str, value: &NbtValue, buff: &mut Vec<u8>) -> NbtResult<()>;
 
-        fn to_binary(value: &NbtValue) -> NbtResult<Vec<u8>> {
+        fn to_bytes(value: &NbtValue) -> NbtResult<Vec<u8>> {
             let mut buff = Vec::new();
             Self::write_to(value, &mut buff)?;
             Ok(buff)
@@ -137,7 +143,9 @@ pub enum NbtError {
     ListTypeNotSame(Vec<NbtTypeId>),
 }
 
-pub type NbtResult<T> = Result<T, NbtError>;
+pub type NbtResult<T> = std::result::Result<T, NbtError>;
+
+impl std::error::Error for NbtError {}
 
 impl std::fmt::Display for NbtError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -183,6 +191,9 @@ impl std::fmt::Display for NbtError {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize))]
+#[cfg_attr(feature = "serde", serde(untagged))]
 pub enum NbtValue {
     // end: 0
     /// 1: Byte
@@ -261,6 +272,6 @@ impl NbtValue {
     where
         W: nbt_version::NbtWriteTrait,
     {
-        W::to_binary(self)
+        W::to_bytes(self)
     }
 }

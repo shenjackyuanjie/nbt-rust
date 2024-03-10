@@ -43,5 +43,6 @@
         "variant": "cpp",
         "vector": "cpp",
         "algorithm": "cpp"
-    }
+    },
+    // "rust-analyzer.cargo.features": "all",
 }

@@ -14,7 +14,8 @@
   - [x] JavaNetAfter1_20_2
   - [x] BedrockDisk
   - [x] BedrockNetVarInt
-- [ ] `Serde` 支持
+
+- [ ] `Serde` 支持 (等待 PR, 我不会写了)
   - [ ] `Serialize`
   - [ ] `Deserialize`
   - [ ] `from_value`
@@ -87,6 +88,7 @@ writen in rust!
 - `shen-nbt5` (编写中)
   - 一年左右的技术积累
   - 4000 mb/s ?
+    - 也就 2400 ms/s
   - 支持 `serde` 序列化/反序列化
 
 ## 测试数据

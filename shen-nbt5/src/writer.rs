@@ -196,7 +196,7 @@ impl NbtWriteTrait for JavaNetAfter1_20_2 {
         JavaNetAfter1_20_2::write_to(value, buff)
     }
     #[inline]
-    fn to_binary(value: &NbtValue) -> NbtResult<Vec<u8>> {
+    fn to_bytes(value: &NbtValue) -> NbtResult<Vec<u8>> {
         let mut buff = Vec::new();
         JavaNetAfter1_20_2::write_to(value, &mut buff)?;
         Ok(buff)
@@ -336,7 +336,7 @@ impl NbtWriteTrait for BedrockDisk {
         Ok(())
     }
 
-    fn to_binary(value: &NbtValue) -> NbtResult<Vec<u8>> {
+    fn to_bytes(value: &NbtValue) -> NbtResult<Vec<u8>> {
         let mut buff = Vec::new();
         BedrockDisk::write_to(value, &mut buff)?;
         Ok(buff)
@@ -532,7 +532,7 @@ impl NbtWriteTrait for BedrockNetVarInt {
         Self::write_to(value, buff)?;
         Ok(())
     }
-    fn to_binary(value: &NbtValue) -> NbtResult<Vec<u8>> {
+    fn to_bytes(value: &NbtValue) -> NbtResult<Vec<u8>> {
         let mut buff = Vec::new();
         BedrockNetVarInt::write_to(value, &mut buff)?;
         Ok(buff)

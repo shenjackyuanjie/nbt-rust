@@ -1,3 +1,5 @@
+#![feature(core_intrinsics)]
+
 use std::borrow::Cow;
 #[cfg(feature = "internal_opt")]
 use std::intrinsics::unlikely;
@@ -473,7 +475,7 @@ impl<'value> Value<'value> {
         let mut nbt_data = NbtData::new(data);
         let _type_id = nbt_data.read_byte();
         let _name_len = nbt_data.read_short();
-        let name = String::from_utf8(nbt_data.read_bytes(_name_len as usize)).unwrap();
+        let _name = String::from_utf8(nbt_data.read_bytes(_name_len as usize)).unwrap();
         Value::read_compound(&mut nbt_data)
     }
 }

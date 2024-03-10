@@ -258,7 +258,7 @@ fn cli_read_test() {
         std::thread::sleep(std::time::Duration::from_secs(1));
         let start_time = std::time::Instant::now();
         // let nbt_data = shen_nbt4::Value::from_vec(data);
-        
+
         let nbt_data =
             shen_nbt5::NbtValue::from_binary::<shen_nbt5::nbt_version::Java>(data.as_mut_slice())
                 .unwrap();
