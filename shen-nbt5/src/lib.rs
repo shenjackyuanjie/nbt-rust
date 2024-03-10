@@ -1,17 +1,32 @@
 //! shen-nbt5
-//! 
+//!
 //! NBT 格式解析库 v5 by shenjack and InfyniteHeap
-//! 
+//!
 //! 支持格式
-//! 
+//!
 //! - Java 版 NBT
-//! 
+//!
 //! - Java 1.20.2+(协议号 >= 764) 及以后 的网路传输 NBT 格式
-//! 
+//!
 //! - 基岩版 实际用于存储的 NBT 格式
-//! 
+//!
 //! - 基岩版 网络 NBT 格式
-
+//!
+//! 用例:
+//! ```rust
+//! use shen_nbt5::NbtValue;
+//! use shen_nbt5::nbt_version::Java;
+//!
+//! fn main() {
+//!    let mut data = vec![0x0A, 0x00, 0x0B, 0x68, 0x65,
+//!        0x6C, 0x6C, 0x6F, 0x20, 0x77, 0x6F, 0x72, 0x6C, 0x64,
+//!        0x08, 0x00, 0x04, 0x6E, 0x61, 0x6D, 0x65, 0x00, 0x09,
+//!        0x42, 0x61, 0x6E, 0x61, 0x6E, 0x72, 0x61, 0x6D, 0x61, 0x00,
+//!    ];
+//!    let value = NbtValue::from_binary::<Java>(&mut data).unwrap();
+//!    println!("{:?}", value);
+//! }
+//! ```
 
 pub mod reader;
 pub mod writer;
@@ -39,12 +54,6 @@ mod tests;
 ///   基岩版 实际用于存储的 NBT 格式
 /// - `BedrockNetVarInt`
 ///   基岩版 网络 NBT 格式
-// pub enum NbtVersion {
-//     Java,
-//     JavaNetAfter1_20_2,
-//     BedrockDisk,
-//     BedrockNetVarInt,
-// }
 pub mod nbt_version {
     use super::{NbtReader, NbtResult, NbtValue};
 
@@ -90,8 +99,25 @@ pub mod nbt_version {
     ///
     /// 大端, 大端, 还是 xx 的 大端!
     pub enum Java {}
+    /// 1.20.2+(协议号 >= 764) 及以后 的网路传输 NBT 格式
+    ///
+    /// # 编码特点
+    ///
+    /// 根节点没有名称
     pub enum JavaNetAfter1_20_2 {}
+    /// 基岩版 实际用于存储的 NBT 格式
+    ///
+    /// # 编码特点
+    ///
+    /// 小端, 小端, 还是 xx 的 小端!
     pub enum BedrockDisk {}
+    /// 基岩版 网络 NBT 格式
+    /// 最痛苦的一集
+    ///
+    /// # 编码特点
+    ///
+    /// VarInt, VarLong, ZigZagVarInt, ZigZagVarLong
+    /// 全都有
     pub enum BedrockNetVarInt {}
 }
 
@@ -159,6 +185,7 @@ pub enum NbtError {
     IncorrectType(NbtTypeId, NbtTypeId),
 }
 
+/// 返回类型
 pub type NbtResult<T> = std::result::Result<T, NbtError>;
 
 impl std::error::Error for NbtError {}
@@ -209,6 +236,10 @@ impl std::fmt::Display for NbtError {
     }
 }
 
+/// 核心 Value
+/// 
+/// 暂时不支持 `from_value` 和 `to_value`
+/// https://github.com/shenjackyuanjie/nbt-rust/issues/1
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 #[cfg_attr(feature = "serde", derive(Deserialize))]
@@ -248,6 +279,7 @@ pub enum NbtValue {
 }
 
 impl NbtValue {
+    /// 解析 Nbt 数据
     pub fn from_binary<R>(data: &mut [u8]) -> NbtResult<NbtValue>
     where
         R: nbt_version::NbtReadTrait,

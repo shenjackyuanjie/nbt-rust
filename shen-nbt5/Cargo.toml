@@ -1,15 +1,16 @@
 [package]
 name = "shen-nbt5"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2021"
 description = "Just A FASSST NBT parser/writer"
 homepage = "https://github.com/shenjackyuanjie/nbt-rust"
 repository = "https://github.com/shenjackyuanjie/nbt-rust"
-read = "README.md"
+read = "../README.md"
 license-file = "../LICENSE"
 keywords = ["nbt", "minecraft", "parser", "writer", "fast"]
 categories = ["games", "parsing"]
 authors = ["shenjackyuanjie <3695888@qq.com>", "InfyniteHeap"]
+documentation = "https://docs.rs/shen-nbt5"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
