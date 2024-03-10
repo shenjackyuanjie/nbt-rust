@@ -64,8 +64,10 @@ writen in rust!
 
 ## 感谢
 
-感谢 @langyo 和 @InfyniteHeap
+感谢 [@langyo](https://github.com/langyo) 和 [@InfyniteHeap](https://github.com/InfyniteHeap)
 在编写过程中的帮助（
+
+感谢 [mat](https://github.com/mat-1) 的 simd-nbt 中 [`mutf8.rs`](https://github.com/azalea-rs/simdnbt/blob/master/simdnbt/benches/mutf8.rs) 的实现
 
 感谢 [wiki.vg](https://wiki.vg/NBT) 存储的 NBT 格式的详细信息
 

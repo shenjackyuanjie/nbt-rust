@@ -187,7 +187,7 @@ impl NbtWriteTrait for JavaNetAfter1_20_2 {
                 buff.push(0);
                 Ok(())
             }
-            x => return Err(NbtError::WrongRootType(x.tag())),
+            x => Err(NbtError::WrongRootType(x.tag())),
         }
     }
     #[inline]
