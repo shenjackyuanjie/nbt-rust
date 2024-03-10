@@ -1,6 +1,6 @@
 [package]
 name = "shen-nbt5"
-version = "0.4.3"
+version = "0.4.4"
 edition = "2021"
 description = "Just A FASSST NBT parser/writer"
 homepage = "https://github.com/shenjackyuanjie/nbt-rust"

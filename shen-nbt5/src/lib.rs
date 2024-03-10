@@ -237,7 +237,7 @@ impl std::fmt::Display for NbtError {
 }
 
 /// 核心 Value
-/// 
+///
 /// 暂时不支持 `from_value` 和 `to_value`
 /// https://github.com/shenjackyuanjie/nbt-rust/issues/1
 #[derive(Debug, Clone, PartialEq)]

@@ -721,6 +721,26 @@ impl NbtReader<'_> {
         self.cursor += len;
         value
     }
+    /// 读取指定长度的 i16 数组
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 UB
+    #[inline]
+    pub unsafe fn read_be_i16_array_unsafe(&mut self, len: usize) -> Vec<i16> {
+        let mut value: Vec<i16> = Vec::with_capacity(len);
+        std::ptr::copy_nonoverlapping(
+            self.data[self.cursor..].as_ptr() as *const u8,
+            value.as_ptr() as *mut u8,
+            len * 2,
+        );
+        value.set_len(len);
+        for n in &mut value {
+            *n = n.to_be();
+        }
+        self.cursor += len * 2;
+        value
+    }
     /// 读取指定长度的 i32 数组
     ///
     /// # 安全性
@@ -728,13 +748,37 @@ impl NbtReader<'_> {
     /// 长度溢出会导致 UB
     #[inline]
     pub unsafe fn read_be_i32_array_unsafe(&mut self, len: usize) -> Vec<i32> {
-        let value =
-            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i32, len);
-        let mut value = value.to_vec();
+        let mut value: Vec<i32> = Vec::with_capacity(len);
+        std::ptr::copy_nonoverlapping(
+            self.data[self.cursor..].as_ptr() as *const u8,
+            value.as_ptr() as *mut u8,
+            len * 4,
+        );
+        value.set_len(len);
         for n in &mut value {
             *n = n.to_be();
         }
         self.cursor += len * 4;
+        value
+    }
+    /// 读取指定长度的 i64 数组
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 UB
+    #[inline]
+    pub unsafe fn read_be_i64_array_unsafe(&mut self, len: usize) -> Vec<i64> {
+        let mut value: Vec<i64> = Vec::with_capacity(len);
+        std::ptr::copy_nonoverlapping(
+            self.data[self.cursor..].as_ptr() as *const u8,
+            value.as_ptr() as *mut u8,
+            len * 8,
+        );
+        value.set_len(len);
+        for n in &mut value {
+            *n = n.to_be();
+        }
+        self.cursor += len * 8;
         value
     }
     /// 读取指定长度的 i32 数组
@@ -749,22 +793,6 @@ impl NbtReader<'_> {
             .map(|n| i32::from_be_bytes(n[0..4].try_into().unwrap()))
             .collect();
         self.cursor += len * 4;
-        value
-    }
-    /// 读取指定长度的 i64 数组
-    ///
-    /// # 安全性
-    ///
-    /// 长度溢出会导致 UB
-    #[inline]
-    pub unsafe fn read_be_i64_array_unsafe(&mut self, len: usize) -> Vec<i64> {
-        let value =
-            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i64, len);
-        let mut value = value.to_vec();
-        for n in &mut value {
-            *n = n.to_be();
-        }
-        self.cursor += len * 8;
         value
     }
     /// 读取指定长度的 i64 数组

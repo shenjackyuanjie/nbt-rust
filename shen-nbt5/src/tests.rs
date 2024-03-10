@@ -280,6 +280,46 @@ mod unsafe_test {
             assert_eq!(reader.cursor, 100 * 8);
         }
     }
+
+    /// 未对齐的地址
+    #[test]
+    fn unaligned_read_u16_array() {
+        let mut value = vec![0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04];
+        let mut reader = NbtReader::new(&mut value);
+        let value = reader.read_u8();
+        assert_eq!(value, 0x01);
+        assert_eq!(reader.cursor, 1);
+        unsafe {
+            // 读取 u16 数组
+            let array = reader.read_be_i16_array_unsafe(3);
+            assert_eq!(array, vec![0x0203, 0x0401, 0x0203]);
+            assert_eq!(reader.cursor, 7);
+            let value = reader.read_u8();
+            assert_eq!(value, 0x04);
+            assert_eq!(reader.cursor, 8);
+        }
+    }
+
+    /// 依然是未对齐
+    /// 只不过是 u32/i32
+    #[test]
+    fn unaligned_read_x32_array() {
+        let mut value = gen_datas(202);
+        let mut reader = NbtReader::new(&mut value);
+        let value = reader.read_u8();
+        assert_eq!(value, 0x00);
+        assert_eq!(reader.cursor, 1);
+        unsafe {
+            let array = reader.read_be_i32_array_unsafe(50);
+            reader.roll_back(50 * 4);
+            let safe_array = reader.read_be_i32_array(50);
+            assert_eq!(array, safe_array);
+            assert_eq!(reader.cursor, 201);
+        }
+        let value = reader.read_u8();
+        assert_eq!(value, 201);
+        assert_eq!(reader.cursor, 202);
+    }
 }
 
 mod nbt {
