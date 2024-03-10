@@ -120,11 +120,11 @@ pub enum NbtError {
     /// 未知错误
     UnknownErr(String),
     /// 根节点类型错误
-    WrongRootType(u8),
+    WrongRootType(NbtTypeId),
     /// 根节点无名称
     RootWithoutName,
     /// 未知类型
-    UnknownType(u8),
+    UnknownType(NbtTypeId),
     /// 名称读取错误
     NameRead(String),
     /// 指针超出范围
@@ -141,6 +141,8 @@ pub enum NbtError {
     VarlongTooBig(usize),
     /// NbtList 中类型不同
     ListTypeNotSame(Vec<NbtTypeId>),
+    /// 错误类型
+    IncorrectType(NbtTypeId, NbtTypeId),
 }
 
 pub type NbtResult<T> = std::result::Result<T, NbtError>;
@@ -185,6 +187,9 @@ impl std::fmt::Display for NbtError {
             NbtError::VarlongTooBig(n) => write!(f, "VarLong 过大: {} 最大长度为 10", n),
             NbtError::ListTypeNotSame(types) => {
                 write!(f, "NbtList 中类型不同: {:?} 应相同", types)
+            }
+            NbtError::IncorrectType(expect, got) => {
+                write!(f, "错误类型: 期望: {}, 实际: {}", expect, got)
             }
         }
     }
@@ -274,4 +279,114 @@ impl NbtValue {
     {
         W::to_bytes(self)
     }
+
+    #[inline]
+    pub fn as_i18(&self) -> NbtResult<i8> {
+        match self {
+            NbtValue::Byte(v) => Ok(*v),
+            _ => Err(NbtError::IncorrectType(1_u8, self.tag())),
+        }
+    }
+    #[inline]
+    pub fn as_i16(&self) -> NbtResult<i16> {
+        match self {
+            NbtValue::Short(v) => Ok(*v),
+            _ => Err(NbtError::IncorrectType(2_u8, self.tag())),
+        }
+    }
+    #[inline]
+    pub fn as_i32(&self) -> NbtResult<i32> {
+        match self {
+            NbtValue::Int(v) => Ok(*v),
+            _ => Err(NbtError::IncorrectType(3_u8, self.tag())),
+        }
+    }
+    #[inline]
+    pub fn as_i64(&self) -> NbtResult<i64> {
+        match self {
+            NbtValue::Long(v) => Ok(*v),
+            _ => Err(NbtError::IncorrectType(4_u8, self.tag())),
+        }
+    }
+    #[inline]
+    pub fn as_f32(&self) -> NbtResult<f32> {
+        match self {
+            NbtValue::Float(v) => Ok(*v),
+            _ => Err(NbtError::IncorrectType(5_u8, self.tag())),
+        }
+    }
+    #[inline]
+    pub fn as_f64(&self) -> NbtResult<f64> {
+        match self {
+            NbtValue::Double(v) => Ok(*v),
+            _ => Err(NbtError::IncorrectType(6_u8, self.tag())),
+        }
+    }
+    #[inline]
+    pub fn as_i8_array(&self) -> NbtResult<Vec<i8>> {
+        match self {
+            NbtValue::ByteArray(v) => Ok(v.clone()),
+            _ => Err(NbtError::IncorrectType(7_u8, self.tag())),
+        }
+    }
+    #[inline]
+    pub fn as_i32_array(&self) -> NbtResult<Vec<i32>> {
+        match self {
+            NbtValue::IntArray(v) => Ok(v.clone()),
+            _ => Err(NbtError::IncorrectType(11_u8, self.tag())),
+        }
+    }
+    #[inline]
+    pub fn as_i64_array(&self) -> NbtResult<Vec<i64>> {
+        match self {
+            NbtValue::LongArray(v) => Ok(v.clone()),
+            _ => Err(NbtError::IncorrectType(12_u8, self.tag())),
+        }
+    }
+    #[inline]
+    pub fn as_string(&self) -> NbtResult<String> {
+        match self {
+            NbtValue::String(v) => Ok(v.clone()),
+            _ => Err(NbtError::IncorrectType(8_u8, self.tag())),
+        }
+    }
+    #[inline]
+    pub fn as_list(&self) -> NbtResult<Vec<NbtValue>> {
+        match self {
+            NbtValue::List(v) => Ok(v.clone()),
+            _ => Err(NbtError::IncorrectType(9_u8, self.tag())),
+        }
+    }
+    #[inline]
+    pub fn as_compound(&self) -> NbtResult<(Option<&String>, Vec<(String, NbtValue)>)> {
+        match self {
+            NbtValue::Compound(name, v) => Ok((name.as_ref(), v.clone())),
+            _ => Err(NbtError::IncorrectType(10_u8, self.tag())),
+        }
+    }
+
+    #[inline]
+    pub fn is_i8(&self) -> bool { matches!(self, NbtValue::Byte(_)) }
+    #[inline]
+    pub fn is_i16(&self) -> bool { matches!(self, NbtValue::Short(_)) }
+    #[inline]
+    pub fn is_i32(&self) -> bool { matches!(self, NbtValue::Int(_)) }
+    #[inline]
+    pub fn is_i64(&self) -> bool { matches!(self, NbtValue::Long(_)) }
+    #[inline]
+    pub fn is_f32(&self) -> bool { matches!(self, NbtValue::Float(_)) }
+    #[inline]
+    pub fn is_f64(&self) -> bool { matches!(self, NbtValue::Double(_)) }
+    #[inline]
+    pub fn is_i8_array(&self) -> bool { matches!(self, NbtValue::ByteArray(_)) }
+    #[inline]
+    pub fn is_i32_array(&self) -> bool { matches!(self, NbtValue::IntArray(_)) }
+    #[inline]
+    pub fn is_i64_array(&self) -> bool { matches!(self, NbtValue::LongArray(_)) }
+    #[inline]
+    pub fn is_string(&self) -> bool { matches!(self, NbtValue::String(_)) }
+    #[inline]
+    pub fn is_list(&self) -> bool { matches!(self, NbtValue::List(_)) }
+    #[inline]
+    pub fn is_compound(&self) -> bool { matches!(self, NbtValue::Compound(_, _)) }
 }

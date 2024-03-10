@@ -2,7 +2,7 @@
 
 use crate::{nbt_version, NbtError, NbtResult, NbtValue};
 
-compile_error!("Serde support is not yet implemented, awaiting for PR");
+compile_error!("Serde support is not yet implemented, awaiting for PR https://github.com/shenjackyuanjie/nbt-rust/issues/1");
 // impl serde_ser::Error for NbtError {
 //     fn custom<T: Display>(msg: T) -> Self { NbtError::UnknownErr(msg.to_string()) }
 // }
@@ -51,7 +51,7 @@ compile_error!("Serde support is not yet implemented, awaiting for PR");
 //             None => Ok(None),
 //         }
 //     }
-    
+
 // }
 
 // impl<'de, 'a> serde_de::Deserializer for DeserializeNbtValue<'de> {
@@ -76,7 +76,7 @@ compile_error!("Serde support is not yet implemented, awaiting for PR");
 //             NbtValue::Compound(name, v) => visitor.visit_map(CompoundDeserializer::new(v)),
 //             NbtValue::IntArray(v) => visitor.visit_seq(ArrayDeserializer::new(v.iter())),
 //             NbtValue::LongArray(v) => visitor.visit_seq(ArrayDeserializer::new(v.iter())),
-            
+
 //         }
 //     }
 // }
