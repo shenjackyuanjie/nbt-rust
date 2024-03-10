@@ -515,6 +515,7 @@ mod nbt {
     }
 
     #[test]
+    #[cfg(feature = "test")]
     fn file_sys_test() {
         // 测试所有能直接找到的 .nbt 文件
         // es -r .*\.nbt
