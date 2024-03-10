@@ -1,7 +1,23 @@
+//! shen-nbt5
+//! 
+//! NBT 格式解析库 v5 by shenjack and InfyniteHeap
+//! 
+//! 支持格式
+//! 
+//! - Java 版 NBT
+//! 
+//! - Java 1.20.2+(协议号 >= 764) 及以后 的网路传输 NBT 格式
+//! 
+//! - 基岩版 实际用于存储的 NBT 格式
+//! 
+//! - 基岩版 网络 NBT 格式
+
+
 pub mod reader;
+pub mod writer;
+
 #[cfg(feature = "serde")]
 pub mod ser;
-pub mod writer;
 #[cfg(feature = "serde")]
 use serde;
 #[cfg(feature = "serde")]
@@ -12,8 +28,6 @@ use reader::NbtReader;
 #[cfg(test)]
 mod tests;
 
-/// 后面也许会实现的
-///
 /// 不同版本的 Nbt 数据细节不同
 /// 老要命了
 ///
