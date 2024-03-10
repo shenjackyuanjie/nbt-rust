@@ -28,9 +28,14 @@ pub mod nbt_version {
     use super::{NbtReader, NbtResult, NbtValue};
 
     pub trait NbtReadTrait {
-        fn from_reader(reader: NbtReader) -> NbtResult<NbtValue>;
+        fn read_i8_array(reader: &mut NbtReader) -> NbtResult<Vec<i8>>;
+        fn read_i32_array(reader: &mut NbtReader) -> NbtResult<Vec<i32>>;
+        fn read_i64_array(reader: &mut NbtReader) -> NbtResult<Vec<i64>>;
+        fn read_nbt_string(reader: &mut NbtReader) -> NbtResult<String>;
         fn read_list(reader: &mut NbtReader) -> NbtResult<Vec<NbtValue>>;
         fn read_compound(reader: &mut NbtReader) -> NbtResult<Vec<(String, NbtValue)>>;
+
+        fn from_reader(reader: NbtReader) -> NbtResult<NbtValue>;
     }
     /// Java 版 绝大部分的 NBT 格式
     ///
@@ -178,76 +183,11 @@ pub enum NbtValue {
 }
 
 impl NbtValue {
-    pub fn from_binary<T>(data: &mut [u8]) -> NbtResult<NbtValue> 
-    where T: nbt_version::NbtReadTrait {
+    pub fn from_binary<T>(data: &mut [u8]) -> NbtResult<NbtValue>
+    where
+        T: nbt_version::NbtReadTrait,
+    {
         let reader = NbtReader::new(data);
         T::from_reader(reader)
     }
-
-    // fn read_nbt_compound(reader: &mut NbtReader) -> NbtResult<Vec<(String, NbtValue)>> {
-    //     let mut compound = Vec::with_capacity(10);
-    //     loop {
-    //         let tag_id = reader.read_u8();
-    //         if tag_id == 0 {
-    //             break;
-    //         }
-    //         let name = reader.read_nbt_string()?;
-    //         let value = match tag_id {
-    //             1 => NbtValue::Byte(reader.read_i8()),
-    //             2 => NbtValue::Short(reader.read_be_i16()),
-    //             3 => NbtValue::Int(reader.read_be_i32()),
-    //             4 => NbtValue::Long(reader.read_be_i64()),
-    //             5 => NbtValue::Float(reader.read_be_f32()),
-    //             6 => NbtValue::Double(reader.read_be_f64()),
-    //             7 => NbtValue::ByteArray(reader.read_nbt_i8_array()),
-    //             8 => NbtValue::String(reader.read_nbt_string()?),
-    //             9 => NbtValue::List(NbtValue::read_nbt_list(reader)?),
-    //             10 => NbtValue::Compound(None, NbtValue::read_nbt_compound(reader)?),
-    //             11 => NbtValue::IntArray(reader.read_nbt_i32_array()),
-    //             12 => NbtValue::LongArray(reader.read_nbt_i64_array()),
-    //             _ => unimplemented!(),
-    //         };
-    //         compound.push((name, value));
-    //     }
-    //     Ok(compound)
-    // }
-
-    // fn read_nbt_list(reader: &mut NbtReader) -> NbtResult<Vec<NbtValue>> {
-    //     let type_id = reader.read_u8();
-    //     let len = reader.read_be_i32() as usize;
-    //     let mut list = Vec::with_capacity(len);
-    //     for _ in 0..len {
-    //         let value = match type_id {
-    //             1 => NbtValue::Byte(reader.read_i8()),
-    //             2 => NbtValue::Short(reader.read_be_i16()),
-    //             3 => NbtValue::Int(reader.read_be_i32()),
-    //             4 => NbtValue::Long(reader.read_be_i64()),
-    //             5 => NbtValue::Float(reader.read_be_f32()),
-    //             6 => NbtValue::Double(reader.read_be_f64()),
-    //             7 => NbtValue::ByteArray(reader.read_nbt_i8_array()),
-    //             8 => NbtValue::String(reader.read_nbt_string()?),
-    //             9 => NbtValue::List(NbtValue::read_nbt_list(reader)?),
-    //             10 => NbtValue::Compound(None, NbtValue::read_nbt_compound(reader)?),
-    //             11 => NbtValue::IntArray(reader.read_nbt_i32_array()),
-    //             12 => NbtValue::LongArray(reader.read_nbt_i64_array()),
-    //             _ => unimplemented!(),
-    //         };
-    //         list.push(value);
-    //     }
-    //     Ok(list)
-    // }
-
-    // pub fn from_reader(mut reader: NbtReader) -> NbtValue {
-    //     // 第一个 tag, 不可能是 0
-    //     match reader.read_u8() {
-    //         9 => NbtValue::List(NbtValue::read_nbt_list(&mut reader).unwrap()),
-    //         10 => {
-    //             let name = reader.read_nbt_string().unwrap();
-    //             NbtValue::Compound(Some(name), NbtValue::read_nbt_compound(&mut reader).unwrap())
-    //         }
-    //         x => {
-    //             panic!("根节点类型错误 {}", x.as_nbt_type_name());
-    //         }
-    //     }
-    // }
 }

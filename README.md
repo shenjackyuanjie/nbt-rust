@@ -19,6 +19,14 @@
   - 数据都是小端序
   - 根节点必须有名称
   - 根节点是 `NbtCompound(10)` 或者 `NbtList(9)` 类型
+
+  - ```text
+    与Java版本使用的big-endian格式相同，但所有数字都以little-endian编码。
+    这包括标记名称和TAG_String值之前的16位长度前缀，以及TAG_Float和TAG_Double值。
+
+    ---- https://wiki.vg/NBT
+    ```
+
 - `BedrockNetVarInt`
   - 基岩版用于网络传输的 NBT 格式
 
@@ -32,7 +40,6 @@
 
     ---- https://wiki.vg/NBT
     ```
-
 
 writen in rust!
 

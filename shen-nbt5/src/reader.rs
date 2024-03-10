@@ -1,5 +1,5 @@
-use crate::nbt_version;
-use crate::{NbtError, NbtResult, NbtValue};
+use crate::nbt_version::{BedrockDisk, BedrockNetVarInt, Java, JavaNetAfter1_20_2, NbtReadTrait};
+use crate::{nbt_version, NbtError, NbtResult, NbtValue};
 
 /// 用于读取 NBT 数据
 pub struct NbtReader<'data> {
@@ -17,10 +17,142 @@ pub struct NbtReader<'data> {
 ///
 /// 上面说的那玩意 请使用 `JavaNetAfter1_20_2`
 impl nbt_version::NbtReadTrait for nbt_version::Java {
-    fn from_reader(reader: NbtReader) -> NbtResult<NbtValue> { todo!() }
-    fn read_compound(reader: &mut NbtReader) -> NbtResult<Vec<(String, NbtValue)>> { todo!() }
-    fn read_list(reader: &mut NbtReader) -> NbtResult<Vec<NbtValue>> { todo!() }
+    #[inline]
+    fn read_nbt_string(reader: &mut NbtReader) -> NbtResult<String> {
+        let len = reader.read_be_u16() as usize;
+        reader.read_string(len)
+    }
+    #[inline]
+    fn read_i8_array(reader: &mut NbtReader) -> NbtResult<Vec<i8>> {
+        let len = reader.read_be_i32() as usize;
+        let value = reader.read_i8_array(len);
+        Ok(value)
+    }
+    #[inline]
+    fn read_i32_array(reader: &mut NbtReader) -> NbtResult<Vec<i32>> {
+        let len = reader.read_be_i32() as usize;
+        let value = reader.read_i32_array(len);
+        Ok(value)
+    }
+    #[inline]
+    fn read_i64_array(reader: &mut NbtReader) -> NbtResult<Vec<i64>> {
+        let len = reader.read_be_i32() as usize;
+        let value = reader.read_i64_array(len);
+        Ok(value)
+    }
+    #[inline]
+    fn read_compound(reader: &mut NbtReader) -> NbtResult<Vec<(String, NbtValue)>> {
+        let mut compound = Vec::with_capacity(10);
+        loop {
+            let tag_id = reader.read_u8();
+            if tag_id == 0 {
+                break;
+            }
+            let name = Java::read_nbt_string(reader)?;
+            let value = match tag_id {
+                1 => NbtValue::Byte(reader.read_i8()),
+                2 => NbtValue::Short(reader.read_be_i16()),
+                3 => NbtValue::Int(reader.read_be_i32()),
+                4 => NbtValue::Long(reader.read_be_i64()),
+                5 => NbtValue::Float(reader.read_be_f32()),
+                6 => NbtValue::Double(reader.read_be_f64()),
+                7 => NbtValue::ByteArray(Java::read_i8_array(reader)?),
+                8 => NbtValue::String(Java::read_nbt_string(reader)?),
+                9 => NbtValue::List(Java::read_list(reader)?),
+                10 => NbtValue::Compound(None, nbt_version::Java::read_compound(reader)?),
+                11 => NbtValue::IntArray(Java::read_i32_array(reader)?),
+                12 => NbtValue::LongArray(Java::read_i64_array(reader)?),
+                _ => unimplemented!(),
+            };
+            compound.push((name, value));
+        }
+        Ok(compound)
+    }
+    #[inline]
+    fn read_list(reader: &mut NbtReader) -> NbtResult<Vec<NbtValue>> {
+        let type_id = reader.read_u8();
+        let len = reader.read_be_i32() as usize;
+        let mut list = Vec::with_capacity(len);
+        for _ in 0..len {
+            let value = match type_id {
+                1 => NbtValue::Byte(reader.read_i8()),
+                2 => NbtValue::Short(reader.read_be_i16()),
+                3 => NbtValue::Int(reader.read_be_i32()),
+                4 => NbtValue::Long(reader.read_be_i64()),
+                5 => NbtValue::Float(reader.read_be_f32()),
+                6 => NbtValue::Double(reader.read_be_f64()),
+                7 => NbtValue::ByteArray(Java::read_i8_array(reader)?),
+                8 => NbtValue::String(Java::read_nbt_string(reader)?),
+                9 => NbtValue::List(Java::read_list(reader)?),
+                10 => NbtValue::Compound(None, nbt_version::Java::read_compound(reader)?),
+                11 => NbtValue::IntArray(Java::read_i32_array(reader)?),
+                12 => NbtValue::LongArray(Java::read_i64_array(reader)?),
+                _ => unimplemented!(),
+            };
+            list.push(value);
+        }
+        Ok(list)
+    }
+
+    fn from_reader(mut reader: NbtReader) -> NbtResult<NbtValue> {
+        // 第一个 tag, 不可能是 0
+        match reader.read_u8() {
+            10 => {
+                let name = Java::read_nbt_string(&mut reader)?;
+                Ok(NbtValue::Compound(Some(name), nbt_version::Java::read_compound(&mut reader)?))
+            }
+            x => Err(NbtError::WrongRootType(x)),
+        }
+    }
 }
+
+/// 两个最好实现的就在这里了
+/// 
+/// 网络 NBT: 1.20.2+ 的网络 NBT 根节点没有名字
+impl NbtReadTrait for JavaNetAfter1_20_2 {
+    #[inline]
+    fn read_nbt_string(reader: &mut NbtReader) -> NbtResult<String> {
+        Java::read_nbt_string(reader)
+    }
+    #[inline]
+    fn read_i8_array(reader: &mut NbtReader) -> NbtResult<Vec<i8>> { Java::read_i8_array(reader) }
+    #[inline]
+    fn read_i32_array(reader: &mut NbtReader) -> NbtResult<Vec<i32>> {
+        Java::read_i32_array(reader)
+    }
+    #[inline]
+    fn read_i64_array(reader: &mut NbtReader) -> NbtResult<Vec<i64>> {
+        Java::read_i64_array(reader)
+    }
+    #[inline]
+    fn read_compound(reader: &mut NbtReader) -> NbtResult<Vec<(String, NbtValue)>> {
+        Java::read_compound(reader)
+    }
+    #[inline]
+    fn read_list(reader: &mut NbtReader) -> NbtResult<Vec<NbtValue>> { Java::read_list(reader) }
+
+    fn from_reader(mut reader: NbtReader) -> NbtResult<NbtValue> {
+        // 第一个 tag, 不可能是 0
+        match reader.read_u8() {
+            10 => {
+                // Java 1.20.2+ 的网络 NBT 没有名字
+                Ok(NbtValue::Compound(None, nbt_version::Java::read_compound(&mut reader)?))
+            }
+            x => Err(NbtError::WrongRootType(x)),
+        }
+    }
+}
+
+/// 基岩版的其实也还行, 就是有点麻烦
+///
+/// 所有都是小端
+// impl NbtReadTrait for BedrockDisk {
+//     #[inline]
+//     fn read_nbt_string(reader: &mut NbtReader) -> NbtResult<String> {
+//         let len = reader.read_le_u16() as usize;
+//         reader.read_string(len)
+//     }
+// }
 
 macro_rules! read_uncheck {
     ($be_name:ident, $le_name:ident, $ty:ty, $size:literal) => {
