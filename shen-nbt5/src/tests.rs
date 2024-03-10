@@ -323,6 +323,8 @@ mod unsafe_test {
 }
 
 mod nbt {
+    use std::io::Read;
+
     use super::*;
 
     #[test]
@@ -510,5 +512,65 @@ mod nbt {
         println!("{:?}", value);
         assert!(value.is_ok());
         // 其他版本
+    }
+
+    #[test]
+    fn file_sys_test() {
+        // 测试所有能直接找到的 .nbt 文件
+        // es -r .*\.nbt
+        // command
+        // 总计数, 文件打开失败计数, 解析失败计数, gzip 解析计数, 普通解析计数
+        let mut counter: Vec<i32> = vec![0; 5];
+
+        let find_paths = std::process::Command::new("es")
+            .arg("-r")
+            .arg(r".*\.nbt$")
+            .output()
+            .expect("failed to execute process");
+        let find_paths = String::from_utf8_lossy(find_paths.stdout.as_slice());
+        let find_paths = find_paths.split("\n").collect::<Vec<&str>>();
+        for path in find_paths {
+            if path.len() == 0 {
+                continue;
+            }
+            counter[0] += 1;
+            let path = path.trim();
+            // println!("path: {}", path);
+            let file = std::fs::File::open(path);
+            if file.is_err() {
+                println!("open file failed: {}", path);
+                counter[1] += 1;
+                continue;
+            }
+            let file = file.unwrap();
+            let mut data = file.bytes().collect::<Result<Vec<u8>, _>>().unwrap();
+
+            // 检查一下是否是 gzip
+            if data[0] == 0x1F && data[1] == 0x8B {
+                let mut decoder = flate2::read::GzDecoder::new(data.as_slice());
+                let mut data = Vec::with_capacity(data.len());
+                decoder.read_to_end(&mut data).unwrap();
+                let value = NbtValue::from_binary::<nbt_version::Java>(&mut data);
+                if !value.is_ok() {
+                    counter[2] += 1;
+                    println!("failed: {} {:?}", path, value.as_ref());
+                    assert!(value.is_ok());
+                }
+                counter[3] += 1;
+            } else {
+                let value = NbtValue::from_binary::<nbt_version::Java>(&mut data);
+                if !value.is_ok() {
+                    counter[2] += 1;
+                    println!("failed: {} {:?}", path, value.as_ref());
+                    assert!(value.is_ok());
+                }
+                counter[4] += 1;
+            }
+        }
+        // 输出统计结果
+        println!(
+            "total: {}, open failed: {}, parse failed: {}, gzip parse: {}, normal parse: {}",
+            counter[0], counter[1], counter[2], counter[3], counter[4]
+        );
     }
 }

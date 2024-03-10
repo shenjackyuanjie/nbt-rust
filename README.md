@@ -1,4 +1,4 @@
-# nbt-rust
+# shen-nbt5
 
 一个 "全功能" 的 "快速" NBT 解析器
 
@@ -136,4 +136,10 @@ speed: 2483288579.985664 (bytes/s)
 2425086.50389225 (KB/s)
 2368.2485389572753 (MB/s)
 2.312742713825464 (GB/s)
+```
+
+shen-nbt5 通过了作者电脑上 所有 .nbt 格式的文件的读取测试
+
+```text
+total: 6063, open failed: 25, parse failed: 0, gzip parse: 6013, normal parse: 25
 ```
