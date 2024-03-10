@@ -1,11 +1,11 @@
 [package]
 name = "shen-nbt5"
-version = "0.4.2"
+version = "0.4.3"
 edition = "2021"
 description = "Just A FASSST NBT parser/writer"
 homepage = "https://github.com/shenjackyuanjie/nbt-rust"
 repository = "https://github.com/shenjackyuanjie/nbt-rust"
-read = "../README.md"
+readme = "../README.md"
 license-file = "../LICENSE"
 keywords = ["nbt", "minecraft", "parser", "writer", "fast"]
 categories = ["games", "parsing"]
