@@ -29,13 +29,13 @@ impl nbt_version::NbtReadTrait for nbt_version::Java {
     #[inline]
     fn read_i32_array(reader: &mut NbtReader) -> NbtResult<Vec<i32>> {
         let len = reader.read_be_i32() as usize;
-        let value = reader.read_i32_array(len);
+        let value = reader.read_be_i32_array(len);
         Ok(value)
     }
     #[inline]
     fn read_i64_array(reader: &mut NbtReader) -> NbtResult<Vec<i64>> {
         let len = reader.read_be_i32() as usize;
-        let value = reader.read_i64_array(len);
+        let value = reader.read_be_i64_array(len);
         Ok(value)
     }
     #[inline]
@@ -159,13 +159,13 @@ impl NbtReadTrait for BedrockDisk {
     #[inline]
     fn read_i32_array(reader: &mut NbtReader) -> NbtResult<Vec<i32>> {
         let len = reader.read_le_i32() as usize;
-        let value = reader.read_i32_array(len);
+        let value = reader.read_le_i32_array(len);
         Ok(value)
     }
     #[inline]
     fn read_i64_array(reader: &mut NbtReader) -> NbtResult<Vec<i64>> {
         let len = reader.read_le_i32() as usize;
-        let value = reader.read_i64_array(len);
+        let value = reader.read_le_i64_array(len);
         Ok(value)
     }
     #[inline]
@@ -256,12 +256,12 @@ impl NbtReadTrait for BedrockNetVarInt {
     }
     fn read_i32_array(reader: &mut NbtReader) -> NbtResult<Vec<i32>> {
         let len = reader.read_zigzag_var_i32()? as usize;
-        let value = reader.read_i32_array(len);
+        let value = reader.read_le_i32_array(len);
         Ok(value)
     }
     fn read_i64_array(reader: &mut NbtReader) -> NbtResult<Vec<i64>> {
         let len = reader.read_zigzag_var_i32()? as usize;
-        let value = reader.read_i64_array(len);
+        let value = reader.read_le_i64_array(len);
         Ok(value)
     }
     fn read_compound(reader: &mut NbtReader) -> NbtResult<Vec<(String, NbtValue)>> {
@@ -727,7 +727,7 @@ impl NbtReader<'_> {
     ///
     /// 长度溢出会导致 UB
     #[inline]
-    pub unsafe fn read_i32_array_unsafe(&mut self, len: usize) -> Vec<i32> {
+    pub unsafe fn read_be_i32_array_unsafe(&mut self, len: usize) -> Vec<i32> {
         let value =
             std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i32, len);
         let mut value = value.to_vec();
@@ -743,7 +743,7 @@ impl NbtReader<'_> {
     ///
     /// 长度溢出会导致 panic
     #[inline]
-    pub fn read_i32_array(&mut self, len: usize) -> Vec<i32> {
+    pub fn read_be_i32_array(&mut self, len: usize) -> Vec<i32> {
         let value = self.data[self.cursor..self.cursor + len * 4]
             .chunks_exact(4)
             .map(|n| i32::from_be_bytes(n[0..4].try_into().unwrap()))
@@ -757,7 +757,7 @@ impl NbtReader<'_> {
     ///
     /// 长度溢出会导致 UB
     #[inline]
-    pub unsafe fn read_i64_array_unsafe(&mut self, len: usize) -> Vec<i64> {
+    pub unsafe fn read_be_i64_array_unsafe(&mut self, len: usize) -> Vec<i64> {
         let value =
             std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const i64, len);
         let mut value = value.to_vec();
@@ -773,10 +773,52 @@ impl NbtReader<'_> {
     ///
     /// 长度溢出会导致 panic
     #[inline]
-    pub fn read_i64_array(&mut self, len: usize) -> Vec<i64> {
+    pub fn read_be_i64_array(&mut self, len: usize) -> Vec<i64> {
         let value = self.data[self.cursor..self.cursor + len * 8]
             .chunks_exact(8)
             .map(|n| i64::from_be_bytes(n[0..8].try_into().unwrap()))
+            .collect();
+        self.cursor += len * 8;
+        value
+    }
+    /// 读取指定长度的 le i16 数组
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 panic
+    #[inline]
+    pub fn read_le_i16_array(&mut self, len: usize) -> Vec<i16> {
+        let value = self.data[self.cursor..self.cursor + len * 2]
+            .chunks_exact(2)
+            .map(|n| i16::from_le_bytes(n[0..2].try_into().unwrap()))
+            .collect();
+        self.cursor += len * 2;
+        value
+    }
+    /// 读取指定长度的 le i32 数组
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 panic
+    #[inline]
+    pub fn read_le_i32_array(&mut self, len: usize) -> Vec<i32> {
+        let value = self.data[self.cursor..self.cursor + len * 4]
+            .chunks_exact(4)
+            .map(|n| i32::from_le_bytes(n[0..4].try_into().unwrap()))
+            .collect();
+        self.cursor += len * 4;
+        value
+    }
+    /// 读取指定长度的 le i64 数组
+    ///
+    /// # 安全性
+    ///
+    /// 长度溢出会导致 panic
+    #[inline]
+    pub fn read_le_i64_array(&mut self, len: usize) -> Vec<i64> {
+        let value = self.data[self.cursor..self.cursor + len * 8]
+            .chunks_exact(8)
+            .map(|n| i64::from_le_bytes(n[0..8].try_into().unwrap()))
             .collect();
         self.cursor += len * 8;
         value

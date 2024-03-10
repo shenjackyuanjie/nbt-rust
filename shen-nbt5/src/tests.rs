@@ -260,9 +260,9 @@ mod unsafe_test {
         let mut value = gen_datas(4 * 100);
         let mut reader = NbtReader::new(&mut value);
         unsafe {
-            let value = reader.read_i32_array_unsafe(100);
+            let value = reader.read_be_i32_array_unsafe(100);
             reader.roll_back(100 * 4);
-            let safe_value = reader.read_i32_array(100);
+            let safe_value = reader.read_be_i32_array(100);
             assert_eq!(value, safe_value);
             assert_eq!(reader.cursor, 100 * 4);
         }
@@ -273,9 +273,9 @@ mod unsafe_test {
         let mut value = gen_datas(8 * 100);
         let mut reader = NbtReader::new(&mut value);
         unsafe {
-            let value = reader.read_i64_array_unsafe(100);
+            let value = reader.read_be_i64_array_unsafe(100);
             reader.roll_back(100 * 8);
-            let safe_value = reader.read_i64_array(100);
+            let safe_value = reader.read_be_i64_array(100);
             assert_eq!(value, safe_value);
             assert_eq!(reader.cursor, 100 * 8);
         }
