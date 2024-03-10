@@ -405,9 +405,7 @@ impl NbtReader<'_> {
         self.cursor += 2;
         value
     }
-    /// 安全的读取 i16 类型的数据
-    ///
-    /// 转换大小端(小端)
+    /// 安全的读取小端 i16 数据
     ///
     /// 会在超出长度时 panic
     #[inline]
@@ -470,7 +468,7 @@ impl NbtReader<'_> {
     }
     /// 安全的读取一个 Varlong
     ///
-    /// 他有大小端区别吗? (其实是小端) 
+    /// 他有大小端区别吗? (其实是小端)
     ///
     /// 会在超出长度时 panic
     #[inline]
@@ -491,7 +489,7 @@ impl NbtReader<'_> {
         Ok(value)
     }
     /// 安全的读取一个 zigzag 编码的 varint
-    /// 
+    ///
     /// 会在超出长度时 panic
     #[inline]
     pub fn read_zigzag_var_i32(&mut self) -> NbtResult<i32> {
@@ -499,7 +497,7 @@ impl NbtReader<'_> {
         Ok((value >> 1) ^ (-(value & 1)))
     }
     /// 安全的读取一个 zigzag 编码的 varlong
-    /// 
+    ///
     /// 会在超出长度时 panic
     #[inline]
     pub fn read_zigzag_var_i64(&mut self) -> NbtResult<i64> {
@@ -799,31 +797,4 @@ impl NbtReader<'_> {
         self.cursor += len;
         Ok(value.into_owned())
     }
-
-    // /// 读取一个 NBT byte array
-    // pub fn read_nbt_i8_array(&mut self) -> Vec<i8> {
-    //     let len = self.read_be_i32() as usize;
-    //     let value = unsafe { self.read_i8_array_unsafe(len) };
-    //     value
-    // }
-
-    // /// 读取一个 NBT int array
-    // pub fn read_nbt_i32_array(&mut self) -> Vec<i32> {
-    //     let len = self.read_be_i32() as usize;
-    //     let value = unsafe { self.read_i32_array_unsafe(len) };
-    //     value
-    // }
-
-    // /// 读取一个 NBT long array
-    // pub fn read_nbt_i64_array(&mut self) -> Vec<i64> {
-    //     let len = self.read_be_i32() as usize;
-    //     let value = unsafe { self.read_i64_array_unsafe(len) };
-    //     value
-    // }
-
-    // /// 读取一个 NBT string
-    // pub fn read_nbt_string(&mut self) -> NbtResult<String> {
-    //     let len = self.read_be_u16() as usize;
-    //     self.read_string(len)
-    // }
 }
