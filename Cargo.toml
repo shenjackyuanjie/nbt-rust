@@ -6,7 +6,6 @@ members = [
     # "shen-nbt3",
     # "shen-nbt4",
     "shen-nbt5",
-    "trait-test",
 ]
 resolver = "2"
 
