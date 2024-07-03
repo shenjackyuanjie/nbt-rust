@@ -70,9 +70,7 @@ impl NbtWriteTrait for Java {
                 NbtValue::LongArray(x) => Self::write_i64_array(writer, x),
                 NbtValue::String(x) => Self::write_nbt_string(writer, x),
                 NbtValue::List(x) => Self::write_list(writer, x)?,
-                NbtValue::Compound(name, data) => {
-                    Self::write_compound(writer, name.as_ref(), data)?
-                }
+                NbtValue::Compound(_, data) => Self::write_compound(writer, None, data)?,
             }
         }
         Ok(())
@@ -474,9 +472,7 @@ impl NbtWriteTrait for BedrockNetVarInt {
                 NbtValue::LongArray(x) => Self::write_i64_array(writer, x),
                 NbtValue::String(x) => Self::write_nbt_string(writer, x),
                 NbtValue::List(x) => Self::write_list(writer, x)?,
-                NbtValue::Compound(name, data) => {
-                    Self::write_compound(writer, name.as_ref(), data)?
-                }
+                NbtValue::Compound(_, data) => Self::write_compound(writer, None, data)?,
             }
         }
         Ok(())
