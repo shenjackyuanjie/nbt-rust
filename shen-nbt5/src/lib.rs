@@ -58,19 +58,23 @@ pub mod nbt_version {
     use super::{NbtReader, NbtResult, NbtValue};
 
     pub trait NbtWriteTrait {
+        /// 写入一个 i8(byte) 数组
         fn write_i8_array(writer: &mut Vec<u8>, data: &[i8]);
+        /// 写入一个 i32(int) 数组
         fn write_i32_array(writer: &mut Vec<u8>, data: &[i32]);
+        /// 写入一个 i64(long) 数组
         fn write_i64_array(writer: &mut Vec<u8>, data: &[i64]);
+        /// 写入一个 NBT 字符串
         fn write_nbt_string(writer: &mut Vec<u8>, data: &str);
+        /// 向 `writer` 写入一个列表类型(List)
         fn write_list(writer: &mut Vec<u8>, data: &[NbtValue]) -> NbtResult<()>;
         /// 向 `writer` 写入一个复合标签类型(Compound)
-        /// 
-        /// * `is_list_element` 用于指示是否为列表元素。当复合标签类型为列表元素时是不用将名称写入的。
+        ///
+        /// 如果 `name` 为 `None` 则不写入名字
         fn write_compound(
             writer: &mut Vec<u8>,
             name: Option<&String>,
             data: &[(String, NbtValue)],
-            is_list_element: bool,
         ) -> NbtResult<()>;
 
         fn write_to(value: &NbtValue, buff: &mut Vec<u8>) -> NbtResult<()>;
@@ -84,11 +88,17 @@ pub mod nbt_version {
     }
 
     pub trait NbtReadTrait {
+        /// 从 `reader` 读取一个 i8(byte) 数组
         fn read_i8_array(reader: &mut NbtReader) -> NbtResult<Vec<i8>>;
+        /// 从 `reader` 读取一个 i32(int) 数组
         fn read_i32_array(reader: &mut NbtReader) -> NbtResult<Vec<i32>>;
+        /// 从 `reader` 读取一个 i64(long) 数组
         fn read_i64_array(reader: &mut NbtReader) -> NbtResult<Vec<i64>>;
+        /// 从 `reader` 读取一个 NBT 字符串
         fn read_nbt_string(reader: &mut NbtReader) -> NbtResult<String>;
+        /// 从 `reader` 读取一个列表类型(List)
         fn read_list(reader: &mut NbtReader) -> NbtResult<Vec<NbtValue>>;
+        /// 从 `reader` 读取一个复合标签类型(Compound)
         fn read_compound(reader: &mut NbtReader) -> NbtResult<Vec<(String, NbtValue)>>;
 
         fn from_reader(reader: NbtReader) -> NbtResult<NbtValue>;

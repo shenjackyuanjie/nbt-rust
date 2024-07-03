@@ -71,7 +71,7 @@ impl NbtWriteTrait for Java {
                 NbtValue::String(x) => Self::write_nbt_string(writer, x),
                 NbtValue::List(x) => Self::write_list(writer, x)?,
                 NbtValue::Compound(name, data) => {
-                    Self::write_compound(writer, name.as_ref(), data, true)?
+                    Self::write_compound(writer, name.as_ref(), data)?
                 }
             }
         }
@@ -82,19 +82,18 @@ impl NbtWriteTrait for Java {
         writer: &mut Vec<u8>,
         name: Option<&String>,
         data: &[(String, NbtValue)],
-        is_list_element: bool,
     ) -> NbtResult<()> {
         // 如果是列表元素时不用写入名字和key
-        if !is_list_element {
-            // 写入自己的名字
-            Self::write_nbt_string(writer, name.unwrap_or(&"".to_string()));
+        // 写入自己的名字
+        if let Some(name) = name {
+            Self::write_nbt_string(writer, name);
         }
         for (key, value) in data {
             // 写入 tag
             writer.push(value.tag());
             // 写入 key，如果是Compound就不写入，因为key就是名字
-            if let NbtValue::Compound(_, _) = value {}
-            else {
+            if let NbtValue::Compound(_, _) = value {
+            } else {
                 Self::write_nbt_string(writer, key)
             };
             // 写入 value
@@ -111,7 +110,7 @@ impl NbtWriteTrait for Java {
                 NbtValue::String(x) => Self::write_nbt_string(writer, x),
                 NbtValue::List(x) => Self::write_list(writer, x)?,
                 NbtValue::Compound(name, data) => {
-                    Self::write_compound(writer, name.as_ref(), data, false)?
+                    Self::write_compound(writer, name.as_ref(), data)?
                 }
             }
         }
@@ -124,7 +123,7 @@ impl NbtWriteTrait for Java {
         match value {
             NbtValue::Compound(name, data) => {
                 buff.push(value.tag());
-                Self::write_compound(buff, name.as_ref(), data, false)?
+                Self::write_compound(buff, name.as_ref(), data)?
             }
             x => return Err(NbtError::WrongRootType(x.tag())),
         }
@@ -159,9 +158,8 @@ impl NbtWriteTrait for JavaNetAfter1_20_2 {
         writer: &mut Vec<u8>,
         name: Option<&String>,
         data: &[(String, NbtValue)],
-        is_list_element: bool,
     ) -> NbtResult<()> {
-        Java::write_compound(writer, name, data, is_list_element)
+        Java::write_compound(writer, name, data)
     }
     #[inline]
     fn write_to(value: &NbtValue, buff: &mut Vec<u8>) -> NbtResult<()> {
@@ -189,7 +187,7 @@ impl NbtWriteTrait for JavaNetAfter1_20_2 {
                         NbtValue::String(x) => Self::write_nbt_string(buff, x),
                         NbtValue::List(x) => Self::write_list(buff, x)?,
                         NbtValue::Compound(name, data) => {
-                            Self::write_compound(buff, name.as_ref(), data, false)?
+                            Self::write_compound(buff, name.as_ref(), data)?
                         }
                     }
                 }
@@ -277,9 +275,7 @@ impl NbtWriteTrait for BedrockDisk {
                 NbtValue::LongArray(x) => Self::write_i64_array(writer, x),
                 NbtValue::String(x) => Self::write_nbt_string(writer, x),
                 NbtValue::List(x) => Self::write_list(writer, x)?,
-                NbtValue::Compound(name, data) => {
-                    Self::write_compound(writer, name.as_ref(), data, true)?
-                }
+                NbtValue::Compound(_, data) => Self::write_compound(writer, None, data)?,
             }
         }
         Ok(())
@@ -289,10 +285,11 @@ impl NbtWriteTrait for BedrockDisk {
         writer: &mut Vec<u8>,
         name: Option<&String>,
         data: &[(String, NbtValue)],
-        _is_list_element: bool,
     ) -> NbtResult<()> {
         // 写入自己的名字
-        Self::write_nbt_string(writer, name.unwrap_or(&"".to_string()));
+        if let Some(name) = name {
+            Self::write_nbt_string(writer, name);
+        }
         for (key, value) in data {
             // 写入 tag
             writer.push(value.tag());
@@ -312,7 +309,7 @@ impl NbtWriteTrait for BedrockDisk {
                 NbtValue::String(x) => Self::write_nbt_string(writer, x),
                 NbtValue::List(x) => Self::write_list(writer, x)?,
                 NbtValue::Compound(name, data) => {
-                    Self::write_compound(writer, name.as_ref(), data, false)?
+                    Self::write_compound(writer, name.as_ref(), data)?
                 }
             }
         }
@@ -326,7 +323,7 @@ impl NbtWriteTrait for BedrockDisk {
         match value {
             NbtValue::Compound(name, data) => {
                 buff.push(value.tag());
-                Self::write_compound(buff, name.as_ref(), data, false)?
+                Self::write_compound(buff, name.as_ref(), data)?
             }
             NbtValue::List(data) => {
                 buff.push(value.tag());
@@ -478,7 +475,7 @@ impl NbtWriteTrait for BedrockNetVarInt {
                 NbtValue::String(x) => Self::write_nbt_string(writer, x),
                 NbtValue::List(x) => Self::write_list(writer, x)?,
                 NbtValue::Compound(name, data) => {
-                    Self::write_compound(writer, name.as_ref(), data, true)?
+                    Self::write_compound(writer, name.as_ref(), data)?
                 }
             }
         }
@@ -488,10 +485,11 @@ impl NbtWriteTrait for BedrockNetVarInt {
         writer: &mut Vec<u8>,
         name: Option<&String>,
         data: &[(String, NbtValue)],
-        _is_list_element: bool,
     ) -> NbtResult<()> {
         // 写入自己的名字
-        Self::write_nbt_string(writer, name.unwrap_or(&"".to_string()));
+        if let Some(name) = name {
+            Self::write_nbt_string(writer, name);
+        }
         for (key, value) in data {
             // 写入 tag
             writer.push(value.tag());
@@ -511,7 +509,7 @@ impl NbtWriteTrait for BedrockNetVarInt {
                 NbtValue::String(x) => Self::write_nbt_string(writer, x),
                 NbtValue::List(x) => Self::write_list(writer, x)?,
                 NbtValue::Compound(name, data) => {
-                    Self::write_compound(writer, name.as_ref(), data, false)?
+                    Self::write_compound(writer, name.as_ref(), data)?
                 }
             }
         }
@@ -525,7 +523,7 @@ impl NbtWriteTrait for BedrockNetVarInt {
         match value {
             NbtValue::Compound(name, data) => {
                 buff.push(value.tag());
-                Self::write_compound(buff, name.as_ref(), data, false)?
+                Self::write_compound(buff, name.as_ref(), data)?
             }
             NbtValue::List(data) => {
                 buff.push(value.tag());
