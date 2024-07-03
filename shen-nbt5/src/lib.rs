@@ -63,10 +63,14 @@ pub mod nbt_version {
         fn write_i64_array(writer: &mut Vec<u8>, data: &[i64]);
         fn write_nbt_string(writer: &mut Vec<u8>, data: &str);
         fn write_list(writer: &mut Vec<u8>, data: &[NbtValue]) -> NbtResult<()>;
+        /// 向 `writer` 写入一个复合标签类型(Compound)
+        /// 
+        /// * `is_list_element` 用于指示是否为列表元素。当复合标签类型为列表元素时是不用将名称写入的。
         fn write_compound(
             writer: &mut Vec<u8>,
             name: Option<&String>,
             data: &[(String, NbtValue)],
+            is_list_element: bool,
         ) -> NbtResult<()>;
 
         fn write_to(value: &NbtValue, buff: &mut Vec<u8>) -> NbtResult<()>;

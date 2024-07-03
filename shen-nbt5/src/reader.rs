@@ -57,7 +57,7 @@ impl nbt_version::NbtReadTrait for nbt_version::Java {
                 7 => NbtValue::ByteArray(Java::read_i8_array(reader)?),
                 8 => NbtValue::String(Java::read_nbt_string(reader)?),
                 9 => NbtValue::List(Java::read_list(reader)?),
-                10 => NbtValue::Compound(None, nbt_version::Java::read_compound(reader)?),
+                10 => NbtValue::Compound(Some(name.clone()), nbt_version::Java::read_compound(reader)?),
                 11 => NbtValue::IntArray(Java::read_i32_array(reader)?),
                 12 => NbtValue::LongArray(Java::read_i64_array(reader)?),
                 _ => return Err(NbtError::UnknownType(tag_id)),
