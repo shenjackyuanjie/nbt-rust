@@ -5,7 +5,8 @@ members = [
     "shen-nbt2",
     "shen-nbt3",
     "shen-nbt4", 
-    "shen-nbt5", "trait-test",
+    "shen-nbt5", 
+    "trait-test",
 ]
 resolver = "2"
 
