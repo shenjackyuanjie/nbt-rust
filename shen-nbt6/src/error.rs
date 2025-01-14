@@ -1,4 +1,6 @@
-use std::{error::Error, fmt::Display};
+use std::error::Error;
+use std::fmt::Display;
+use std::str::Utf8Error;
 
 use crate::NbtTypeId;
 
@@ -31,6 +33,8 @@ pub enum NbtError {
     ListTypeNotSame(Vec<NbtTypeId>),
     /// 错误类型
     IncorrectType(NbtTypeId, NbtTypeId),
+    /// m-utf8 解码错误
+    Mutf8Error(Utf8Error),
 }
 
 impl Error for NbtError {}
@@ -77,6 +81,7 @@ impl Display for NbtError {
             NbtError::IncorrectType(expect, got) => {
                 write!(f, "错误类型: 期望: {}, 实际: {}", expect, got)
             }
+            NbtError::Mutf8Error(e) => write!(f, "m-utf8 解码错误: {}", e),
         }
     }
 }

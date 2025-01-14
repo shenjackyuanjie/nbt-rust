@@ -37,3 +37,15 @@ pub enum NbtValue {
     /// 长度: i32
     LongArray(Vec<i64>),
 }
+
+impl NbtValue {
+    /// 检验所有的 mut8 字符串 是否合法
+    pub fn verify_strings(&self) -> bool {
+        match self {
+            NbtValue::String(_) => true,
+            NbtValue::List(v) => v.iter().all(|v| v.verify_strings()),
+            NbtValue::Compound(_, v) => v.iter().all(|(_, v)| v.verify_strings()),
+            _ => false,
+        }
+    }
+}
