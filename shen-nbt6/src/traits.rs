@@ -1,4 +1,6 @@
-use crate::NbtTypeId;
+use std::fmt::Display;
+
+use crate::{NbtTypeId, NbtValue};
 
 /// 把 u8 转换成对应的 Nbt 类型名称
 pub trait NbtTypeConversion {
@@ -28,5 +30,24 @@ impl NbtTypeConversion for NbtTypeId {
             _ => unreachable!(),
         }
         .to_string()
+    }
+}
+
+/// 输出 SNBT
+/// 这里的格式是为了方便阅读
+/// 更接近客户端里实际的格式(命令里使用的格式)
+impl Display for NbtValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            NbtValue::Byte(v) => write!(f, "{}", v),
+            NbtValue::Short(v) => write!(f, "{}", v),
+            NbtValue::Int(v) => write!(f, "{}", v),
+            NbtValue::Long(v) => write!(f, "{}", v),
+            // float 后面跟一个 f
+            NbtValue::Float(v) => write!(f, "{}f", v),
+            // double 后面跟一个 d?
+            NbtValue::Double(v) => write!(f, "{}d", v),
+            _ => todo!()
+        }
     }
 }

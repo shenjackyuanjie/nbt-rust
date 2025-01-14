@@ -17,7 +17,9 @@ pub mod value;
 #[cfg(feature = "serde")]
 pub mod serding;
 
+// re-exports
 pub use error::NbtError;
+pub use value::NbtValue;
 
 /// 用于存储 Nbt 类型的标识符
 pub type NbtTypeId = u8;
