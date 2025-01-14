@@ -1,6 +1,22 @@
 [package]
-name = "shen-nbt6"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
+name = "shen-nbt6"
+readme = "./README.md"
+license-file = "../LICENSE"
+description = "Just A FASSST NBT parser/writer"
+
+keywords = ["nbt", "minecraft", "parser", "writer", "serde"]
+categories = ["data-structures", "encoding", "parsing"]
+
+homepage = "https://github.com/shenjackyuanjie/nbt-rust"
+repository = "https://github.com/shenjackyuanjie/nbt-rust"
+
+[dependencies.serde]
+version = "1.0"
+optional = true
+
+[features]
+default = []
+serde = ["dep:serde"]
