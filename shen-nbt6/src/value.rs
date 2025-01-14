@@ -57,7 +57,10 @@ impl NbtValue {
                         errors.push(e.into());
                     }
                 }
-                for (_, value) in values {
+                for (name, value) in values {
+                    if let Some(e) = name.verify() {
+                        errors.push(e.into());
+                    }
                     value.inner_verify_strings(&mut errors);
                 }
             }
@@ -83,8 +86,24 @@ impl NbtValue {
                     errors.push(e.into());
                 }
             }
-            NbtValue::List(list) => {}
-            NbtValue::Compound(_, list) => {}
+            NbtValue::List(list) => {
+                for value in list {
+                    value.inner_verify_strings(errors);
+                }
+            }
+            NbtValue::Compound(name, list) => {
+                if let Some(n) = name {
+                    if let Some(e) = n.verify() {
+                        errors.push(e.into());
+                    }
+                }
+                for (name, value) in list {
+                    if let Some(e) = name.verify() {
+                        errors.push(e.into());
+                    }
+                    value.inner_verify_strings(errors);
+                }
+            }
             _ => (),
         }
     }

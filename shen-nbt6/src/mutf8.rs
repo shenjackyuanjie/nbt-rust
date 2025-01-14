@@ -22,7 +22,11 @@ impl Mutf8String {
     pub fn verify(&self) -> Option<Utf8Error> {
         if !is_plain_ascii(&self.data) {
             todo!()
+        } else {
+            if let Err(e) = std::str::from_utf8(&self.data) {
+                return Some(e);
+            }
+            None
         }
-        None
     }
 }
