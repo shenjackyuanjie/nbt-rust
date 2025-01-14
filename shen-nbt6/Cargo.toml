@@ -13,6 +13,9 @@ categories = ["data-structures", "encoding", "parsing"]
 homepage = "https://github.com/shenjackyuanjie/nbt-rust"
 repository = "https://github.com/shenjackyuanjie/nbt-rust"
 
+[dependencies]
+simd_cesu8 = "1.0.1"
+
 [dependencies.serde]
 version = "1.0"
 optional = true
