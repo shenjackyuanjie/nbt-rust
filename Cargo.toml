@@ -1,10 +1,6 @@
 [workspace]
 members = [
     # "nbt-test",
-    # "shen-nbt1",  # EOL!
-    # "shen-nbt2",
-    # "shen-nbt3",
-    # "shen-nbt4",
     "shen-nbt5",
     "shen-nbt6",
 ]

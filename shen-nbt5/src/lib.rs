@@ -31,13 +31,6 @@
 pub mod reader;
 pub mod writer;
 
-#[cfg(feature = "serde")]
-pub mod ser;
-#[cfg(feature = "serde")]
-use serde;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 use reader::NbtReader;
 
 #[cfg(test)]
