@@ -1,3 +1,5 @@
+use std::str::Utf8Error;
+
 #[inline]
 /// Check if the given slice is plain ASCII.
 ///
@@ -9,4 +11,18 @@ fn is_plain_ascii(slice: &[u8]) -> bool {
         }
     }
     true
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Mutf8String {
+    data: Vec<u8>,
+}
+
+impl Mutf8String {
+    pub fn verify(&self) -> Option<Utf8Error> {
+        if !is_plain_ascii(&self.data) {
+            todo!()
+        }
+        None
+    }
 }

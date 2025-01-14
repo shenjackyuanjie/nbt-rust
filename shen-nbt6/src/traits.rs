@@ -47,7 +47,7 @@ impl Display for NbtValue {
             NbtValue::Float(v) => write!(f, "{}f", v),
             // double 后面跟一个 d?
             NbtValue::Double(v) => write!(f, "{}d", v),
-            _ => todo!()
+            _ => todo!(),
         }
     }
 }

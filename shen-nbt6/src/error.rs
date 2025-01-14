@@ -85,3 +85,7 @@ impl Display for NbtError {
         }
     }
 }
+
+impl From<Utf8Error> for NbtError {
+    fn from(e: Utf8Error) -> Self { NbtError::Mutf8Error(e) }
+}
