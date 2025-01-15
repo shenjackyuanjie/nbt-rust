@@ -78,6 +78,16 @@ impl NbtValue {
         }
     }
 
+    /// 生成一个 true
+    pub fn value_true() -> Self {
+        NbtValue::Byte(1)
+    }
+
+    /// 生成一个 false
+    pub fn value_false() -> Self {
+        NbtValue::Byte(0)
+    }
+
     /// 内部实际传递的函数
     fn inner_verify_strings(&self, errors: &mut Vec<NbtError>) {
         match self {
