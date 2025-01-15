@@ -1,3 +1,5 @@
+use crate::NbtResult;
+
 
 /// 这里的所有 usize 实际上都指向一个 &[u8]
 /// 
@@ -23,4 +25,10 @@ pub enum BorrowNbtValue {
     IntArray(usize, usize),
     /// ptr, len
     LongArray(usize, usize),
+}
+
+impl BorrowNbtValue {
+    pub fn from_bytes(data: &[u8]) -> NbtResult<Self> {
+        todo!()
+    }
 }

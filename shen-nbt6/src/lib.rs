@@ -10,6 +10,8 @@ pub mod traits;
 pub mod value;
 /// 仅借用的实现
 pub mod borrow;
+/// 几乎就是从 v5 copy 过来的
+pub mod reader;
 
 /// 如果 `serde` 特性被启用，则导出 `serding` 模块
 ///
