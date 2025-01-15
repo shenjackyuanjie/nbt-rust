@@ -47,7 +47,63 @@ impl Display for NbtValue {
             NbtValue::Float(v) => write!(f, "{}f", v),
             // double 后面跟一个 d?
             NbtValue::Double(v) => write!(f, "{}d", v),
-            _ => todo!(),
+            NbtValue::ByteArray(v) => {
+                write!(f, "[")?;
+                for (i, v) in v.iter().enumerate() {
+                    if i != 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", v)?;
+                }
+                write!(f, "]")
+            }
+            NbtValue::IntArray(v) => {
+                write!(f, "[")?;
+                for (i, v) in v.iter().enumerate() {
+                    if i != 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", v)?;
+                }
+                write!(f, "]")
+            }
+            NbtValue::LongArray(v) => {
+                write!(f, "[")?;
+                for (i, v) in v.iter().enumerate() {
+                    if i != 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", v)?;
+                }
+                write!(f, "]")
+            },
+            NbtValue::String(v) => {
+                write!(f, "\"{}\"", v.decode())
+            },
+            NbtValue::List(lst) => {
+                write!(f, "[")?;
+                for (i, v) in lst.iter().enumerate() {
+                    if i != 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", v)?;
+                }
+                write!(f, "]")
+            },
+            NbtValue::Compound(name, map) => {
+                if let Some(name) = name {
+                    write!(f, "{}: {{", name.decode())?;
+                } else {
+                    write!(f, "{{")?;
+                }
+                for (i, (k, v)) in map.iter().enumerate() {
+                    if i != 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}: {}", k.decode(), v)?;
+                }
+                write!(f, "}}")
+            }
         }
     }
 }

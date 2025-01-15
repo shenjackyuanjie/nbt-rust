@@ -1,5 +1,7 @@
 use std::str::Utf8Error;
 
+use simd_cesu8::mutf8;
+
 #[inline]
 /// Check if the given slice is plain ASCII.
 ///
@@ -27,6 +29,14 @@ impl Mutf8String {
                 return Some(e);
             }
             None
+        }
+    }
+
+    pub fn decode(&self) -> String {
+        if is_plain_ascii(&self.data) {
+            unsafe { String::from_utf8_unchecked(self.data.clone()) }
+        } else {
+            mutf8::decode(&self.data).unwrap_or_default().to_string()
         }
     }
 }
