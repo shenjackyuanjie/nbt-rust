@@ -94,14 +94,14 @@ impl NbtReader<'_> {
     ///
     /// 转换大小端(大端)
     #[inline]
-    pub fn read_be_u16(&mut self) -> NbtResult<u16> { 
+    pub fn read_be_u16(&mut self) -> NbtResult<u16> {
         if self.cursor + 2 > self.data.len() {
             return Err(NbtError::CursorOverflow(self.cursor, 2, self.data.len()));
         }
         let value = u16::from_be_bytes([self.data[self.cursor], self.data[self.cursor + 1]]);
         self.cursor += 2;
         Ok(value)
-     }
+    }
     /// 安全的读取 u16 类型的数据
     ///
     /// 转换大小端(小端)

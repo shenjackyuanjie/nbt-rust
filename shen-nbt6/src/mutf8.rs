@@ -41,7 +41,6 @@ impl Mutf8String {
     }
 }
 
-
 impl From<String> for Mutf8String {
     fn from(s: String) -> Self {
         Self {

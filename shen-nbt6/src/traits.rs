@@ -76,10 +76,10 @@ impl Display for NbtValue {
                     write!(f, "{}l", v)?;
                 }
                 write!(f, "]")
-            },
+            }
             NbtValue::String(v) => {
                 write!(f, "\"{}\"", v.decode())
-            },
+            }
             NbtValue::List(lst) => {
                 write!(f, "[")?;
                 for (i, v) in lst.iter().enumerate() {
@@ -89,7 +89,7 @@ impl Display for NbtValue {
                     write!(f, "{}", v)?;
                 }
                 write!(f, "]")
-            },
+            }
             NbtValue::Compound(name, map) => {
                 if let Some(name) = name {
                     write!(f, "{}: {{", name.decode())?;
@@ -108,25 +108,27 @@ impl Display for NbtValue {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn dispaly_nbt_common() {
-        let nbt = NbtValue::Compound(None, vec![
-            ("byte".into(), NbtValue::Byte(1)),
-            ("short".into(), NbtValue::Short(2)),
-            ("int".into(), NbtValue::Int(3)),
-            ("long".into(), NbtValue::Long(4)),
-            ("float".into(), NbtValue::Float(5.0)),
-            ("double".into(), NbtValue::Double(6.0)),
-            ("byte_array".into(), NbtValue::ByteArray(vec![1, 2, 3])),
-            ("int_array".into(), NbtValue::IntArray(vec![1, 2, 3])),
-            ("long_array".into(), NbtValue::LongArray(vec![1, 2, 3])),
-            ("string".into(), NbtValue::String("test".into()))
-            ]);
+        let nbt = NbtValue::Compound(
+            None,
+            vec![
+                ("byte".into(), NbtValue::Byte(1)),
+                ("short".into(), NbtValue::Short(2)),
+                ("int".into(), NbtValue::Int(3)),
+                ("long".into(), NbtValue::Long(4)),
+                ("float".into(), NbtValue::Float(5.0)),
+                ("double".into(), NbtValue::Double(6.0)),
+                ("byte_array".into(), NbtValue::ByteArray(vec![1, 2, 3])),
+                ("int_array".into(), NbtValue::IntArray(vec![1, 2, 3])),
+                ("long_array".into(), NbtValue::LongArray(vec![1, 2, 3])),
+                ("string".into(), NbtValue::String("test".into())),
+            ],
+        );
         let str = format!("{}", nbt);
         assert_eq!(str, "{byte: 1b, short: 2s, int: 3, long: 4l, float: 5f, double: 6d, byte_array: [B; 1b, 2b, 3b], int_array: [I; 1, 2, 3], long_array: [L; 1l, 2l, 3l], string: \"test\"}");
     }

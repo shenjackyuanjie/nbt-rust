@@ -1,19 +1,19 @@
+/// 仅借用的实现
+pub mod borrow;
 /// Error
 pub mod error;
+/// nbt! 宏
+pub mod macros;
 /// 感谢 @mat 允许我使用他的代码
 ///
 /// 用于处理 mutf8 编码
 pub mod mutf8;
+/// 几乎就是从 v5 copy 过来的
+pub mod reader;
 /// 一些实现
 pub mod traits;
 /// 核心 value 实现
 pub mod value;
-/// 仅借用的实现
-pub mod borrow;
-/// 几乎就是从 v5 copy 过来的
-pub mod reader;
-/// nbt! 宏
-pub mod macros;
 
 /// 如果 `serde` 特性被启用，则导出 `serding` 模块
 ///
@@ -25,6 +25,7 @@ pub mod serding;
 
 // re-exports
 pub use error::NbtError;
+pub use mutf8::Mutf8String;
 pub use value::NbtValue;
 
 /// 用于存储 Nbt 类型的标识符
