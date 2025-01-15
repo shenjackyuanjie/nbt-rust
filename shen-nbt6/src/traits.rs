@@ -39,26 +39,26 @@ impl NbtTypeConversion for NbtTypeId {
 impl Display for NbtValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            NbtValue::Byte(v) => write!(f, "{}", v),
-            NbtValue::Short(v) => write!(f, "{}", v),
+            NbtValue::Byte(v) => write!(f, "{}b", v),
+            NbtValue::Short(v) => write!(f, "{}s", v),
             NbtValue::Int(v) => write!(f, "{}", v),
-            NbtValue::Long(v) => write!(f, "{}", v),
+            NbtValue::Long(v) => write!(f, "{}l", v),
             // float 后面跟一个 f
             NbtValue::Float(v) => write!(f, "{}f", v),
             // double 后面跟一个 d?
             NbtValue::Double(v) => write!(f, "{}d", v),
             NbtValue::ByteArray(v) => {
-                write!(f, "[")?;
+                write!(f, "[B; ")?;
                 for (i, v) in v.iter().enumerate() {
                     if i != 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{}", v)?;
+                    write!(f, "{}b", v)?;
                 }
                 write!(f, "]")
             }
             NbtValue::IntArray(v) => {
-                write!(f, "[")?;
+                write!(f, "[I; ")?;
                 for (i, v) in v.iter().enumerate() {
                     if i != 0 {
                         write!(f, ", ")?;
@@ -68,12 +68,12 @@ impl Display for NbtValue {
                 write!(f, "]")
             }
             NbtValue::LongArray(v) => {
-                write!(f, "[")?;
+                write!(f, "[L; ")?;
                 for (i, v) in v.iter().enumerate() {
                     if i != 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{}", v)?;
+                    write!(f, "{}l", v)?;
                 }
                 write!(f, "]")
             },
@@ -105,5 +105,50 @@ impl Display for NbtValue {
                 write!(f, "}}")
             }
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dispaly_nbt_common() {
+        let nbt = NbtValue::Compound(None, vec![
+            ("byte".into(), NbtValue::Byte(1)),
+            ("short".into(), NbtValue::Short(2)),
+            ("int".into(), NbtValue::Int(3)),
+            ("long".into(), NbtValue::Long(4)),
+            ("float".into(), NbtValue::Float(5.0)),
+            ("double".into(), NbtValue::Double(6.0)),
+            ("byte_array".into(), NbtValue::ByteArray(vec![1, 2, 3])),
+            ("int_array".into(), NbtValue::IntArray(vec![1, 2, 3])),
+            ("long_array".into(), NbtValue::LongArray(vec![1, 2, 3])),
+            ("string".into(), NbtValue::String("test".into()))
+            ]);
+        let str = format!("{}", nbt);
+        assert_eq!(str, "{byte: 1b, short: 2s, int: 3, long: 4l, float: 5f, double: 6d, byte_array: [B; 1b, 2b, 3b], int_array: [I; 1, 2, 3], long_array: [L; 1l, 2l, 3l], string: \"test\"}");
+    }
+
+    #[test]
+    fn display_byte_array() {
+        let nbt = NbtValue::ByteArray(vec![1, 2, 3]);
+        let str = format!("{}", nbt);
+        assert_eq!(str, "[B; 1b, 2b, 3b]");
+    }
+
+    #[test]
+    fn display_int_array() {
+        let nbt = NbtValue::IntArray(vec![1, 2, 3]);
+        let str = format!("{}", nbt);
+        assert_eq!(str, "[I; 1, 2, 3]");
+    }
+
+    #[test]
+    fn display_long_array() {
+        let nbt = NbtValue::LongArray(vec![1, 2, 3]);
+        let str = format!("{}", nbt);
+        assert_eq!(str, "[L; 1l, 2l, 3l]");
     }
 }

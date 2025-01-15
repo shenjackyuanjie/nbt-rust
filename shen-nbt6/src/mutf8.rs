@@ -40,3 +40,20 @@ impl Mutf8String {
         }
     }
 }
+
+
+impl From<String> for Mutf8String {
+    fn from(s: String) -> Self {
+        Self {
+            data: s.into_bytes(),
+        }
+    }
+}
+
+impl From<&str> for Mutf8String {
+    fn from(s: &str) -> Self {
+        Self {
+            data: s.as_bytes().to_vec(),
+        }
+    }
+}
