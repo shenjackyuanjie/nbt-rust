@@ -8,6 +8,8 @@ pub mod mutf8;
 pub mod traits;
 /// 核心 value 实现
 pub mod value;
+/// 仅借用的实现
+pub mod borrow;
 
 /// 如果 `serde` 特性被启用，则导出 `serding` 模块
 ///
