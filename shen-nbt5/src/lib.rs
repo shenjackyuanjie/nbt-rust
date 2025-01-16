@@ -248,9 +248,6 @@ impl std::fmt::Display for NbtError {
 /// 暂时不支持 `from_value` 和 `to_value`
 /// https://github.com/shenjackyuanjie/nbt-rust/issues/1
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", derive(Deserialize))]
-#[cfg_attr(feature = "serde", serde(untagged))]
 pub enum NbtValue {
     // end: 0
     /// 1: Byte
