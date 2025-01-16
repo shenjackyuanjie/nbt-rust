@@ -8,7 +8,7 @@ mod tests;
 /// 用于更快速的解析 Nbt 数据
 ///
 /// 所有 usize 都指向对应数据的开始位置
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BorrowNbtValue {
     Byte(usize),
     Short(usize),
@@ -431,6 +431,139 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                     ));
                                     // 检查溢出
                                     reader.roll_down(sub_lst_len)?;
+                                }
+                                nbt_consts::TAG_SHORT => {
+                                    let lst_values = (0..sub_lst_len)
+                                        .map(|i| BorrowNbtValue::Short(current_ptr + i * 2))
+                                        .collect::<Vec<BorrowNbtValue>>();
+                                    values.push(BorrowNbtValue::List(
+                                        current_ptr,
+                                        sub_lst_len,
+                                        sub_lst_type,
+                                        lst_values,
+                                    ));
+                                    reader.roll_down(sub_lst_len * 2)?;
+                                }
+                                nbt_consts::TAG_INT => {
+                                    let lst_values = (0..sub_lst_len)
+                                        .map(|i| BorrowNbtValue::Int(current_ptr + i * 4))
+                                        .collect::<Vec<BorrowNbtValue>>();
+                                    values.push(BorrowNbtValue::List(
+                                        current_ptr,
+                                        sub_lst_len,
+                                        sub_lst_type,
+                                        lst_values,
+                                    ));
+                                    reader.roll_down(sub_lst_len * 4)?;
+                                }
+                                nbt_consts::TAG_LONG => {
+                                    let lst_values = (0..sub_lst_len)
+                                        .map(|i| BorrowNbtValue::Long(current_ptr + i * 8))
+                                        .collect::<Vec<BorrowNbtValue>>();
+                                    values.push(BorrowNbtValue::List(
+                                        current_ptr,
+                                        sub_lst_len,
+                                        sub_lst_type,
+                                        lst_values,
+                                    ));
+                                    reader.roll_down(sub_lst_len * 8)?;
+                                }
+                                nbt_consts::TAG_FLOAT => {
+                                    let lst_values = (0..sub_lst_len)
+                                        .map(|i| BorrowNbtValue::Float(current_ptr + i * 4))
+                                        .collect::<Vec<BorrowNbtValue>>();
+                                    values.push(BorrowNbtValue::List(
+                                        current_ptr,
+                                        sub_lst_len,
+                                        sub_lst_type,
+                                        lst_values,
+                                    ));
+                                    reader.roll_down(sub_lst_len * 4)?;
+                                }
+                                nbt_consts::TAG_DOUBLE => {
+                                    let lst_values = (0..sub_lst_len)
+                                        .map(|i| BorrowNbtValue::Double(current_ptr + i * 8))
+                                        .collect::<Vec<BorrowNbtValue>>();
+                                    values.push(BorrowNbtValue::List(
+                                        current_ptr,
+                                        sub_lst_len,
+                                        sub_lst_type,
+                                        lst_values,
+                                    ));
+                                    reader.roll_down(sub_lst_len * 8)?;
+                                }
+                                // arrays
+                                nbt_consts::TAG_BYTE_ARRAY => {
+                                    let mut lst_values = Vec::with_capacity(sub_lst_len);
+                                    for _ in 0..sub_lst_len {
+                                        let value_ptr = reader.cursor;
+                                        let value_len = reader.read_be_i32()?;
+                                        if value_len < 0 {
+                                            return Err(NbtError::LenNegative(
+                                                sub_lst_type,
+                                                value_len,
+                                                value_ptr,
+                                            ));
+                                        }
+                                        let value_len = value_len as usize;
+                                        let value = BorrowNbtValue::ByteArray(value_ptr, value_len);
+                                        lst_values.push(value);
+                                        reader.roll_down(value_len)?;
+                                    }
+                                    values.push(BorrowNbtValue::List(
+                                        current_ptr,
+                                        sub_lst_len,
+                                        sub_lst_type,
+                                        lst_values,
+                                    ));
+                                }
+                                nbt_consts::TAG_INT_ARRAY => {
+                                    let mut lst_values = Vec::with_capacity(sub_lst_len);
+                                    for _ in 0..sub_lst_len {
+                                        let value_ptr = reader.cursor;
+                                        let value_len = reader.read_be_i32()?;
+                                        if value_len < 0 {
+                                            return Err(NbtError::LenNegative(
+                                                sub_lst_type,
+                                                value_len,
+                                                value_ptr,
+                                            ));
+                                        }
+                                        let value_len = value_len as usize;
+                                        let value = BorrowNbtValue::IntArray(value_ptr, value_len);
+                                        lst_values.push(value);
+                                        reader.roll_down(value_len * 4)?;
+                                    }
+                                    values.push(BorrowNbtValue::List(
+                                        current_ptr,
+                                        sub_lst_len,
+                                        sub_lst_type,
+                                        lst_values,
+                                    ));
+                                }
+                                nbt_consts::TAG_LONG_ARRAY => {
+                                    let mut lst_values = Vec::with_capacity(sub_lst_len);
+                                    for _ in 0..sub_lst_len {
+                                        let value_ptr = reader.cursor;
+                                        let value_len = reader.read_be_i32()?;
+                                        if value_len < 0 {
+                                            return Err(NbtError::LenNegative(
+                                                sub_lst_type,
+                                                value_len,
+                                                value_ptr,
+                                            ));
+                                        }
+                                        let value_len = value_len as usize;
+                                        let value = BorrowNbtValue::LongArray(value_ptr, value_len);
+                                        lst_values.push(value);
+                                        reader.roll_down(value_len * 8)?;
+                                    }
+                                    values.push(BorrowNbtValue::List(
+                                        current_ptr,
+                                        sub_lst_len,
+                                        sub_lst_type,
+                                        lst_values,
+                                    ));
                                 }
                                 _ => unreachable!("其他的都预处理过了"),
                             }

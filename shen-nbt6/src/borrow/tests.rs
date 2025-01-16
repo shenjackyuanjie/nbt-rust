@@ -22,9 +22,7 @@ fn hello_world_borrow() {
         println!("cursor state:\n{}", reader.show_cursor_fancy(None));
         panic!("{}", e);
     }
-
-    let correct_data = NbtValue::Compound(
-        Some("hello world".into()),
-        vec![("name".into(), NbtValue::String("Bananrama".into()))],
-    );
+    let correct_data =
+        BorrowNbtValue::Compound(0, Some(11), vec![(4, BorrowNbtValue::String(21, 9))]);
+    assert_eq!(data.unwrap(), correct_data);
 }
