@@ -8,6 +8,10 @@ use crate::{
 pub trait NbtTypeConversion {
     /// 把 u8 转换成对应的 Nbt 类型名称
     fn as_nbt_type_name(&self) -> String;
+    /// 检查是否是一个合法的 Nbt 类型
+    fn is_valid_nbt_type(&self) -> bool;
+    /// 检查是否是一个有效的 Nbt 数据类型
+    fn is_valid_nbt_data_type(&self) -> bool;
 }
 
 impl NbtTypeConversion for NbtTypeId {
@@ -32,6 +36,12 @@ impl NbtTypeConversion for NbtTypeId {
             _ => unreachable!(),
         }
         .to_string()
+    }
+    fn is_valid_nbt_type(&self) -> bool {
+        *self <= 12
+    }
+    fn is_valid_nbt_data_type(&self) -> bool {
+        *self <= 12 && *self != nbt_consts::TAG_END
     }
 }
 

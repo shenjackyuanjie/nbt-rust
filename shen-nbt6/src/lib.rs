@@ -15,6 +15,10 @@ pub mod traits;
 /// 核心 value 实现
 pub mod value;
 
+
+#[cfg(test)]
+mod tests;
+
 /// 如果 `serde` 特性被启用，则导出 `serding` 模块
 ///
 /// 用于序列化和反序列化 Nbt 数据
