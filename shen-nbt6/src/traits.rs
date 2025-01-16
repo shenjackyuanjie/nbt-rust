@@ -37,12 +37,8 @@ impl NbtTypeConversion for NbtTypeId {
         }
         .to_string()
     }
-    fn is_valid_nbt_type(&self) -> bool {
-        *self <= 12
-    }
-    fn is_valid_nbt_data_type(&self) -> bool {
-        *self <= 12 && *self != nbt_consts::TAG_END
-    }
+    fn is_valid_nbt_type(&self) -> bool { *self <= 12 }
+    fn is_valid_nbt_data_type(&self) -> bool { *self <= 12 && *self != nbt_consts::TAG_END }
 }
 
 pub trait NbtReadTrait {

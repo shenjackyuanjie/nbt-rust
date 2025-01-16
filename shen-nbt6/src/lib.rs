@@ -15,7 +15,6 @@ pub mod traits;
 /// 核心 value 实现
 pub mod value;
 
-
 #[cfg(test)]
 mod tests;
 
@@ -99,9 +98,12 @@ pub mod nbt_consts {
     /// len: u16 ( 基岩版 le/varint )
     /// mutf8
     pub const TAG_STRING: u8 = 8;
-    /// 
+    /// len: i32 ( 基岩版 le/zigzag varints )
     pub const TAG_LIST: u8 = 9;
+    /// just map!
     pub const TAG_COMPOUND: u8 = 10;
+    /// len: i32 ( 基岩版 le/zigzag varints )
     pub const TAG_INT_ARRAY: u8 = 11;
+    /// len: i32 ( 基岩版 le/zigzag varints )
     pub const TAG_LONG_ARRAY: u8 = 12;
 }

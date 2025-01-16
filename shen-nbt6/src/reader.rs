@@ -62,13 +62,13 @@ impl NbtReader<'_> {
     }
 
     /// 比较华丽的展示当前指针位置
-    /// 
+    ///
     /// 会把当前指针位置标记出来
-    /// 
+    ///
     /// 尽量把当前指针位置放在中间
-    /// 
+    ///
     /// 默认展示 10 个字节
-    /// 
+    ///
     /// ```text
     /// [...., 0x01, 0x02, 0x03, 0x04, 0x05, ....]
     ///                    ^^^^ pos: 3
@@ -77,7 +77,11 @@ impl NbtReader<'_> {
         let show_len = display_len.unwrap_or(10).min(self.data.len());
         // 中间位置
         let middle = show_len / 2;
-        let start = if self.cursor > middle { self.cursor - middle } else { 0 };
+        let start = if self.cursor > middle {
+            self.cursor - middle
+        } else {
+            0
+        };
         let end = (start + show_len).min(self.data.len());
         let display_data = self.data[start..end]
             .iter()

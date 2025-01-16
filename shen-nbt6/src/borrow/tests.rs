@@ -1,6 +1,5 @@
-use crate::{NbtReader, nbt_versions, NbtValue};
 use super::{BorrowNbtValue, NbtBorrowTrait};
-
+use crate::{nbt_versions, NbtReader, NbtValue};
 
 #[test]
 fn hello_world_borrow() {
@@ -23,10 +22,9 @@ fn hello_world_borrow() {
         println!("cursor state:\n{}", reader.show_cursor_fancy(None));
         panic!("{}", e);
     }
-    
+
     let correct_data = NbtValue::Compound(
         Some("hello world".into()),
         vec![("name".into(), NbtValue::String("Bananrama".into()))],
     );
-
 }
