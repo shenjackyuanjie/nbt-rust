@@ -99,11 +99,15 @@ impl NbtReader<'_> {
             }
         };
 
-        if start != 0 {
-            format!("[...., {}]\n{}", display_data.join(", "), cursor_pointer)
-        } else {
-            format!("[{}]\n{}", display_data.join(", "), cursor_pointer)
-        }
+        let values = {
+            format!(
+                "[{}{}{}]",
+                if start != 0 { "...., " } else { "" },
+                display_data.join(", "),
+                if end != self.data.len() { ", ...." } else { "" }
+            )
+        };
+        format!("{}\n{}", values, cursor_pointer)
     }
 
     /// 检查 cursor 是否超出范围

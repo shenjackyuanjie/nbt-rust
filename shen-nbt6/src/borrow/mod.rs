@@ -70,7 +70,12 @@ impl NbtBorrowTrait for nbt_versions::Java {
                 return Err(NbtError::NbtDepthTooBig(RECURSE_LIMIT));
             }
             // 取出栈顶对象
-            let current = read_stack.last_mut().unwrap();
+            let current = read_stack.last().unwrap();
+            let current: &mut BorrowNbtValue = unsafe {
+                // SAFETY: 这里的操作是安全的, 因为 BorrowNbtValue 的所有变体都是 Copy 的
+                // 所以不会出现悬垂指针的问题
+                std::ptr::read(current)
+            };
             // 开始持续尝试读取对应的数据
             // 这里分 Compound 和 List 两种情况
             // 读取的时候是直接从当前的 cursor 开始读取的
@@ -90,8 +95,10 @@ impl NbtBorrowTrait for nbt_versions::Java {
                         }
                         let value_name_len = reader.read_be_u16()? as usize;
                         println!(
-                            "Value type: {}, name_len: {}, cursor: {}",
-                            value_type_id, value_name_len, reader.cursor
+                            "Value type: {}, name_len: {}, cursor:\n{}",
+                            value_type_id.as_nbt_type_name(),
+                            value_name_len,
+                            reader.show_cursor_fancy(None)
                         );
                         // 跳过 name
                         reader.roll_down(value_name_len)?;
@@ -211,6 +218,8 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                         vec![],
                                     );
                                     values.push((value_name_len, value));
+                                    let last = values.last_mut().unwrap();
+                                    read_stack.push(&mut last.1);
                                     break;
                                 }
                                 let current_ptr = reader.cursor;
@@ -368,6 +377,8 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                 // 非 root 的 Compound
                                 let value = BorrowNbtValue::Compound(value_ptr, None, vec![]);
                                 values.push((value_name_len, value));
+                                let last = values.last_mut().unwrap();
+                                read_stack.push(&mut last.1);
                                 break;
                             }
                             nbt_consts::TAG_END => {
@@ -412,6 +423,7 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                     vec![],
                                 );
                                 values.push(value);
+                                read_stack.push(values.last_mut().unwrap());
                                 continue;
                             }
                             let current_ptr = reader.cursor;
