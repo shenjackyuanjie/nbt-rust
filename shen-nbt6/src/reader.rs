@@ -50,8 +50,20 @@ impl NbtReader<'_> {
     #[inline]
     pub fn roll_back(&mut self, len: usize) { self.cursor -= len; }
     /// 向前滚动
+    /// 会在超出长度返回错误
     #[inline]
-    pub fn roll_down(&mut self, len: usize) { self.cursor += len; }
+    #[must_use]
+    pub fn roll_down(&mut self, len: usize) -> NbtResult<()> {
+        if self.cursor < len {
+            return Err(NbtError::CursorOverflow(self.cursor, len, self.data.len()));
+        }
+        self.cursor += len;
+        Ok(())
+    }
+    /// 检查 cursor 是否超出范围
+    /// 如果超出范围, 则返回 false
+    #[inline]
+    pub fn check_cursor(&self) -> bool { self.cursor < self.data.len() }
     /// 读取一个 u8 类型的数据
     #[inline]
     pub fn read_u8(&mut self) -> NbtResult<u8> {

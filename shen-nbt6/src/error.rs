@@ -31,10 +31,14 @@ pub enum NbtError {
     VarlongTooBig(usize),
     /// NbtList 中类型不同
     ListTypeNotSame(Vec<NbtTypeId>),
+    /// NbtList 长度 < 0
+    ListLenNegative(i32),
     /// 错误类型
     IncorrectType(NbtTypeId, NbtTypeId),
     /// m-utf8 解码错误
     Mutf8Error(Utf8Error),
+    /// NBT 深度过大
+    NbtDepthTooBig(usize),
 }
 
 impl Error for NbtError {}
@@ -78,10 +82,12 @@ impl Display for NbtError {
             NbtError::ListTypeNotSame(types) => {
                 write!(f, "NbtList 中类型不同: {:?} 应相同", types)
             }
+            NbtError::ListLenNegative(n) => write!(f, "NbtList 长度 {} < 0", n),
             NbtError::IncorrectType(expect, got) => {
                 write!(f, "错误类型: 期望: {}, 实际: {}", expect, got)
             }
             NbtError::Mutf8Error(e) => write!(f, "m-utf8 解码错误: {}", e),
+            NbtError::NbtDepthTooBig(n) => write!(f, "NBT 深度过大, 仅支持 {} 深度", n),
         }
     }
 }
