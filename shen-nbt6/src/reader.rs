@@ -54,14 +54,17 @@ impl NbtReader<'_> {
     pub fn roll_down(&mut self, len: usize) { self.cursor += len; }
     /// 读取一个 u8 类型的数据
     #[inline]
-    pub fn read_u8(&mut self) -> u8 {
+    pub fn read_u8(&mut self) -> NbtResult<u8> {
+        if self.cursor >= self.data.len() {
+            return Err(NbtError::CursorOverflow(self.cursor, 1, self.data.len()));
+        }
         let value = self.data[self.cursor];
         self.cursor += 1;
-        value
+        Ok(value)
     }
     /// 读取一个 i8 类型的数据
     #[inline]
-    pub fn read_i8(&mut self) -> i8 { self.read_u8() as i8 }
+    pub fn read_i8(&mut self) -> NbtResult<i8> { Ok(self.read_u8()? as i8) }
     read_uncheck!(read_be_i16_unsafe, read_le_i16_unsafe, i16, 2);
     read_uncheck!(read_be_u16_unsafe, read_le_u16_unsafe, u16, 2);
     read_uncheck!(read_be_i32_unsafe, read_le_i32_unsafe, i32, 4);
@@ -143,7 +146,7 @@ impl NbtReader<'_> {
         let mut value = 0;
         let mut size = 0;
         loop {
-            let byte = self.read_u8();
+            let byte = self.read_u8()?;
             value |= ((byte & 0b0111_1111) as i32) << (size * 7);
             size += 1;
             if size > 5 {
@@ -165,7 +168,7 @@ impl NbtReader<'_> {
         let mut value = 0;
         let mut size = 0;
         loop {
-            let byte = self.read_u8();
+            let byte = self.read_u8()?;
             value |= ((byte & 0b0111_1111) as i64) << (size * 7);
             size += 1;
             if size > 10 {

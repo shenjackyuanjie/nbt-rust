@@ -1,4 +1,4 @@
-use crate::NbtResult;
+use crate::{nbt_versions, traits::NbtBorrowTrait, NbtReader, NbtResult};
 
 /// 这里的所有 usize 实际上都指向一个 &[u8]
 ///
@@ -24,4 +24,12 @@ pub enum BorrowNbtValue {
     IntArray(usize, usize),
     /// ptr, len
     LongArray(usize, usize),
+}
+
+impl NbtBorrowTrait for nbt_versions::Java {
+    fn from_reader(reader: &mut NbtReader) -> NbtResult<BorrowNbtValue> {
+        let first_type_id = reader.read_u8();
+
+        todo!()
+    }
 }

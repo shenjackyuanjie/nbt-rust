@@ -1,6 +1,8 @@
 use std::fmt::Display;
 
-use crate::{Mutf8String, NbtReader, NbtResult, NbtTypeId, NbtValue};
+use crate::{
+    borrow::BorrowNbtValue, nbt_consts, Mutf8String, NbtReader, NbtResult, NbtTypeId, NbtValue,
+};
 
 /// 把 u8 转换成对应的 Nbt 类型名称
 pub trait NbtTypeConversion {
@@ -14,19 +16,19 @@ impl NbtTypeConversion for NbtTypeId {
             return format!("未知类型({})", *self);
         }
         match *self {
-            0 => "NBT_End(0)",
-            1 => "NBT_Byte(1)",
-            2 => "NBT_Short(2)",
-            3 => "NBT_Int(3)",
-            4 => "NBT_Long(4)",
-            5 => "NBT_Float(5)",
-            6 => "NBT_Double(6)",
-            7 => "NBT_ByteArray(7)",
-            8 => "NBT_String(8)",
-            9 => "NBT_List(9)",
-            10 => "NBT_Compound(10)",
-            11 => "NBT_IntArray(11)",
-            12 => "NBT_LongArray(12)",
+            nbt_consts::TAG_END => "NBT_End(0)",
+            nbt_consts::TAG_BYTE => "NBT_Byte(1)",
+            nbt_consts::TAG_SHORT => "NBT_Short(2)",
+            nbt_consts::TAG_INT => "NBT_Int(3)",
+            nbt_consts::TAG_LONG => "NBT_Long(4)",
+            nbt_consts::TAG_FLOAT => "NBT_Float(5)",
+            nbt_consts::TAG_DOUBLE => "NBT_Double(6)",
+            nbt_consts::TAG_BYTE_ARRAY => "NBT_ByteArray(7)",
+            nbt_consts::TAG_STRING => "NBT_String(8)",
+            nbt_consts::TAG_LIST => "NBT_List(9)",
+            nbt_consts::TAG_COMPOUND => "NBT_Compound(10)",
+            nbt_consts::TAG_INT_ARRAY => "NBT_IntArray(11)",
+            nbt_consts::TAG_LONG_ARRAY => "NBT_LongArray(12)",
             _ => unreachable!(),
         }
         .to_string()
@@ -48,6 +50,13 @@ pub trait NbtReadTrait {
     fn read_compound(reader: &mut NbtReader) -> NbtResult<Vec<(Mutf8String, NbtValue)>>;
 
     fn from_reader(reader: NbtReader) -> NbtResult<NbtValue>;
+}
+
+pub trait NbtBorrowTrait {
+    /// 从 `reader` 解析一个 Nbt 类型
+    ///
+    /// 因为并不会实际上读取任何数据, 所以这里需要借用 reader
+    fn from_reader(reader: &mut NbtReader) -> NbtResult<BorrowNbtValue>;
 }
 
 /// 输出 SNBT
