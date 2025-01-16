@@ -174,9 +174,77 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                 if lst_len < 0 {
                                     return Err(NbtError::ListLenNegative(lst_len as i32));
                                 }
-                                let value = BorrowNbtValue::List(value_ptr, lst_len as usize, lst_type, vec![]);
-                                values.push((value_name_len, value));
-                                break;
+                                if lst_type == nbt_consts::TAG_COMPOUND || lst_type == nbt_consts::TAG_LIST {
+                                    // 这两个需要压栈
+                                    let value = BorrowNbtValue::List(value_ptr, lst_len as usize, lst_type, vec![]);
+                                    values.push((value_name_len, value));
+                                    break;
+                                }
+                                let current_ptr = reader.cursor;
+                                // 可直接读取的类型
+                                match lst_type {
+                                    // byte/short/int/long/float/double
+                                    nbt_consts::TAG_BYTE => {
+                                        let lst_values = (0..lst_len as usize)
+                                            .map(|i| {
+                                                BorrowNbtValue::Byte(current_ptr + i)
+                                            })
+                                            .collect::<Vec<BorrowNbtValue>>();
+                                        values.push((value_name_len, BorrowNbtValue::List(value_ptr, lst_len as usize, lst_type, lst_values)));
+                                        // 检查溢出
+                                        reader.roll_down(lst_len as usize)?;
+                                    }
+                                    nbt_consts::TAG_SHORT => {
+                                        let lst_values = (0..lst_len as usize)
+                                            .map(|i| {
+                                                BorrowNbtValue::Short(current_ptr + i * 2)
+                                            })
+                                            .collect::<Vec<BorrowNbtValue>>();
+                                        values.push((value_name_len, BorrowNbtValue::List(value_ptr, lst_len as usize, lst_type, lst_values)));
+                                        reader.roll_down(lst_len as usize * 2)?;
+                                    }
+                                    nbt_consts::TAG_INT => {
+                                        let lst_values = (0..lst_len as usize)
+                                            .map(|i| {
+                                                BorrowNbtValue::Int(current_ptr + i * 4)
+                                            })
+                                            .collect::<Vec<BorrowNbtValue>>();
+                                        values.push((value_name_len, BorrowNbtValue::List(value_ptr, lst_len as usize, lst_type, lst_values)));
+                                        reader.roll_down(lst_len as usize * 4)?;
+                                    }
+                                    nbt_consts::TAG_LONG => {
+                                        let lst_values = (0..lst_len as usize)
+                                            .map(|i| {
+                                                BorrowNbtValue::Long(current_ptr + i * 8)
+                                            })
+                                            .collect::<Vec<BorrowNbtValue>>();
+                                        values.push((value_name_len, BorrowNbtValue::List(value_ptr, lst_len as usize, lst_type, lst_values)));
+                                        reader.roll_down(lst_len as usize * 8)?;
+                                    }
+                                    nbt_consts::TAG_FLOAT =>{
+                                        let lst_values = (0..lst_len as usize)
+                                            .map(|i| {
+                                                BorrowNbtValue::Float(current_ptr + i * 4)
+                                            })
+                                            .collect::<Vec<BorrowNbtValue>>();
+                                        values.push((value_name_len, BorrowNbtValue::List(value_ptr, lst_len as usize, lst_type, lst_values)));
+                                        reader.roll_down(lst_len as usize * 4)?;
+                                    }
+                                    nbt_consts::TAG_DOUBLE => {
+                                        let lst_values = (0..lst_len as usize)
+                                            .map(|i| {
+                                                BorrowNbtValue::Double(current_ptr + i * 8)
+                                            })
+                                            .collect::<Vec<BorrowNbtValue>>();
+                                        values.push((value_name_len, BorrowNbtValue::List(value_ptr, lst_len as usize, lst_type, lst_values)));
+                                        reader.roll_down(lst_len as usize * 8)?;
+                                    }
+                                    // byte/int/long array
+                                    nbt_consts::TAG_BYTE_ARRAY => {
+                                        
+                                    }
+                                    _ => unreachable!("其他的都预处理过了")
+                                }
                             }
                             nbt_consts::TAG_COMPOUND => {
                                 let value_ptr = reader.cursor;
@@ -194,7 +262,7 @@ impl NbtBorrowTrait for nbt_versions::Java {
                         }
                     }
                 }
-                BorrowNbtValue::List(_start, lst_len, type_id, values) => {
+                BorrowNbtValue::List(_start, lst_len, lst_type, values) => {
                     // cursor 的位置就是当前需要读取的下一个值的开始位置
                     // 先检查长度是不是读完了
                     if values.len() == *lst_len {
@@ -202,7 +270,29 @@ impl NbtBorrowTrait for nbt_versions::Java {
                         read_stack.pop();
                         continue;
                     }
+                    match *lst_type {
+                        // 可直接读取的类型
+                        // 直接重复读取即可
+                        nbt_consts::TAG_BYTE => {
+                            for _ in 0..*lst_len {
+                                let value_ptr = reader.cursor;
+                                let value = BorrowNbtValue::Byte(value_ptr);
+                                values.push(value);
+                                reader.roll_down(1)?;
+                            }
+                        }
+                        // 三个 array
+                        
+                        nbt_consts::TAG_LIST => {
 
+                        }
+                        nbt_consts::TAG_COMPOUND => {
+
+                        }
+                        _ => {
+                            unreachable!("在外面就检查过了")
+                        }
+                    }
                 }
                 _ => {
                     unreachable!(

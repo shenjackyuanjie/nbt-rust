@@ -74,15 +74,32 @@ pub mod nbt_versions {
 
 /// 一些 NBT 中的常量
 pub mod nbt_consts {
+    /// 标记结束
     pub const TAG_END: u8 = 0;
+    /// i8 byte, 就一个字节
     pub const TAG_BYTE: u8 = 1;
+    /// short, 两个字节
+    /// 基岩版是 le
     pub const TAG_SHORT: u8 = 2;
+    /// int, 四个字节
+    /// 基岩版是 le/zigzag
     pub const TAG_INT: u8 = 3;
+    /// long, 八个字节
+    /// 基岩版是 le/zigzag varlongs
     pub const TAG_LONG: u8 = 4;
+    /// float, 四个字节
+    /// 基岩版是 le
     pub const TAG_FLOAT: u8 = 5;
+    /// double, 八个字节
+    /// 基岩版是 le
     pub const TAG_DOUBLE: u8 = 6;
+    /// len: i32 ( 基岩版 le/zigzag varints )
+    /// 投影里直接把这玩意当成一块内存使
     pub const TAG_BYTE_ARRAY: u8 = 7;
+    /// len: u16 ( 基岩版 le/varint )
+    /// mutf8
     pub const TAG_STRING: u8 = 8;
+    /// 
     pub const TAG_LIST: u8 = 9;
     pub const TAG_COMPOUND: u8 = 10;
     pub const TAG_INT_ARRAY: u8 = 11;
