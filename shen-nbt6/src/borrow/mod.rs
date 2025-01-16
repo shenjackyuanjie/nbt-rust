@@ -1,11 +1,14 @@
-use crate::traits::NbtBorrowTrait;
+use crate::traits::{NbtBorrowTrait, NbtTypeConversion};
 use crate::{nbt_consts, nbt_versions, NbtError, NbtReader, NbtResult, NbtTypeId};
+#[cfg(test)]
+mod tests;
 
 /// 这里的所有 usize 实际上都指向一个 &[u8]
 ///
 /// 用于更快速的解析 Nbt 数据
 ///
 /// 所有 usize 都指向对应数据的开始位置
+#[derive(Debug, Clone)]
 pub enum BorrowNbtValue {
     Byte(usize),
     Short(usize),
@@ -79,16 +82,17 @@ impl NbtBorrowTrait for nbt_versions::Java {
                     // 重复读取值, 直到遇到需要压栈的 Compound/List
                     loop {
                         let value_type_id = reader.read_u8()?;
+                        if value_type_id == nbt_consts::TAG_END {
+                            // 读取到了 TAG_END
+                            // 弹出栈顶对象
+                            read_stack.pop();
+                            break;
+                        }
                         let value_name_len = reader.read_be_u16()? as usize;
+                        println!("Value type: {}, name_len: {}, cursor: {}", value_type_id, value_name_len, reader.cursor);
                         // 跳过 name
                         reader.roll_down(value_name_len)?;
                         match value_type_id {
-                            nbt_consts::TAG_END => {
-                                // 读取到了 TAG_END, 表示当前 Compound 结束
-                                // 弹出栈顶 (当前 Compound)
-                                read_stack.pop();
-                                break;
-                            }
                             nbt_consts::TAG_BYTE => {
                                 // 读取到了 TAG_BYTE
                                 // 创建一个 Byte 对象
@@ -163,18 +167,26 @@ impl NbtBorrowTrait for nbt_versions::Java {
                             nbt_consts::TAG_LIST => {
                                 let value_ptr = reader.cursor;
                                 let lst_type = reader.read_u8()?;
+                                if !lst_type.is_valid_nbt_data_type() {
+                                    return Err(NbtError::UnknownType(lst_type));
+                                }
                                 let lst_len = reader.read_be_i32()?;
                                 if lst_len < 0 {
                                     return Err(NbtError::ListLenNegative(lst_len as i32));
                                 }
                                 let value = BorrowNbtValue::List(value_ptr, lst_len as usize, lst_type, vec![]);
                                 values.push((value_name_len, value));
+                                break;
                             }
                             nbt_consts::TAG_COMPOUND => {
                                 let value_ptr = reader.cursor;
                                 // 非 root 的 Compound 
                                 let value = BorrowNbtValue::Compound(value_ptr, None, vec![]);
                                 values.push((value_name_len, value));
+                                break;
+                            }
+                            nbt_consts::TAG_END => {
+                                unreachable!("前面处理过了")
                             }
                             _ => {
                                 return Err(NbtError::UnknownType(value_type_id));
@@ -182,15 +194,15 @@ impl NbtBorrowTrait for nbt_versions::Java {
                         }
                     }
                 }
-                BorrowNbtValue::List(_, lst_len, type_id, values) => {
-                    // 先看看是不是已经读过至少一个了
-                    // 如果是, 则直接根据上一个的类型来读取
-                    if values.is_empty() {
-                        // 看来没读呢
-                        // 先读取一个类型
-                        let list_type_id = reader.read_u8()?;
-                        // let list_len =
+                BorrowNbtValue::List(_start, lst_len, type_id, values) => {
+                    // cursor 的位置就是当前需要读取的下一个值的开始位置
+                    // 先检查长度是不是读完了
+                    if values.len() == *lst_len {
+                        // 读取完了, 弹出栈顶对象
+                        read_stack.pop();
+                        continue;
                     }
+
                 }
                 _ => {
                     unreachable!(
