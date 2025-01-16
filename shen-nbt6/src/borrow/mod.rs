@@ -116,6 +116,18 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                 values.push((value_name_len, value));
                                 reader.roll_down(8)?;
                             }
+                            nbt_consts::TAG_FLOAT => {
+                                let value_ptr = reader.cursor;
+                                let value = BorrowNbtValue::Float(value_ptr);
+                                values.push((value_name_len, value));
+                                reader.roll_down(4)?;
+                            }
+                            nbt_consts::TAG_DOUBLE => {
+                                let value_ptr = reader.cursor;
+                                let value = BorrowNbtValue::Double(value_ptr);
+                                values.push((value_name_len, value));
+                                reader.roll_down(8)?;
+                            }
                             nbt_consts::TAG_BYTE_ARRAY => {
                                 // 读取 ByteArray
                                 let value_ptr = reader.cursor;
