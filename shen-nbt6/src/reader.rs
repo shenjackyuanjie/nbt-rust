@@ -3,7 +3,7 @@ use crate::{NbtError, NbtResult};
 /// 用于读取 NBT 数据
 pub struct NbtReader<'data> {
     /// NBT 数据
-    pub data: &'data mut [u8],
+    pub data: &'data [u8],
     /// 当前读取的位置
     pub cursor: usize,
 }
@@ -45,7 +45,7 @@ macro_rules! read_uncheck {
 }
 
 impl NbtReader<'_> {
-    pub fn new(data: &mut [u8]) -> NbtReader { NbtReader { data, cursor: 0 } }
+    pub fn new(data: &[u8]) -> NbtReader { NbtReader { data, cursor: 0 } }
     /// 向后滚动
     #[inline]
     pub fn roll_back(&mut self, len: usize) { self.cursor -= len; }
@@ -54,12 +54,54 @@ impl NbtReader<'_> {
     #[inline]
     #[must_use]
     pub fn roll_down(&mut self, len: usize) -> NbtResult<()> {
-        if self.cursor < len {
+        if self.cursor + len > self.data.len() {
             return Err(NbtError::CursorOverflow(self.cursor, len, self.data.len()));
         }
         self.cursor += len;
         Ok(())
     }
+
+    /// 比较华丽的展示当前指针位置
+    /// 
+    /// 会把当前指针位置标记出来
+    /// 
+    /// 尽量把当前指针位置放在中间
+    /// 
+    /// 默认展示 10 个字节
+    /// 
+    /// ```text
+    /// [...., 0x01, 0x02, 0x03, 0x04, 0x05, ....]
+    ///                    ^^^^ pos: 3
+    /// ```
+    pub fn show_cursor_fancy(&self, display_len: Option<usize>) -> String {
+        let show_len = display_len.unwrap_or(10).min(self.data.len());
+        // 中间位置
+        let middle = show_len / 2;
+        let start = if self.cursor > middle { self.cursor - middle } else { 0 };
+        let end = (start + show_len).min(self.data.len());
+        let display_data = self.data[start..end]
+            .iter()
+            .map(|byte| format!("0x{:02X}", byte))
+            .collect::<Vec<String>>();
+
+        let cursor_pointer = {
+            let pos = self.cursor - start;
+            if start != 0 {
+                // 前面有个 ....
+                format!("{}^^^^ pos: {}", " ".repeat(4 * (pos + 1) + 1), self.cursor)
+            } else {
+                // 没有 ....
+                format!("{}^^^^ pos: {}", " ".repeat(4 * pos + 1), self.cursor)
+            }
+        };
+
+        if start != 0 {
+            format!("[...., {}]\n{}", display_data.join(", "), cursor_pointer)
+        } else {
+            format!("[{}]\n{}", display_data.join(", "), cursor_pointer)
+        }
+    }
+
     /// 检查 cursor 是否超出范围
     /// 如果超出范围, 则返回 false
     #[inline]
