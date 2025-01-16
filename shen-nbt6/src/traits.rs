@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{NbtTypeId, NbtValue};
+use crate::{Mutf8String, NbtReader, NbtResult, NbtTypeId, NbtValue};
 
 /// 把 u8 转换成对应的 Nbt 类型名称
 pub trait NbtTypeConversion {
@@ -31,6 +31,23 @@ impl NbtTypeConversion for NbtTypeId {
         }
         .to_string()
     }
+}
+
+pub trait NbtReadTrait {
+    /// 从 `reader` 读取一个 i8(byte) 数组
+    fn read_i8_array(reader: &mut NbtReader) -> NbtResult<Vec<i8>>;
+    /// 从 `reader` 读取一个 i32(int) 数组
+    fn read_i32_array(reader: &mut NbtReader) -> NbtResult<Vec<i32>>;
+    /// 从 `reader` 读取一个 i64(long) 数组
+    fn read_i64_array(reader: &mut NbtReader) -> NbtResult<Vec<i64>>;
+    /// 从 `reader` 读取一个 NBT 字符串
+    fn read_nbt_string(reader: &mut NbtReader) -> NbtResult<Mutf8String>;
+    /// 从 `reader` 读取一个列表类型(List)
+    fn read_list(reader: &mut NbtReader) -> NbtResult<Vec<NbtValue>>;
+    /// 从 `reader` 读取一个复合标签类型(Compound)
+    fn read_compound(reader: &mut NbtReader) -> NbtResult<Vec<(Mutf8String, NbtValue)>>;
+
+    fn from_reader(reader: NbtReader) -> NbtResult<NbtValue>;
 }
 
 /// 输出 SNBT

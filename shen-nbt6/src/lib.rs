@@ -26,6 +26,7 @@ pub mod serding;
 // re-exports
 pub use error::NbtError;
 pub use mutf8::Mutf8String;
+pub use reader::NbtReader;
 pub use value::NbtValue;
 
 /// 用于存储 Nbt 类型的标识符

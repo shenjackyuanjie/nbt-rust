@@ -25,7 +25,3 @@ pub enum BorrowNbtValue {
     /// ptr, len
     LongArray(usize, usize),
 }
-
-impl BorrowNbtValue {
-    pub fn from_bytes(data: &[u8]) -> NbtResult<Self> { todo!() }
-}
