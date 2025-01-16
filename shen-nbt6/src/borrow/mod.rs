@@ -141,7 +141,11 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                 // 长度是 i32
                                 let value_len = reader.read_be_i32()?;
                                 if value_len < 0 {
-                                    return Err(NbtError::LenNegative(value_type_id, value_len));
+                                    return Err(NbtError::LenNegative(
+                                        value_type_id,
+                                        value_len,
+                                        value_ptr,
+                                    ));
                                 }
                                 let value =
                                     BorrowNbtValue::ByteArray(value_ptr, value_len as usize);
@@ -153,7 +157,11 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                 let value_ptr = reader.cursor;
                                 let value_len = reader.read_be_i32()?;
                                 if value_len < 0 {
-                                    return Err(NbtError::LenNegative(value_type_id, value_len));
+                                    return Err(NbtError::LenNegative(
+                                        value_type_id,
+                                        value_len,
+                                        value_ptr,
+                                    ));
                                 }
                                 let value = BorrowNbtValue::IntArray(value_ptr, value_len as usize);
                                 values.push((value_name_len, value));
@@ -163,7 +171,11 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                 let value_ptr = reader.cursor;
                                 let value_len = reader.read_be_i32()?;
                                 if value_len < 0 {
-                                    return Err(NbtError::LenNegative(value_type_id, value_len));
+                                    return Err(NbtError::LenNegative(
+                                        value_type_id,
+                                        value_len,
+                                        value_ptr,
+                                    ));
                                 }
                                 let value =
                                     BorrowNbtValue::LongArray(value_ptr, value_len as usize);
@@ -185,7 +197,9 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                 }
                                 let lst_len = reader.read_be_i32()?;
                                 if lst_len < 0 {
-                                    return Err(NbtError::LenNegative(lst_type, lst_len));
+                                    return Err(NbtError::LenNegative(
+                                        lst_type, lst_len, value_ptr,
+                                    ));
                                 }
                                 let lst_len = lst_len as usize;
                                 if lst_type.is_list_or_compound() {
@@ -214,7 +228,7 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                             ),
                                         ));
                                         // 检查溢出
-                                        reader.roll_down(lst_len as usize)?;
+                                        reader.roll_down(lst_len)?;
                                     }
                                     nbt_consts::TAG_SHORT => {
                                         let lst_values = (0..lst_len)
@@ -226,7 +240,7 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                                 value_ptr, lst_len, lst_type, lst_values,
                                             ),
                                         ));
-                                        reader.roll_down(lst_len as usize * 2)?;
+                                        reader.roll_down(lst_len * 2)?;
                                     }
                                     nbt_consts::TAG_INT => {
                                         let lst_values = (0..lst_len)
@@ -238,7 +252,7 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                                 value_ptr, lst_len, lst_type, lst_values,
                                             ),
                                         ));
-                                        reader.roll_down(lst_len as usize * 4)?;
+                                        reader.roll_down(lst_len * 4)?;
                                     }
                                     nbt_consts::TAG_LONG => {
                                         let lst_values = (0..lst_len)
@@ -250,7 +264,7 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                                 value_ptr, lst_len, lst_type, lst_values,
                                             ),
                                         ));
-                                        reader.roll_down(lst_len as usize * 8)?;
+                                        reader.roll_down(lst_len * 8)?;
                                     }
                                     nbt_consts::TAG_FLOAT => {
                                         let lst_values = (0..lst_len)
@@ -262,7 +276,7 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                                 value_ptr, lst_len, lst_type, lst_values,
                                             ),
                                         ));
-                                        reader.roll_down(lst_len as usize * 4)?;
+                                        reader.roll_down(lst_len * 4)?;
                                     }
                                     nbt_consts::TAG_DOUBLE => {
                                         let lst_values = (0..lst_len)
@@ -274,14 +288,20 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                                 value_ptr, lst_len, lst_type, lst_values,
                                             ),
                                         ));
-                                        reader.roll_down(lst_len as usize * 8)?;
+                                        reader.roll_down(lst_len * 8)?;
                                     }
                                     // byte/int/long array
                                     nbt_consts::TAG_BYTE_ARRAY => {
                                         let mut lst_values = Vec::with_capacity(lst_len);
                                         for _ in 0..lst_len {
                                             let value_ptr = reader.cursor;
-                                            let value_len = reader.read_be_i32()? as usize;
+                                            let value_len = reader.read_be_i32()?;
+                                            if value_len < 0 {
+                                                return Err(NbtError::LenNegative(
+                                                    lst_type, value_len, value_ptr,
+                                                ));
+                                            }
+                                            let value_len = value_len as usize;
                                             let value =
                                                 BorrowNbtValue::ByteArray(value_ptr, value_len);
                                             lst_values.push(value);
@@ -298,7 +318,13 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                         let mut lst_values = Vec::with_capacity(lst_len);
                                         for _ in 0..lst_len {
                                             let value_ptr = reader.cursor;
-                                            let value_len = reader.read_be_i32()? as usize;
+                                            let value_len = reader.read_be_i32()?;
+                                            if value_len < 0 {
+                                                return Err(NbtError::LenNegative(
+                                                    lst_type, value_len, value_ptr,
+                                                ));
+                                            }
+                                            let value_len = value_len as usize;
                                             let value =
                                                 BorrowNbtValue::IntArray(value_ptr, value_len);
                                             lst_values.push(value);
@@ -315,7 +341,13 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                         let mut lst_values = Vec::with_capacity(lst_len);
                                         for _ in 0..lst_len {
                                             let value_ptr = reader.cursor;
-                                            let value_len = reader.read_be_i32()? as usize;
+                                            let value_len = reader.read_be_i32()?;
+                                            if value_len < 0 {
+                                                return Err(NbtError::LenNegative(
+                                                    lst_type, value_len, value_ptr,
+                                                ));
+                                            }
+                                            let value_len = value_len as usize;
                                             let value =
                                                 BorrowNbtValue::LongArray(value_ptr, value_len);
                                             lst_values.push(value);
@@ -364,7 +396,11 @@ impl NbtBorrowTrait for nbt_versions::Java {
                             }
                             let sub_lst_len = reader.read_be_i32()?;
                             if sub_lst_len < 0 {
-                                return Err(NbtError::ListLenNegative(sub_lst_len as i32));
+                                return Err(NbtError::LenNegative(
+                                    sub_lst_type,
+                                    sub_lst_len,
+                                    reader.cursor,
+                                ));
                             }
                             let sub_lst_len = sub_lst_len as usize;
                             if sub_lst_type.is_list_or_compound() {

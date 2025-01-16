@@ -33,7 +33,7 @@ pub enum NbtError {
     /// NbtList 中类型不同
     ListTypeNotSame(Vec<NbtTypeId>),
     /// NbtList/NbtArray 长度 < 0
-    LenNegative(NbtTypeId, i32),
+    LenNegative(NbtTypeId, i32, usize),
     /// 错误类型
     IncorrectType(NbtTypeId, NbtTypeId),
     /// m-utf8 解码错误
@@ -83,8 +83,8 @@ impl Display for NbtError {
             NbtError::ListTypeNotSame(types) => {
                 write!(f, "NbtList 中类型不同: {:?} 应相同", types)
             }
-            NbtError::LenNegative(type_id, len) => {
-                write!(f, "{} 长度 < 0: {}", type_id.as_nbt_type_name(), len)
+            NbtError::LenNegative(type_id, len, cursor) => {
+                write!(f, "{} 长度 < 0: {}, pos: {}", type_id.as_nbt_type_name(), len, cursor)
             }
             NbtError::IncorrectType(expect, got) => {
                 write!(f, "错误类型: 期望: {}, 实际: {}", expect, got)
