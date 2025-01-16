@@ -12,6 +12,8 @@ pub trait NbtTypeConversion {
     fn is_valid_nbt_type(&self) -> bool;
     /// 检查是否是一个有效的 Nbt 数据类型
     fn is_valid_nbt_data_type(&self) -> bool;
+    /// 检查是不是 list/compond 类型
+    fn is_list_or_compound(&self) -> bool;
 }
 
 impl NbtTypeConversion for NbtTypeId {
@@ -39,6 +41,9 @@ impl NbtTypeConversion for NbtTypeId {
     }
     fn is_valid_nbt_type(&self) -> bool { *self <= 12 }
     fn is_valid_nbt_data_type(&self) -> bool { *self <= 12 && *self != nbt_consts::TAG_END }
+    fn is_list_or_compound(&self) -> bool {
+        *self == nbt_consts::TAG_LIST || *self == nbt_consts::TAG_COMPOUND
+    }
 }
 
 pub trait NbtReadTrait {

@@ -2,6 +2,7 @@ use std::error::Error;
 use std::fmt::Display;
 use std::str::Utf8Error;
 
+use crate::traits::NbtTypeConversion;
 use crate::NbtTypeId;
 
 /// Error
@@ -31,8 +32,8 @@ pub enum NbtError {
     VarlongTooBig(usize),
     /// NbtList 中类型不同
     ListTypeNotSame(Vec<NbtTypeId>),
-    /// NbtList 长度 < 0
-    ListLenNegative(i32),
+    /// NbtList/NbtArray 长度 < 0
+    LenNegative(NbtTypeId, i32),
     /// 错误类型
     IncorrectType(NbtTypeId, NbtTypeId),
     /// m-utf8 解码错误
@@ -82,7 +83,9 @@ impl Display for NbtError {
             NbtError::ListTypeNotSame(types) => {
                 write!(f, "NbtList 中类型不同: {:?} 应相同", types)
             }
-            NbtError::ListLenNegative(n) => write!(f, "NbtList 长度 {} < 0", n),
+            NbtError::LenNegative(type_id, len) => {
+                write!(f, "{} 长度 < 0: {}", type_id.as_nbt_type_name(), len)
+            }
             NbtError::IncorrectType(expect, got) => {
                 write!(f, "错误类型: 期望: {}, 实际: {}", expect, got)
             }
