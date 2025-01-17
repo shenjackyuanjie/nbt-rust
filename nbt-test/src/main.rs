@@ -127,7 +127,7 @@ pub fn print_speed(speed: f64) {
     // 只输出 > 1024 的
     for (i, speed) in speeds.iter().enumerate() {
         if *speed > 1.0 {
-            println!("{:?} ({}/s)", speed, ["KB", "MB", "GB", "TB"][i]);
+            println!("{:?} ({}/s)", speed, ["KiB", "MiB", "GiB", "TiB"][i]);
         }
     }
 }
