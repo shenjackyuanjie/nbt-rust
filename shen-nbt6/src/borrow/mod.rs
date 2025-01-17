@@ -1,5 +1,5 @@
-use crate::traits::{NbtBorrowTrait};
-use crate::{nbt_version, NbtReader, NbtResult, NbtTypeId};
+use crate::traits::NbtBorrowTrait;
+use crate::{nbt_version, NbtReader, NbtResult, NbtTypeId, NbtValue};
 #[cfg(test)]
 mod tests;
 
@@ -67,6 +67,73 @@ impl BorrowNbtValue {
         (name_len, Self::List(ptr, len, type_id, values))
     }
 
+    /// 获得当前 BorrowNbtValue 开始的位置
+    pub fn start_idx(&self) -> usize {
+        match self {
+            Self::Byte(ptr) => *ptr,
+            Self::Short(ptr) => *ptr,
+            Self::Int(ptr) => *ptr,
+            Self::Long(ptr) => *ptr,
+            Self::Float(ptr) => *ptr,
+            Self::Double(ptr) => *ptr,
+            Self::ByteArray(ptr, _) => *ptr,
+            Self::String(ptr, _) => *ptr,
+            Self::List(ptr, _, _, _) => *ptr,
+            Self::Compound(ptr, _, _) => *ptr,
+            Self::IntArray(ptr, _) => *ptr,
+            Self::LongArray(ptr, _) => *ptr,
+        }
+    }
+
+    /// 获取 byte/short/int/long/float/double 的位置
+    ///
+    /// 反正都是只有一个开始位置, 就直接统一了
+    pub fn as_value_idx(&self) -> Option<usize> {
+        match self {
+            Self::Byte(ptr) => Some(*ptr),
+            Self::Short(ptr) => Some(*ptr),
+            Self::Int(ptr) => Some(*ptr),
+            Self::Long(ptr) => Some(*ptr),
+            Self::Float(ptr) => Some(*ptr),
+            Self::Double(ptr) => Some(*ptr),
+            _ => None,
+        }
+    }
+
+    /// 获取 byte/int/long array 的位置 和 长度
+    ///
+    /// 反正都是两个 usize, 就直接统一了
+    pub fn as_array_idx(&self) -> Option<(usize, usize)> {
+        match self {
+            Self::ByteArray(ptr, len) => Some((*ptr, *len)),
+            Self::IntArray(ptr, len) => Some((*ptr, *len)),
+            Self::LongArray(ptr, len) => Some((*ptr, *len)),
+            _ => None,
+        }
+    }
+
+    /// 获取 string 的位置 和 长度
+    pub fn as_string_idx(&self) -> Option<(usize, usize)> {
+        match self {
+            Self::String(ptr, len) => Some((*ptr, *len)),
+            _ => None,
+        }
+    }
+
+    pub fn as_list_idx(&self) -> Option<(usize, usize, NbtTypeId)> {
+        match self {
+            Self::List(ptr, len, type_id, _) => Some((*ptr, *len, *type_id)),
+            _ => None,
+        }
+    }
+
+    pub fn as_compound_idx(&self) -> Option<(usize, Option<usize>)> {
+        match self {
+            Self::Compound(ptr, name_len, _) => Some((*ptr, *name_len)),
+            _ => None,
+        }
+    }
+
     pub fn from_binary<R>(data: &[u8]) -> NbtResult<(NbtReader, BorrowNbtValue)>
     where
         R: NbtBorrowTrait,
@@ -81,8 +148,8 @@ impl NbtBorrowTrait for nbt_version::Java {
     fn from_reader(reader: &mut NbtReader) -> NbtResult<BorrowNbtValue> {
         impls::java_read::java_from_reader(reader, true)
     }
-    fn read_data(&self, reader: &mut NbtReader) -> NbtResult<crate::NbtValue> {
-        todo!()
+    fn read_data(value: &BorrowNbtValue, reader: &mut NbtReader) -> NbtValue {
+        impls::java_own::own_value(value, reader)
     }
 }
 
@@ -90,7 +157,7 @@ impl NbtBorrowTrait for nbt_version::JavaNetAfter1_20_2 {
     fn from_reader(reader: &mut NbtReader) -> NbtResult<BorrowNbtValue> {
         impls::java_read::java_from_reader(reader, false)
     }
-    fn read_data(&self, reader: &mut NbtReader) -> NbtResult<crate::NbtValue> {
-        todo!()
+    fn read_data(value: &BorrowNbtValue, reader: &mut NbtReader) -> NbtValue {
+        impls::java_own::own_value(value, reader)
     }
 }

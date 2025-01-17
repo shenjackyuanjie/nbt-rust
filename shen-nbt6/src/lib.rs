@@ -40,7 +40,7 @@ pub type NbtResult<T> = Result<T, NbtError>;
 /// 虽然计划是在 borrow 里手动模拟 stack, 但是 stack 的大小还是需要限制一下
 ///
 /// 不过既然是手动模拟了, 那就可以稍微大一些
-/// 
+///
 /// 原版限制: 512
 pub const RECURSE_LIMIT: usize = 1024;
 

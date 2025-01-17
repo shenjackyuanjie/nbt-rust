@@ -70,7 +70,7 @@ pub trait NbtBorrowTrait {
     /// 因为并不会实际上读取任何数据, 所以这里需要借用 reader
     fn from_reader(reader: &mut NbtReader) -> NbtResult<BorrowNbtValue>;
     /// 把 borrow 的值转换成 NbtValue
-    fn read_data(&self, reader: &mut NbtReader) -> NbtResult<NbtValue>;
+    fn read_data(value: &BorrowNbtValue, reader: &mut NbtReader) -> NbtValue;
 }
 
 /// 输出 SNBT

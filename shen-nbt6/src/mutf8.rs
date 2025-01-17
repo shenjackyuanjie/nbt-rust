@@ -2,6 +2,8 @@ use std::str::Utf8Error;
 
 use simd_cesu8::mutf8;
 
+use crate::{NbtReader, NbtResult};
+
 #[inline]
 /// Check if the given slice is plain ASCII.
 ///
@@ -38,6 +40,12 @@ impl Mutf8String {
         } else {
             mutf8::decode(&self.data).unwrap_or_default().to_string()
         }
+    }
+
+    pub fn from_reader(reader: &mut NbtReader, start_idx: usize, len: usize) -> NbtResult<Self> {
+        reader.roll_to(start_idx)?;
+        let data = reader.read_u8_array(len)?.to_vec();
+        Ok(Self { data })
     }
 }
 

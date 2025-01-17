@@ -48,7 +48,13 @@ impl NbtReader<'_> {
     pub fn new(data: &[u8]) -> NbtReader { NbtReader { data, cursor: 0 } }
     /// 向后滚动
     #[inline]
-    pub fn roll_back(&mut self, len: usize) { self.cursor -= len; }
+    pub fn roll_back(&mut self, len: usize) -> NbtResult<()> {
+        if len > self.cursor {
+            return Err(NbtError::CursorOverflow(self.cursor, len, self.data.len()));
+        }
+        self.cursor -= len;
+        Ok(())
+    }
     /// 向前滚动
     /// 会在超出长度返回错误
     #[inline]
@@ -60,6 +66,18 @@ impl NbtReader<'_> {
         self.cursor += len;
         Ok(())
     }
+    #[inline]
+    pub fn roll_to(&mut self, pos: usize) -> NbtResult<()> {
+        if pos > self.data.len() {
+            return Err(NbtError::CursorOverflow(self.cursor, pos, self.data.len()));
+        }
+        self.cursor = pos;
+        Ok(())
+    }
+    /// 滚动到顶部
+    pub fn roll_top(&mut self) { self.cursor = 0 }
+    /// 滚动到底部
+    pub fn roll_bottom(&mut self) { self.cursor = self.data.len() }
 
     /// 比较华丽的展示当前指针位置
     ///
