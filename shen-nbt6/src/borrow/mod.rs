@@ -1,5 +1,5 @@
 use crate::traits::{NbtBorrowTrait, NbtTypeConversion};
-use crate::{nbt_consts, nbt_versions, value, NbtError, NbtReader, NbtResult, NbtTypeId};
+use crate::{nbt_consts, nbt_versions, reader, value, NbtError, NbtReader, NbtResult, NbtTypeId};
 #[cfg(test)]
 mod tests;
 
@@ -63,6 +63,15 @@ impl BorrowNbtValue {
     ) -> (usize, Self) {
         (name_len, Self::List(ptr, len, type_id, values))
     }
+
+    pub fn from_binary<R>(data: &[u8]) -> NbtResult<(NbtReader, BorrowNbtValue)>
+    where
+        R: NbtBorrowTrait,
+    {
+        let mut reader = NbtReader::new(data);
+        let data = R::from_reader(&mut reader)?;
+        Ok((reader, data))
+    }
 }
 
 /// 虽然计划是在 borrow 里手动模拟 stack, 但是 stack 的大小还是需要限制一下
@@ -105,8 +114,7 @@ impl NbtBorrowTrait for nbt_versions::Java {
             // 取出栈顶对象
             let current = read_stack.last().unwrap();
             let current: &mut BorrowNbtValue = unsafe {
-                // SAFETY: 这里的操作是安全的, 因为 BorrowNbtValue 的所有变体都是 Copy 的
-                // 所以不会出现悬垂指针的问题
+                // SAFETY: 这里的操作是安全的, 因为 pop 之后直接 break 了
                 std::ptr::read(current)
             };
             // 开始持续尝试读取对应的数据
@@ -127,12 +135,12 @@ impl NbtBorrowTrait for nbt_versions::Java {
                             break;
                         }
                         let value_name_len = reader.read_be_u16()? as usize;
-                        println!(
-                            "Value type: {}, name_len: {}, cursor:\n{}",
-                            value_type_id.as_nbt_type_name(),
-                            value_name_len,
-                            reader.show_cursor_fancy(None)
-                        );
+                        // println!(
+                        //     "Value type: {}, name_len: {}, cursor:\n{}",
+                        //     value_type_id.as_nbt_type_name(),
+                        //     value_name_len,
+                        //     reader.show_cursor_fancy(None)
+                        // );
                         // 跳过 name
                         reader.roll_down(value_name_len)?;
                         match value_type_id {
@@ -431,12 +439,12 @@ impl NbtBorrowTrait for nbt_versions::Java {
                         read_stack.pop();
                         continue;
                     }
-                    println!(
-                        "list type: {}, len: {}, cursor:\n{}",
-                        lst_type.as_nbt_type_name(),
-                        lst_len,
-                        reader.show_cursor_fancy(None)
-                    );
+                    // println!(
+                    //     "list type: {}, len: {}, cursor:\n{}",
+                    //     lst_type.as_nbt_type_name(),
+                    //     lst_len,
+                    //     reader.show_cursor_fancy(None)
+                    // );
                     match *lst_type {
                         nbt_consts::TAG_LIST => {
                             // 读取子 list 的类型

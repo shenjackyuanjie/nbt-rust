@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    # "nbt-test",
+    "nbt-test",
     "shen-nbt5",
     "shen-nbt6",
 ]

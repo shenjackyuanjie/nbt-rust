@@ -147,53 +147,53 @@ macro_rules! test_lib {
     };
 }
 
-fn test_v1(data: Vec<u8>) {
-    let len = data.len();
-    std::thread::sleep(std::time::Duration::from_secs(1));
-    test_lib!(
-        {
-            let cursor: shen_nbt1::data::Reader = std::io::Cursor::new(data.as_slice());
-            let _nbt_data = shen_nbt1::data::NbtItem::try_from(cursor).unwrap();
-        },
-        "nbt v1",
-        len
-    );
-}
-fn test_v2(data: Vec<u8>) {
-    let len = data.len();
-    std::thread::sleep(std::time::Duration::from_secs(1));
-    test_lib!(
-        {
-            let _nbt_data = shen_nbt2::Value::from_vec(data);
-        },
-        "nbt v2",
-        len
-    );
-}
+// fn test_v1(data: Vec<u8>) {
+//     let len = data.len();
+//     std::thread::sleep(std::time::Duration::from_secs(1));
+//     test_lib!(
+//         {
+//             let cursor: shen_nbt1::data::Reader = std::io::Cursor::new(data.as_slice());
+//             let _nbt_data = shen_nbt1::data::NbtItem::try_from(cursor).unwrap();
+//         },
+//         "nbt v1",
+//         len
+//     );
+// }
+// fn test_v2(data: Vec<u8>) {
+//     let len = data.len();
+//     std::thread::sleep(std::time::Duration::from_secs(1));
+//     test_lib!(
+//         {
+//             let _nbt_data = shen_nbt2::Value::from_vec(data);
+//         },
+//         "nbt v2",
+//         len
+//     );
+// }
 
-fn test_v3(data: Vec<u8>) {
-    let len = data.len();
-    std::thread::sleep(std::time::Duration::from_secs(1));
-    test_lib!(
-        {
-            let _nbt_data = shen_nbt3::Value::from_vec(data);
-        },
-        "nbt v3",
-        len
-    );
-}
+// fn test_v3(data: Vec<u8>) {
+//     let len = data.len();
+//     std::thread::sleep(std::time::Duration::from_secs(1));
+//     test_lib!(
+//         {
+//             let _nbt_data = shen_nbt3::Value::from_vec(data);
+//         },
+//         "nbt v3",
+//         len
+//     );
+// }
 
-fn test_v4(data: Vec<u8>) {
-    let len = data.len();
-    std::thread::sleep(std::time::Duration::from_secs(1));
-    test_lib!(
-        {
-            let _nbt_data = shen_nbt4::Value::from_vec(data);
-        },
-        "nbt v4",
-        len
-    );
-}
+// fn test_v4(data: Vec<u8>) {
+//     let len = data.len();
+//     std::thread::sleep(std::time::Duration::from_secs(1));
+//     test_lib!(
+//         {
+//             let _nbt_data = shen_nbt4::Value::from_vec(data);
+//         },
+//         "nbt v4",
+//         len
+//     );
+// }
 
 fn test_v5(mut data: Vec<u8>) {
     let len = data.len();
@@ -205,6 +205,20 @@ fn test_v5(mut data: Vec<u8>) {
             );
         },
         "nbt v5",
+        len
+    );
+}
+
+fn test_v6(data: Vec<u8>) {
+    let len = data.len();
+    std::thread::sleep(std::time::Duration::from_secs(1));
+    test_lib!(
+        {
+            let _nbt_data = shen_nbt6::borrow::BorrowNbtValue::from_binary::<
+                shen_nbt6::nbt_versions::Java,
+            >(&data);
+        },
+        "nbt v6",
         len
     );
 }
@@ -227,20 +241,23 @@ fn read_test(in_data: Vec<u8>) {
 
     std::thread::sleep(std::time::Duration::from_secs(1));
 
-    let data = in_data.clone();
-    test_v1(data);
+    // let data = in_data.clone();
+    // test_v1(data);
 
-    let data = in_data.clone();
-    test_v2(data);
+    // let data = in_data.clone();
+    // test_v2(data);
 
-    let data = in_data.clone();
-    test_v3(data);
+    // let data = in_data.clone();
+    // test_v3(data);
 
-    let data = in_data.clone();
-    test_v4(data);
+    // let data = in_data.clone();
+    // test_v4(data);
 
     let data = in_data.clone();
     test_v5(data);
+
+    let data = in_data.clone();
+    test_v6(data);
 
     let data = in_data.clone();
     test_fastnbt(data);
@@ -259,11 +276,13 @@ fn cli_read_test() {
         let start_time = std::time::Instant::now();
         // let nbt_data = shen_nbt4::Value::from_vec(data);
 
-        let nbt_data =
-            shen_nbt5::NbtValue::from_binary::<shen_nbt5::nbt_version::Java>(data.as_mut_slice())
-                .unwrap();
+        let _nbt_data =
+            shen_nbt6::borrow::BorrowNbtValue::from_binary::<shen_nbt6::nbt_versions::Java>(&data);
+        // let _nbt_data = shen_nbt5::NbtValue::from_binary::<shen_nbt5::nbt_version::Java>(data.as_mut_slice())
+        //         .unwrap();
         let end_time = std::time::Instant::now();
-        println!("=== shen nbt 5 ===");
+        println!("=== shen nbt 6 (borrow) ===");
+        // println!("=== shen nbt 5 ===");
         println!("time: {:?}", end_time - start_time);
         let raw_speed = len as f64 / (end_time - start_time).as_secs_f64();
         print_speed(raw_speed);
