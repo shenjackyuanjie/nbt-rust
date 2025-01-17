@@ -38,7 +38,7 @@ pub type NbtTypeId = u8;
 pub type NbtResult<T> = Result<T, NbtError>;
 
 /// 各种 NBT 版本
-pub mod nbt_versions {
+pub mod nbt_version {
     /// Java 版 绝大部分的 NBT 格式
     ///
     /// 除了 1.20.2+(协议号 >= 764) 及以后 的网路传输 NBT 格式 都是这个

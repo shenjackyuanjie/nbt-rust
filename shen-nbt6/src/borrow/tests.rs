@@ -1,5 +1,5 @@
 use super::{BorrowNbtValue as BValue, NbtBorrowTrait};
-use crate::{nbt_versions, NbtReader};
+use crate::{nbt_version, NbtReader};
 
 #[test]
 fn hello_world_borrow() {
@@ -17,7 +17,7 @@ fn hello_world_borrow() {
 
     let mut reader = NbtReader::new(&data);
 
-    let data = nbt_versions::Java::from_reader(&mut reader);
+    let data = nbt_version::Java::from_reader(&mut reader);
     if let Err(e) = data {
         println!("cursor state:\n{}", reader.show_cursor_fancy(None));
         panic!("{}", e);
@@ -135,7 +135,7 @@ fn big_test() {
     ];
     let mut reader = NbtReader::new(&data);
 
-    let data = nbt_versions::Java::from_reader(&mut reader);
+    let data = nbt_version::Java::from_reader(&mut reader);
     if let Err(e) = data {
         println!("cursor state:\n{}", reader.show_cursor_fancy(None));
         panic!("{}", e);

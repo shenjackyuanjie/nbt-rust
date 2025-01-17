@@ -1,5 +1,5 @@
 use crate::traits::{NbtBorrowTrait, NbtTypeConversion};
-use crate::{nbt_consts, nbt_versions, reader, value, NbtError, NbtReader, NbtResult, NbtTypeId};
+use crate::{nbt_consts, nbt_version, reader, value, NbtError, NbtReader, NbtResult, NbtTypeId};
 #[cfg(test)]
 mod tests;
 
@@ -79,7 +79,7 @@ impl BorrowNbtValue {
 /// 不过既然是手动模拟了, 那就可以稍微大一些
 pub const RECURSE_LIMIT: usize = 2048;
 
-impl NbtBorrowTrait for nbt_versions::Java {
+impl NbtBorrowTrait for nbt_version::Java {
     fn from_reader(reader: &mut NbtReader) -> NbtResult<BorrowNbtValue> {
         let first_type_id = reader.read_u8()?;
         match first_type_id {
