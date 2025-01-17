@@ -127,9 +127,9 @@ impl BorrowNbtValue {
         }
     }
 
-    pub fn as_compound_idx(&self) -> Option<(usize, Option<usize>)> {
+    pub fn as_compound_idx(&self) -> Option<(usize, Option<usize>, &Vec<(usize, BorrowNbtValue)>)> {
         match self {
-            Self::Compound(ptr, name_len, _) => Some((*ptr, *name_len)),
+            Self::Compound(ptr, name_len, values) => Some((*ptr, *name_len, values)),
             _ => None,
         }
     }

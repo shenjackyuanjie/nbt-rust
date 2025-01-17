@@ -9,6 +9,9 @@ pub fn own_value(value: &BorrowNbtValue, data: &mut NbtReader) -> NbtValue {
         .1
         .map(|name_len| Mutf8String::from_reader(data, name_value.0, name_len).unwrap());
     let mut root_element = NbtValue::Compound(root_name, vec![]);
+    let root_values = name_value.2;
+
+    let mut parse_stack = vec![value];
 
     todo!()
 }
