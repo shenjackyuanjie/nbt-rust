@@ -32,6 +32,39 @@ pub enum BorrowNbtValue {
     LongArray(usize, usize),
 }
 
+impl BorrowNbtValue {
+    /// 方便的创建一个没有名字的 Compound
+    pub fn nameless_compound(ptr: usize, values: Vec<(usize, BorrowNbtValue)>) -> Self {
+        Self::Compound(ptr, None, values)
+    }
+    /// 方便的创建一个有名字的 Compound
+    pub fn named_compound(
+        ptr: usize,
+        name_len: usize,
+        values: Vec<(usize, BorrowNbtValue)>,
+    ) -> Self {
+        Self::Compound(ptr, Some(name_len), values)
+    }
+    /// 方便的创建一个 Compound 里的 Compound
+    pub fn sub_compound(
+        name_len: usize,
+        ptr: usize,
+        values: Vec<(usize, BorrowNbtValue)>,
+    ) -> (usize, Self) {
+        (name_len, Self::Compound(ptr, None, values))
+    }
+    /// 方便的创建一个 Compound 里的 List
+    pub fn sub_list(
+        name_len: usize,
+        ptr: usize,
+        len: usize,
+        type_id: NbtTypeId,
+        values: Vec<BorrowNbtValue>,
+    ) -> (usize, Self) {
+        (name_len, Self::List(ptr, len, type_id, values))
+    }
+}
+
 /// 虽然计划是在 borrow 里手动模拟 stack, 但是 stack 的大小还是需要限制一下
 ///
 /// 不过既然是手动模拟了, 那就可以稍微大一些
@@ -398,6 +431,12 @@ impl NbtBorrowTrait for nbt_versions::Java {
                         read_stack.pop();
                         continue;
                     }
+                    println!(
+                        "list type: {}, len: {}, cursor:\n{}",
+                        lst_type.as_nbt_type_name(),
+                        lst_len,
+                        reader.show_cursor_fancy(None)
+                    );
                     match *lst_type {
                         nbt_consts::TAG_LIST => {
                             // 读取子 list 的类型
@@ -580,7 +619,15 @@ impl NbtBorrowTrait for nbt_versions::Java {
                                 _ => unreachable!("其他的都预处理过了"),
                             }
                         }
-                        nbt_consts::TAG_COMPOUND => {}
+                        nbt_consts::TAG_COMPOUND => {
+                            let value_ptr = reader.cursor;
+                            // 非 root 的 Compound
+                            let value = BorrowNbtValue::Compound(value_ptr, None, vec![]);
+                            values.push(value);
+                            let last = values.last_mut().unwrap();
+                            read_stack.push(last);
+                            continue;
+                        }
                         _ => {
                             unreachable!("在外面就检查过了")
                         }

@@ -1,4 +1,4 @@
-use super::{BorrowNbtValue, NbtBorrowTrait};
+use super::{BorrowNbtValue as BValue, NbtBorrowTrait};
 use crate::{nbt_versions, NbtReader, NbtValue};
 
 #[test]
@@ -22,8 +22,7 @@ fn hello_world_borrow() {
         println!("cursor state:\n{}", reader.show_cursor_fancy(None));
         panic!("{}", e);
     }
-    let correct_data =
-        BorrowNbtValue::Compound(0, Some(11), vec![(4, BorrowNbtValue::String(21, 9))]);
+    let correct_data = BValue::Compound(0, Some(11), vec![(4, BValue::String(21, 9))]);
     assert_eq!(data.unwrap(), correct_data);
 }
 
@@ -141,20 +140,65 @@ fn big_test() {
         println!("cursor state:\n{}", reader.show_cursor_fancy(None));
         panic!("{}", e);
     }
-    // Compound(0, Some(5), [(8, Long(19)), (9, Short(39)), (10, String(54, 41)), (9, Float(109)), (7, Int(123)), (20, Compound(150, None, [])), (3, Compound(156, None, [])), (4, String(163, 6)), (5, Float(179))])
-    let correct_data = BorrowNbtValue::Compound(
+    let correct_data = BValue::Compound(
         0,
         Some(5),
         vec![
-            (8, BorrowNbtValue::Long(19)),
-            (9, BorrowNbtValue::Short(39)),
-            (10, BorrowNbtValue::String(54, 41)),
-            (9, BorrowNbtValue::Float(109)),
-            (7, BorrowNbtValue::Int(123)),
-            (20, BorrowNbtValue::Compound(150, None, vec![])),
-            (3, BorrowNbtValue::Compound(156, None, vec![])),
-            (4, BorrowNbtValue::String(163, 6)),
-            (5, BorrowNbtValue::Float(179)),
+            (8, BValue::Long(19)),
+            (9, BValue::Short(39)),
+            (10, BValue::String(54, 41)),
+            (9, BValue::Float(109)),
+            (7, BValue::Int(123)),
+            BValue::sub_compound(
+                20,
+                150,
+                vec![
+                    BValue::sub_compound(
+                        3,
+                        156,
+                        vec![(4, BValue::String(163, 6)), (5, BValue::Float(179))],
+                    ),
+                    BValue::sub_compound(
+                        3,
+                        190,
+                        vec![(4, BValue::String(197, 7)), (5, BValue::Float(214))],
+                    ),
+                ],
+            ),
+            BValue::sub_list(
+                15,
+                238,
+                5,
+                4,
+                vec![
+                    BValue::Long(243),
+                    BValue::Long(251),
+                    BValue::Long(259),
+                    BValue::Long(267),
+                    BValue::Long(275),
+                ],
+            ),
+            (
+                19,
+                BValue::List(
+                    305,
+                    2,
+                    10,
+                    vec![
+                        BValue::nameless_compound(
+                            310,
+                            vec![(4, BValue::String(317, 15)), (10, BValue::Long(347))],
+                        ),
+                        BValue::nameless_compound(
+                            356,
+                            vec![(4, BValue::String(363, 15)), (10, BValue::Long(393))],
+                        ),
+                    ],
+                ),
+            ),
+            (8, BValue::Byte(413)),
+            (101, BValue::ByteArray(518, 1000)),
+            (10, BValue::Double(1535)),
         ],
     );
     assert_eq!(data.unwrap(), correct_data);
