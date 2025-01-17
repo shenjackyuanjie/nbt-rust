@@ -1,7 +1,5 @@
 use crate::traits::NbtBorrowTrait;
 use crate::{nbt_version, NbtReader, NbtResult, NbtTypeId, NbtValue};
-#[cfg(test)]
-mod tests;
 
 /// 实现
 pub mod impls;

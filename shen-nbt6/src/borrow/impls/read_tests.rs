@@ -1,4 +1,4 @@
-use super::{BorrowNbtValue as BValue, NbtBorrowTrait};
+use crate::borrow::{BorrowNbtValue as BValue, NbtBorrowTrait};
 use crate::{nbt_version, NbtReader};
 
 #[test]
