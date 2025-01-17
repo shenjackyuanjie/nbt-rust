@@ -79,6 +79,9 @@ impl BorrowNbtValue {
 /// 不过既然是手动模拟了, 那就可以稍微大一些
 pub const RECURSE_LIMIT: usize = 2048;
 
+/// 实际的解析函数
+/// 
+/// 为了网络格式 加一个 root_with_name 参数
 fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResult<BorrowNbtValue> {
     let first_type_id = reader.read_u8()?;
     match first_type_id {
