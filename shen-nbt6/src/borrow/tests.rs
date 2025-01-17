@@ -1,9 +1,9 @@
 use super::{BorrowNbtValue as BValue, NbtBorrowTrait};
-use crate::{nbt_versions, NbtReader, NbtValue};
+use crate::{nbt_versions, NbtReader};
 
 #[test]
 fn hello_world_borrow() {
-    let mut data: [u8; 0x21] = [
+    let data: [u8; 0x21] = [
         0x0A, // TAG_Compound
         0x00, 0x0B, // root name length (11)
         0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x77, 0x6F, 0x72, 0x6C, 0x64, // hello world
