@@ -1,3 +1,5 @@
+use shen_nbt6::traits::NbtBorrowTrait;
+
 fn main() {
     println!("Hello, nbt!");
     // sleep 1s
@@ -215,7 +217,7 @@ fn test_v6(data: Vec<u8>) {
     test_lib!(
         {
             let _nbt_data = shen_nbt6::borrow::BorrowNbtValue::from_binary::<
-                shen_nbt6::nbt_versions::Java,
+                shen_nbt6::nbt_version::Java,
             >(&data);
         },
         "nbt v6",
@@ -276,8 +278,11 @@ fn cli_read_test() {
         let start_time = std::time::Instant::now();
         // let nbt_data = shen_nbt4::Value::from_vec(data);
 
-        let _nbt_data =
-            shen_nbt6::borrow::BorrowNbtValue::from_binary::<shen_nbt6::nbt_versions::Java>(&data);
+        let mut reader = shen_nbt6::NbtReader::new(&data);
+        let _nbt_data = shen_nbt6::nbt_version::Java::from_reader(&mut reader);
+        if let Err(e) = _nbt_data {
+            println!("error: {}, \nreader{}", e, reader.show_cursor_fancy(None));
+        }
         // let _nbt_data = shen_nbt5::NbtValue::from_binary::<shen_nbt5::nbt_version::Java>(data.as_mut_slice())
         //         .unwrap();
         let end_time = std::time::Instant::now();

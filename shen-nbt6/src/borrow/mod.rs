@@ -1,5 +1,5 @@
 use crate::traits::{NbtBorrowTrait, NbtTypeConversion};
-use crate::{nbt_consts, nbt_version, reader, value, NbtError, NbtReader, NbtResult, NbtTypeId};
+use crate::{nbt_consts, nbt_version, NbtError, NbtReader, NbtResult, NbtTypeId};
 #[cfg(test)]
 mod tests;
 
@@ -240,8 +240,9 @@ impl NbtBorrowTrait for nbt_version::Java {
                             nbt_consts::TAG_LIST => {
                                 let value_ptr = reader.cursor;
                                 let lst_type = reader.read_u8()?;
-                                if !lst_type.is_valid_nbt_data_type() {
-                                    return Err(NbtError::UnknownType(lst_type));
+                                // NbtList 里允许 TagEnd
+                                if !lst_type.is_valid_nbt_type() {
+                                    return Err(NbtError::UnknownType(lst_type, value_ptr));
                                 }
                                 let lst_len = reader.read_be_i32()?;
                                 if lst_len < 0 {
@@ -266,6 +267,17 @@ impl NbtBorrowTrait for nbt_version::Java {
                                 let current_ptr = reader.cursor;
                                 // 可直接读取的类型
                                 match lst_type {
+                                    nbt_consts::TAG_END => {
+                                        // 真有
+                                        let value = BorrowNbtValue::List(
+                                            value_ptr,
+                                            lst_len,
+                                            lst_type,
+                                            vec![],
+                                        );
+                                        values.push((value_name_len, value));
+                                        reader.roll_down(lst_len)?;
+                                    }
                                     // byte/short/int/long/float/double
                                     nbt_consts::TAG_BYTE => {
                                         let lst_values = (0..lst_len)
@@ -426,7 +438,7 @@ impl NbtBorrowTrait for nbt_version::Java {
                                 unreachable!("前面处理过了")
                             }
                             _ => {
-                                return Err(NbtError::UnknownType(value_type_id));
+                                return Err(NbtError::UnknownType(value_type_id, reader.cursor));
                             }
                         }
                     }
@@ -449,8 +461,8 @@ impl NbtBorrowTrait for nbt_version::Java {
                         nbt_consts::TAG_LIST => {
                             // 读取子 list 的类型
                             let sub_lst_type = reader.read_u8()?;
-                            if !sub_lst_type.is_valid_nbt_data_type() {
-                                return Err(NbtError::UnknownType(sub_lst_type));
+                            if !sub_lst_type.is_valid_nbt_type() {
+                                return Err(NbtError::UnknownType(sub_lst_type, reader.cursor));
                             }
                             let sub_lst_len = reader.read_be_i32()?;
                             if sub_lst_len < 0 {
@@ -477,6 +489,16 @@ impl NbtBorrowTrait for nbt_version::Java {
 
                             // 可直接读取的类型
                             match sub_lst_type {
+                                nbt_consts::TAG_END => {
+                                    // 真有
+                                    values.push(BorrowNbtValue::List(
+                                        current_ptr,
+                                        sub_lst_len,
+                                        sub_lst_type,
+                                        vec![],
+                                    ));
+                                    reader.roll_down(sub_lst_len)?;
+                                }
                                 // byte/short/int/long/float/double
                                 nbt_consts::TAG_BYTE => {
                                     let lst_values = (0..sub_lst_len)

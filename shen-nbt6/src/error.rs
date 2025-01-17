@@ -14,8 +14,9 @@ pub enum NbtError {
     WrongRootType(NbtTypeId),
     /// 根节点无名称
     RootWithoutName,
+    /// type, cursor
     /// 未知类型
-    UnknownType(NbtTypeId),
+    UnknownType(NbtTypeId, usize),
     /// 名称读取错误
     NameRead(String),
     /// 指针超出范围
@@ -62,11 +63,11 @@ impl Display for NbtError {
             NbtError::RootWithoutName => {
                 write!(f, "根节点无名称, 是否应该使用 JavaNetAfter1_20_2 解析?")
             }
-            NbtError::UnknownType(n) => {
+            NbtError::UnknownType(n, cursor) => {
                 if *n == 0 {
-                    write!(f, "未知类型: NBTEnd(0), 请检查数据是否正确")
+                    write!(f, "未知类型: NBTEnd(0) 于 {}, 请检查数据是否正确", cursor)
                 } else {
-                    write!(f, "未知类型: {}", n)
+                    write!(f, "未知类型: {} 于 {}", n, cursor)
                 }
             }
             NbtError::NameRead(s) => write!(f, "名称读取错误: {}", s),
