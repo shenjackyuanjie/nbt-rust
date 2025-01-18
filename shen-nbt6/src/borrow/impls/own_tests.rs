@@ -23,4 +23,6 @@ fn hello_world_borrow() {
 
     let owned_data = nbt_version::Java::read_data(&data, &mut reader);
     println!("{}", owned_data);
+
+    panic!()
 }

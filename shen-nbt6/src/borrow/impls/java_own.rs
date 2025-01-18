@@ -42,11 +42,11 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
                     continue;
                 }
                 let reading_value = values.get(writing_value.len()).unwrap();
-                let name_len = reading_value.0;
+                let name_start = reading_value.0;
+                let name_len = reading_value.1;
                 let value_start = reading_value.2.start_idx();
                 // 额, 才发现我需要手动算一下 name 的起始位置
                 // 倒也无所谓吧
-                let name_start = value_start - name_len;
                 // UNWRAP safety: 这里的 name_len 是从 values 里面取出来的, 所以不会越界
                 let value_name = Mutf8String::from_reader(reader, name_start, name_len).unwrap();
                 // 以防万一?
