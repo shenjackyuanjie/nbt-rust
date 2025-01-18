@@ -115,9 +115,9 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                         }
                         nbt_consts::TAG_BYTE_ARRAY => {
                             // 读取 ByteArray
-                            let value_ptr = reader.cursor;
                             // 长度是 i32
                             let value_len = reader.read_be_i32()?;
+                            let value_ptr = reader.cursor;
                             if value_len < 0 {
                                 return Err(NbtError::LenNegative(
                                     value_type_id,
@@ -131,8 +131,8 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                             reader.roll_down(value_len as usize)?;
                         }
                         nbt_consts::TAG_INT_ARRAY => {
-                            let value_ptr = reader.cursor;
                             let value_len = reader.read_be_i32()?;
+                            let value_ptr = reader.cursor;
                             if value_len < 0 {
                                 return Err(NbtError::LenNegative(
                                     value_type_id,
@@ -145,8 +145,8 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                             reader.roll_down(value_len as usize * 4)?;
                         }
                         nbt_consts::TAG_LONG_ARRAY => {
-                            let value_ptr = reader.cursor;
                             let value_len = reader.read_be_i32()?;
+                            let value_ptr = reader.cursor;
                             if value_len < 0 {
                                 return Err(NbtError::LenNegative(
                                     value_type_id,
@@ -159,15 +159,16 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                             reader.roll_down(value_len as usize * 8)?;
                         }
                         nbt_consts::TAG_STRING => {
-                            let value_ptr = reader.cursor;
                             let value_len = reader.read_be_u16()? as usize; // 总算不需要检查负数了
+                            let value_ptr = reader.cursor;
                             let value = BorrowNbtValue::String(value_ptr, value_len);
                             values.push((value_name_len, value));
                             reader.roll_down(value_len)?;
                         }
                         nbt_consts::TAG_LIST => {
-                            let value_ptr = reader.cursor;
                             let lst_type = reader.read_u8()?;
+                            // 读过 type id 再读指针位置
+                            let value_ptr = reader.cursor;
                             // NbtList 里允许 TagEnd
                             if !lst_type.is_valid_nbt_type() {
                                 return Err(NbtError::UnknownType(lst_type, value_ptr));
@@ -278,8 +279,8 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                 nbt_consts::TAG_BYTE_ARRAY => {
                                     let mut lst_values = Vec::with_capacity(lst_len);
                                     for _ in 0..lst_len {
-                                        let value_ptr = reader.cursor;
                                         let value_len = reader.read_be_i32()?;
+                                        let value_ptr = reader.cursor;
                                         if value_len < 0 {
                                             return Err(NbtError::LenNegative(
                                                 lst_type, value_len, value_ptr,
@@ -300,8 +301,8 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                 nbt_consts::TAG_INT_ARRAY => {
                                     let mut lst_values = Vec::with_capacity(lst_len);
                                     for _ in 0..lst_len {
-                                        let value_ptr = reader.cursor;
                                         let value_len = reader.read_be_i32()?;
+                                        let value_ptr = reader.cursor;
                                         if value_len < 0 {
                                             return Err(NbtError::LenNegative(
                                                 lst_type, value_len, value_ptr,
@@ -322,8 +323,8 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                 nbt_consts::TAG_LONG_ARRAY => {
                                     let mut lst_values = Vec::with_capacity(lst_len);
                                     for _ in 0..lst_len {
-                                        let value_ptr = reader.cursor;
                                         let value_len = reader.read_be_i32()?;
+                                        let value_ptr = reader.cursor;
                                         if value_len < 0 {
                                             return Err(NbtError::LenNegative(
                                                 lst_type, value_len, value_ptr,
@@ -333,6 +334,22 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                         let value = BorrowNbtValue::LongArray(value_ptr, value_len);
                                         lst_values.push(value);
                                         reader.roll_down(value_len * 8)?;
+                                    }
+                                    values.push((
+                                        value_name_len,
+                                        BorrowNbtValue::List(
+                                            value_ptr, lst_len, lst_type, lst_values,
+                                        ),
+                                    ));
+                                }
+                                nbt_consts::TAG_STRING => {
+                                    let mut lst_values = Vec::with_capacity(lst_len);
+                                    for _ in 0..lst_len {
+                                        let value_len = reader.read_be_u16()? as usize;
+                                        let value_ptr = reader.cursor;
+                                        let value = BorrowNbtValue::String(value_ptr, value_len);
+                                        lst_values.push(value);
+                                        reader.roll_down(value_len)?;
                                     }
                                     values.push((
                                         value_name_len,
@@ -496,8 +513,8 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                             nbt_consts::TAG_BYTE_ARRAY => {
                                 let mut lst_values = Vec::with_capacity(sub_lst_len);
                                 for _ in 0..sub_lst_len {
-                                    let value_ptr = reader.cursor;
                                     let value_len = reader.read_be_i32()?;
+                                    let value_ptr = reader.cursor;
                                     if value_len < 0 {
                                         return Err(NbtError::LenNegative(
                                             sub_lst_type,
@@ -520,8 +537,8 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                             nbt_consts::TAG_INT_ARRAY => {
                                 let mut lst_values = Vec::with_capacity(sub_lst_len);
                                 for _ in 0..sub_lst_len {
-                                    let value_ptr = reader.cursor;
                                     let value_len = reader.read_be_i32()?;
+                                    let value_ptr = reader.cursor;
                                     if value_len < 0 {
                                         return Err(NbtError::LenNegative(
                                             sub_lst_type,
@@ -544,8 +561,8 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                             nbt_consts::TAG_LONG_ARRAY => {
                                 let mut lst_values = Vec::with_capacity(sub_lst_len);
                                 for _ in 0..sub_lst_len {
-                                    let value_ptr = reader.cursor;
                                     let value_len = reader.read_be_i32()?;
+                                    let value_ptr = reader.cursor;
                                     if value_len < 0 {
                                         return Err(NbtError::LenNegative(
                                             sub_lst_type,
@@ -557,6 +574,22 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                     let value = BorrowNbtValue::LongArray(value_ptr, value_len);
                                     lst_values.push(value);
                                     reader.roll_down(value_len * 8)?;
+                                }
+                                values.push(BorrowNbtValue::List(
+                                    current_ptr,
+                                    sub_lst_len,
+                                    sub_lst_type,
+                                    lst_values,
+                                ));
+                            }
+                            nbt_consts::TAG_STRING => {
+                                let mut lst_values = Vec::with_capacity(sub_lst_len);
+                                for _ in 0..sub_lst_len {
+                                    let value_len = reader.read_be_u16()? as usize;
+                                    let value_ptr = reader.cursor;
+                                    let value = BorrowNbtValue::String(value_ptr, value_len);
+                                    lst_values.push(value);
+                                    reader.roll_down(value_len)?;
                                 }
                                 values.push(BorrowNbtValue::List(
                                     current_ptr,

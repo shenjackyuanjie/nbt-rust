@@ -22,7 +22,7 @@ fn hello_world_borrow() {
         println!("cursor state:\n{}", reader.show_cursor_fancy(None));
         panic!("{}", e);
     }
-    let correct_data = BValue::Compound(0, Some(11), vec![(4, BValue::String(21, 9))]);
+    let correct_data = BValue::Compound(0, Some(11), vec![(4, BValue::String(23, 9))]);
     assert_eq!(data.unwrap(), correct_data);
 }
 

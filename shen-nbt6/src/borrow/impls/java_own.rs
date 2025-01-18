@@ -91,8 +91,7 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
                             writing_value.push((value_name, NbtValue::LongArray(data)));
                         }
                         BValue::String(str_start, len) => {
-                            let data =
-                                Mutf8String::from_reader(reader, str_start + 2, len).unwrap();
+                            let data = Mutf8String::from_reader(reader, str_start, len).unwrap();
                             writing_value.push((value_name, NbtValue::String(data)));
                         }
                         _ => {}

@@ -18,18 +18,32 @@ pub enum BorrowNbtValue {
     Float(usize),
     Double(usize),
     /// ptr, len
+    ///
+    /// 这里的 ptr 是可以直接开始读取的位置
     ByteArray(usize, usize),
     /// ptr, len
+    ///
+    /// 这里的 ptr 是可以直接开始读取的位置
     String(usize, usize),
     /// ptr, len, type_id, values
+    ///
+    /// 这里的 ptr 是指向第一个 value 开始的位置
     List(usize, usize, NbtTypeId, Vec<BorrowNbtValue>),
     /// ptr, str_len, vec<(str_len, BorrowNbtValue)>
+    ///
     /// 如果是 None, 则表示没有名称
     /// 否则表示有名称(0 != 无名称)
+    ///
+    /// ptr 指向 name 开始的位置
+    /// 如果没有名称就是 typeid + 1
     Compound(usize, Option<usize>, Vec<(usize, BorrowNbtValue)>),
     /// ptr, len
+    ///
+    /// 这里的 ptr 是可以直接开始读取的位置
     IntArray(usize, usize),
     /// ptr, len
+    ///
+    /// 这里的 ptr 是可以直接开始读取的位置
     LongArray(usize, usize),
 }
 
