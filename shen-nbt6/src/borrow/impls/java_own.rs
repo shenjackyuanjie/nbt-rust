@@ -43,7 +43,7 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
                 }
                 let reading_value = values.get(writing_value.len()).unwrap();
                 let name_len = reading_value.0;
-                let value_start = reading_value.1.start_idx();
+                let value_start = reading_value.2.start_idx();
                 // 额, 才发现我需要手动算一下 name 的起始位置
                 // 倒也无所谓吧
                 let name_start = value_start - name_len;
@@ -53,7 +53,7 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
                 // 把 reader 指针移动到 value 的开始位置
                 let _ = reader.roll_to(value_start);
                 unsafe {
-                    match reading_value.1 {
+                    match reading_value.2 {
                         BValue::Byte(_) => {
                             writing_value
                                 .push((value_name, NbtValue::Byte(reader.read_i8().unwrap())));
@@ -94,7 +94,9 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
                             let data = Mutf8String::from_reader(reader, str_start, len).unwrap();
                             writing_value.push((value_name, NbtValue::String(data)));
                         }
-                        _ => {}
+                        _ => {
+                            todo!()
+                        }
                     }
                 }
             }

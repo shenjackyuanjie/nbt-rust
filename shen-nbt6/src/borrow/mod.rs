@@ -4,6 +4,9 @@ use crate::{nbt_version, NbtReader, NbtResult, NbtTypeId, NbtValue};
 /// 实现
 pub mod impls;
 
+pub type BorrowCompoundPayload = (usize, usize, BorrowNbtValue);
+pub type BorrowCompoundValues = Vec<BorrowCompoundPayload>;
+
 /// 这里的所有 usize 实际上都指向一个 &[u8]
 ///
 /// 用于更快速的解析 Nbt 数据
@@ -29,14 +32,17 @@ pub enum BorrowNbtValue {
     ///
     /// 这里的 ptr 是指向第一个 value 开始的位置
     List(usize, usize, NbtTypeId, Vec<BorrowNbtValue>),
-    /// ptr, str_len, vec<(str_len, BorrowNbtValue)>
+    /// ptr, str_len, vec<(name_ptr, name_len, BorrowNbtValue)>
     ///
     /// 如果是 None, 则表示没有名称
     /// 否则表示有名称(0 != 无名称)
     ///
     /// ptr 指向 name 开始的位置
     /// 如果没有名称就是 typeid + 1
-    Compound(usize, Option<usize>, Vec<(usize, BorrowNbtValue)>),
+    ///
+    /// name_ptr 是指向 name 开始的位置
+    /// str_len 是 name 的长度
+    Compound(usize, Option<usize>, BorrowCompoundValues),
     /// ptr, len
     ///
     /// 这里的 ptr 是可以直接开始读取的位置
@@ -49,34 +55,32 @@ pub enum BorrowNbtValue {
 
 impl BorrowNbtValue {
     /// 方便的创建一个没有名字的 Compound
-    pub fn nameless_compound(ptr: usize, values: Vec<(usize, BorrowNbtValue)>) -> Self {
+    pub fn nameless_compound(ptr: usize, values: BorrowCompoundValues) -> Self {
         Self::Compound(ptr, None, values)
     }
     /// 方便的创建一个有名字的 Compound
-    pub fn named_compound(
-        ptr: usize,
-        name_len: usize,
-        values: Vec<(usize, BorrowNbtValue)>,
-    ) -> Self {
+    pub fn named_compound(ptr: usize, name_len: usize, values: BorrowCompoundValues) -> Self {
         Self::Compound(ptr, Some(name_len), values)
     }
     /// 方便的创建一个 Compound 里的 Compound
     pub fn sub_compound(
+        name_ptr: usize,
         name_len: usize,
         ptr: usize,
-        values: Vec<(usize, BorrowNbtValue)>,
-    ) -> (usize, Self) {
-        (name_len, Self::Compound(ptr, None, values))
+        values: BorrowCompoundValues,
+    ) -> BorrowCompoundPayload {
+        (name_ptr, name_len, Self::Compound(ptr, None, values))
     }
     /// 方便的创建一个 Compound 里的 List
     pub fn sub_list(
+        name_ptr: usize,
         name_len: usize,
         ptr: usize,
         len: usize,
         type_id: NbtTypeId,
         values: Vec<BorrowNbtValue>,
-    ) -> (usize, Self) {
-        (name_len, Self::List(ptr, len, type_id, values))
+    ) -> BorrowCompoundPayload {
+        (name_ptr, name_len, Self::List(ptr, len, type_id, values))
     }
 
     /// 获得当前 BorrowNbtValue 开始的位置
@@ -139,7 +143,7 @@ impl BorrowNbtValue {
         }
     }
 
-    pub fn as_compound_idx(&self) -> Option<(usize, Option<usize>, &Vec<(usize, BorrowNbtValue)>)> {
+    pub fn as_compound_idx(&self) -> Option<(usize, Option<usize>, &BorrowCompoundValues)> {
         match self {
             Self::Compound(ptr, name_len, values) => Some((*ptr, *name_len, values)),
             _ => None,

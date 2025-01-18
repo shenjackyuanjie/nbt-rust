@@ -65,6 +65,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                         break;
                     }
                     let value_name_len = reader.read_be_u16()? as usize;
+                    let value_name_start = reader.cursor;
                     // println!(
                     //     "Value type: {}, name_len: {}, cursor:\n{}",
                     //     value_type_id.as_nbt_type_name(),
@@ -79,38 +80,38 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                             // 创建一个 Byte 对象
                             let value_ptr = reader.cursor;
                             let value = BorrowNbtValue::Byte(value_ptr);
-                            values.push((value_name_len, value));
+                            values.push((value_name_start, value_name_len, value));
                             // 移动 cursor
                             reader.roll_down(1)?;
                         }
                         nbt_consts::TAG_SHORT => {
                             let value_ptr = reader.cursor;
                             let value = BorrowNbtValue::Short(value_ptr);
-                            values.push((value_name_len, value));
+                            values.push((value_name_start, value_name_len, value));
                             reader.roll_down(2)?;
                         }
                         nbt_consts::TAG_INT => {
                             let value_ptr = reader.cursor;
                             let value = BorrowNbtValue::Int(value_ptr);
-                            values.push((value_name_len, value));
+                            values.push((value_name_start, value_name_len, value));
                             reader.roll_down(4)?;
                         }
                         nbt_consts::TAG_LONG => {
                             let value_ptr = reader.cursor;
                             let value = BorrowNbtValue::Long(value_ptr);
-                            values.push((value_name_len, value));
+                            values.push((value_name_start, value_name_len, value));
                             reader.roll_down(8)?;
                         }
                         nbt_consts::TAG_FLOAT => {
                             let value_ptr = reader.cursor;
                             let value = BorrowNbtValue::Float(value_ptr);
-                            values.push((value_name_len, value));
+                            values.push((value_name_start, value_name_len, value));
                             reader.roll_down(4)?;
                         }
                         nbt_consts::TAG_DOUBLE => {
                             let value_ptr = reader.cursor;
                             let value = BorrowNbtValue::Double(value_ptr);
-                            values.push((value_name_len, value));
+                            values.push((value_name_start, value_name_len, value));
                             reader.roll_down(8)?;
                         }
                         nbt_consts::TAG_BYTE_ARRAY => {
@@ -126,7 +127,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                 ));
                             }
                             let value = BorrowNbtValue::ByteArray(value_ptr, value_len as usize);
-                            values.push((value_name_len, value));
+                            values.push((value_name_start, value_name_len, value));
                             // 移动 cursor
                             reader.roll_down(value_len as usize)?;
                         }
@@ -141,7 +142,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                 ));
                             }
                             let value = BorrowNbtValue::IntArray(value_ptr, value_len as usize);
-                            values.push((value_name_len, value));
+                            values.push((value_name_start, value_name_len, value));
                             reader.roll_down(value_len as usize * 4)?;
                         }
                         nbt_consts::TAG_LONG_ARRAY => {
@@ -155,14 +156,14 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                 ));
                             }
                             let value = BorrowNbtValue::LongArray(value_ptr, value_len as usize);
-                            values.push((value_name_len, value));
+                            values.push((value_name_start, value_name_len, value));
                             reader.roll_down(value_len as usize * 8)?;
                         }
                         nbt_consts::TAG_STRING => {
                             let value_len = reader.read_be_u16()? as usize; // 总算不需要检查负数了
                             let value_ptr = reader.cursor;
                             let value = BorrowNbtValue::String(value_ptr, value_len);
-                            values.push((value_name_len, value));
+                            values.push((value_name_start, value_name_len, value));
                             reader.roll_down(value_len)?;
                         }
                         nbt_consts::TAG_LIST => {
@@ -186,9 +187,9 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                     lst_type,
                                     vec![],
                                 );
-                                values.push((value_name_len, value));
+                                values.push((value_name_start, value_name_len, value));
                                 let last = values.last_mut().unwrap();
-                                read_stack.push(&mut last.1);
+                                read_stack.push(&mut last.2);
                                 break;
                             }
                             let current_ptr = reader.cursor;
@@ -198,7 +199,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                     // 真有
                                     let value =
                                         BorrowNbtValue::List(value_ptr, lst_len, lst_type, vec![]);
-                                    values.push((value_name_len, value));
+                                    values.push((value_name_start, value_name_len, value));
                                     reader.roll_down(lst_len)?;
                                 }
                                 // byte/short/int/long/float/double
@@ -207,6 +208,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                         .map(|i| BorrowNbtValue::Byte(current_ptr + i))
                                         .collect::<Vec<BorrowNbtValue>>();
                                     values.push((
+                                        value_name_start,
                                         value_name_len,
                                         BorrowNbtValue::List(
                                             value_ptr, lst_len, lst_type, lst_values,
@@ -220,6 +222,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                         .map(|i| BorrowNbtValue::Short(current_ptr + i * 2))
                                         .collect::<Vec<BorrowNbtValue>>();
                                     values.push((
+                                        value_name_start,
                                         value_name_len,
                                         BorrowNbtValue::List(
                                             value_ptr, lst_len, lst_type, lst_values,
@@ -232,6 +235,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                         .map(|i| BorrowNbtValue::Int(current_ptr + i * 4))
                                         .collect::<Vec<BorrowNbtValue>>();
                                     values.push((
+                                        value_name_start,
                                         value_name_len,
                                         BorrowNbtValue::List(
                                             value_ptr, lst_len, lst_type, lst_values,
@@ -244,6 +248,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                         .map(|i| BorrowNbtValue::Long(current_ptr + i * 8))
                                         .collect::<Vec<BorrowNbtValue>>();
                                     values.push((
+                                        value_name_start,
                                         value_name_len,
                                         BorrowNbtValue::List(
                                             value_ptr, lst_len, lst_type, lst_values,
@@ -256,6 +261,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                         .map(|i| BorrowNbtValue::Float(current_ptr + i * 4))
                                         .collect::<Vec<BorrowNbtValue>>();
                                     values.push((
+                                        value_name_start,
                                         value_name_len,
                                         BorrowNbtValue::List(
                                             value_ptr, lst_len, lst_type, lst_values,
@@ -268,6 +274,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                         .map(|i| BorrowNbtValue::Double(current_ptr + i * 8))
                                         .collect::<Vec<BorrowNbtValue>>();
                                     values.push((
+                                        value_name_start,
                                         value_name_len,
                                         BorrowNbtValue::List(
                                             value_ptr, lst_len, lst_type, lst_values,
@@ -292,6 +299,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                         reader.roll_down(value_len)?;
                                     }
                                     values.push((
+                                        value_name_start,
                                         value_name_len,
                                         BorrowNbtValue::List(
                                             value_ptr, lst_len, lst_type, lst_values,
@@ -314,6 +322,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                         reader.roll_down(value_len * 4)?;
                                     }
                                     values.push((
+                                        value_name_start,
                                         value_name_len,
                                         BorrowNbtValue::List(
                                             value_ptr, lst_len, lst_type, lst_values,
@@ -336,6 +345,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                         reader.roll_down(value_len * 8)?;
                                     }
                                     values.push((
+                                        value_name_start,
                                         value_name_len,
                                         BorrowNbtValue::List(
                                             value_ptr, lst_len, lst_type, lst_values,
@@ -352,6 +362,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                                         reader.roll_down(value_len)?;
                                     }
                                     values.push((
+                                        value_name_start,
                                         value_name_len,
                                         BorrowNbtValue::List(
                                             value_ptr, lst_len, lst_type, lst_values,
@@ -365,9 +376,9 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                             let value_ptr = reader.cursor;
                             // 非 root 的 Compound
                             let value = BorrowNbtValue::Compound(value_ptr, None, vec![]);
-                            values.push((value_name_len, value));
+                            values.push((value_name_start, value_name_len, value));
                             let last = values.last_mut().unwrap();
-                            read_stack.push(&mut last.1);
+                            read_stack.push(&mut last.2);
                             break;
                         }
                         nbt_consts::TAG_END => {
