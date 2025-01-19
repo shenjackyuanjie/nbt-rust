@@ -14,7 +14,7 @@ macro_rules! read_uncheck {
         ///
         /// 转换大小端(大端)
         ///
-        /// # 安全性
+        /// # Safety
         /// 允许未对齐的地址
         /// 长度溢出会导致 UB
         #[inline]
@@ -30,7 +30,7 @@ macro_rules! read_uncheck {
         ///
         /// 转换大小端(小端)
         ///
-        /// # 安全性
+        /// # Safety
         /// 允许未对齐的地址
         /// 长度溢出会导致 UB
         #[inline]
@@ -44,6 +44,7 @@ macro_rules! read_uncheck {
     };
 }
 
+#[allow(clippy::transmute_int_to_float)]
 impl NbtReader<'_> {
     pub fn new(data: &[u8]) -> NbtReader { NbtReader { data, cursor: 0 } }
     /// 向后滚动
@@ -58,7 +59,6 @@ impl NbtReader<'_> {
     /// 向前滚动
     /// 会在超出长度返回错误
     #[inline]
-    #[must_use]
     pub fn roll_down(&mut self, len: usize) -> NbtResult<()> {
         if self.cursor + len > self.data.len() {
             return Err(NbtError::CursorOverflow(self.cursor, len, self.data.len()));
@@ -425,7 +425,7 @@ impl NbtReader<'_> {
     pub fn read_le_f64(&mut self) -> NbtResult<f64> { Ok(f64::from_bits(self.read_le_u64()?)) }
     /// 读取一个大端 f32 数据
     ///
-    /// # 安全性
+    /// # Safety
     /// 允许未对齐的地址
     /// 长度溢出会导致 UB
     #[inline]
@@ -435,7 +435,7 @@ impl NbtReader<'_> {
     }
     /// 读取一个小端 f32 数据
     ///
-    /// # 安全性
+    /// # Safety
     /// 允许未对齐的地址
     /// 长度溢出会导致 UB
     #[inline]
@@ -445,7 +445,7 @@ impl NbtReader<'_> {
     }
     /// 读取一个大端 f64 数据
     ///
-    /// # 安全性
+    /// # Safety
     /// 允许未对齐的地址
     /// 长度溢出会导致 UB
     #[inline]
@@ -455,7 +455,7 @@ impl NbtReader<'_> {
     }
     /// 读取一个小端 f64 数据
     ///
-    /// # 安全性
+    /// # Safety
     /// 允许未对齐的地址
     /// 长度溢出会导致 UB
     #[inline]
@@ -475,7 +475,7 @@ impl NbtReader<'_> {
     }
     /// 读取指定长度的 i8 数组
     ///
-    /// # 安全性
+    /// # Safety
     ///
     /// 长度溢出会导致 UB
     #[inline]
@@ -497,14 +497,14 @@ impl NbtReader<'_> {
     }
     /// 读取指定长度的 i16 数组
     ///
-    /// # 安全性
+    /// # Safety
     ///
     /// 长度溢出会导致 UB
     #[inline]
     pub unsafe fn read_be_i16_array_unsafe(&mut self, len: usize) -> Vec<i16> {
         let mut value: Vec<i16> = Vec::with_capacity(len);
         std::ptr::copy_nonoverlapping(
-            self.data[self.cursor..].as_ptr() as *const u8,
+            self.data[self.cursor..].as_ptr(),
             value.as_ptr() as *mut u8,
             len * 2,
         );
@@ -516,14 +516,14 @@ impl NbtReader<'_> {
     }
     /// 读取指定长度的 i32 数组
     ///
-    /// # 安全性
+    /// # Safety
     ///
     /// 长度溢出会导致 UB
     #[inline]
     pub unsafe fn read_be_i32_array_unsafe(&mut self, len: usize) -> Vec<i32> {
         let mut value: Vec<i32> = Vec::with_capacity(len);
         std::ptr::copy_nonoverlapping(
-            self.data[self.cursor..].as_ptr() as *const u8,
+            self.data[self.cursor..].as_ptr(),
             value.as_ptr() as *mut u8,
             len * 4,
         );
@@ -535,14 +535,14 @@ impl NbtReader<'_> {
     }
     /// 读取指定长度的 i64 数组
     ///
-    /// # 安全性
+    /// # Safety
     ///
     /// 长度溢出会导致 UB
     #[inline]
     pub unsafe fn read_be_i64_array_unsafe(&mut self, len: usize) -> Vec<i64> {
         let mut value: Vec<i64> = Vec::with_capacity(len);
         std::ptr::copy_nonoverlapping(
-            self.data[self.cursor..].as_ptr() as *const u8,
+            self.data[self.cursor..].as_ptr(),
             value.as_ptr() as *mut u8,
             len * 8,
         );
