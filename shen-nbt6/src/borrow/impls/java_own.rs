@@ -12,7 +12,8 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
     let root_name = root_value
         .1
         .map(|name_len| Mutf8String::from_reader(reader, root_value.0 + 3, name_len).unwrap());
-    let mut root_element = NbtValue::Compound(root_name, vec![]);
+    let root_vec = Vec::with_capacity(root_value.2.len());
+    let mut root_element = NbtValue::Compound(root_name, root_vec);
 
     // 两个 FILO 栈用来解析
     // 解析栈
@@ -53,7 +54,7 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
                 // 把 reader 指针移动到 value 的开始位置
                 let _ = reader.roll_to(value_start);
                 unsafe {
-                    match reading_value.2 {
+                    match &reading_value.2 {
                         BValue::Byte(_) => {
                             writing_value
                                 .push((value_name, NbtValue::Byte(reader.read_i8().unwrap())));
@@ -79,24 +80,35 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
                                 .push((value_name, NbtValue::Double(reader.read_be_f64_unsafe())));
                         }
                         BValue::ByteArray(_, len) => {
-                            let data = reader.read_i8_array_unsafe(len);
+                            let data = reader.read_i8_array_unsafe(*len);
                             writing_value.push((value_name, NbtValue::ByteArray(data)));
                         }
                         BValue::IntArray(_, len) => {
-                            let data = reader.read_be_i32_array_unsafe(len);
+                            let data = reader.read_be_i32_array_unsafe(*len);
                             writing_value.push((value_name, NbtValue::IntArray(data)));
                         }
                         BValue::LongArray(_, len) => {
-                            let data = reader.read_be_i64_array_unsafe(len);
+                            let data = reader.read_be_i64_array_unsafe(*len);
                             writing_value.push((value_name, NbtValue::LongArray(data)));
                         }
                         BValue::String(str_start, len) => {
-                            let data = Mutf8String::from_reader(reader, str_start, len).unwrap();
+                            let data = Mutf8String::from_reader(reader, *str_start, *len).unwrap();
                             writing_value.push((value_name, NbtValue::String(data)));
                         }
-                        // BValue::Compound(_, , )
-                        _ => {
-                            todo!()
+                        BValue::Compound(name_start, name_len, inner_values) => {
+                            let new_vec = Vec::with_capacity(inner_values.len());
+                            let new_name = name_len.map(|name_len| {
+                                Mutf8String::from_reader(reader, *name_start, name_len).unwrap()
+                            });
+                            let new_value = NbtValue::Compound(new_name, new_vec);
+                            // 入栈
+                            writing_value.push((value_name, new_value));
+                            parse_stack.push(&reading_value.2);
+                            // 继续解析
+                            continue;
+                        }
+                        BValue::List(_, _, _, _) => {
+
                         }
                     }
                 }
