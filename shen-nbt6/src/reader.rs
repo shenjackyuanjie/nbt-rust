@@ -44,7 +44,6 @@ macro_rules! read_uncheck {
     };
 }
 
-#[allow(clippy::transmute_int_to_float)]
 impl NbtReader<'_> {
     pub fn new(data: &[u8]) -> NbtReader { NbtReader { data, cursor: 0 } }
     /// 向后滚动
@@ -431,7 +430,7 @@ impl NbtReader<'_> {
     #[inline]
     pub unsafe fn read_be_f32_unsafe(&mut self) -> f32 {
         let value = self.read_be_u32_unsafe();
-        std::mem::transmute::<u32, f32>(value)
+        f32::from_bits(value)
     }
     /// 读取一个小端 f32 数据
     ///
@@ -441,7 +440,7 @@ impl NbtReader<'_> {
     #[inline]
     pub unsafe fn read_le_f32_unsafe(&mut self) -> f32 {
         let value = self.read_le_u32_unsafe();
-        std::mem::transmute::<u32, f32>(value)
+        f32::from_bits(value)
     }
     /// 读取一个大端 f64 数据
     ///
@@ -451,7 +450,7 @@ impl NbtReader<'_> {
     #[inline]
     pub unsafe fn read_be_f64_unsafe(&mut self) -> f64 {
         let value = self.read_be_u64_unsafe();
-        std::mem::transmute::<u64, f64>(value)
+        f64::from_bits(value)
     }
     /// 读取一个小端 f64 数据
     ///
@@ -461,8 +460,53 @@ impl NbtReader<'_> {
     #[inline]
     pub unsafe fn read_le_f64_unsafe(&mut self) -> f64 {
         let value = self.read_le_u64_unsafe();
-        std::mem::transmute::<u64, f64>(value)
+        f64::from_bits(value)
     }
+    /// 读取一个大端指定长度的 f32 数据
+    ///
+    /// # Safety
+    /// 会在超出长度时 panic
+    #[inline]
+    pub unsafe fn read_be_f32_array_unsafe(&mut self, len: usize) -> Vec<f32> {
+        let value =
+            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const f32, len);
+        self.cursor += len * 4;
+        value.to_vec()
+    }
+    /// 读取一个小端指定长度的 f32 数据
+    ///
+    /// # Safety
+    /// 会在超出长度时 panic
+    #[inline]
+    pub unsafe fn read_le_f32_array_unsafe(&mut self, len: usize) -> Vec<f32> {
+        let value =
+            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const f32, len);
+        self.cursor += len * 4;
+        value.to_vec()
+    }
+    /// 读取一个大端指定长度的 f64 数据
+    ///
+    /// # Safety
+    /// 会在超出长度时 panic
+    #[inline]
+    pub unsafe fn read_be_f64_array_unsafe(&mut self, len: usize) -> Vec<f64> {
+        let value =
+            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const f64, len);
+        self.cursor += len * 8;
+        value.to_vec()
+    }
+    /// 读取一个小端指定长度的 f64 数据
+    ///
+    /// # Safety
+    /// 会在超出长度时 panic
+    #[inline]
+    pub unsafe fn read_le_f64_array_unsafe(&mut self, len: usize) -> Vec<f64> {
+        let value =
+            std::slice::from_raw_parts(self.data[self.cursor..].as_ptr() as *const f64, len);
+        self.cursor += len * 8;
+        value.to_vec()
+    }
+
     /// 读取指定长度的 u8 数组
     #[inline]
     pub fn read_u8_array(&mut self, len: usize) -> NbtResult<&[u8]> {

@@ -103,15 +103,116 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
                             let new_value = NbtValue::Compound(new_name, new_vec);
                             // 入栈
                             writing_value.push((value_name, new_value));
+                            if inner_values.is_empty() {
+                                // 如果是空的, 说明是空的 compound, 不需要解析
+                                continue;
+                            }
+                            let new_value = writing_value.last_mut().unwrap();
+                            write_stack.push(&mut new_value.1); // 代码还是常看常新啊
                             parse_stack.push(&reading_value.2);
                             // 继续解析
                             continue;
                         }
-                        BValue::List(_, _, _, _) => {}
+                        BValue::List(_, lst_len, _, sub_lst) => {
+                            let new_vec = Vec::with_capacity(*lst_len);
+                            let new_value = NbtValue::List(new_vec);
+                            // 入栈 ( 反正都读完了, 肯定保证不会出现过深的情况 )
+                            writing_value.push((value_name, new_value));
+                            if sub_lst.is_empty() {
+                                // 如果是空的, 说明是空的 list, 不需要解析
+                                continue;
+                            }
+                            let new_value = writing_value.last_mut().unwrap();
+                            write_stack.push(&mut new_value.1);
+                            parse_stack.push(&reading_value.2);
+                        }
                     }
                 }
             }
-            BValue::List(_, len, type_id, values) => {
+            BValue::List(_, len, _, values) => {
+                let writing_value = match write_value {
+                    NbtValue::List(values) => values,
+                    _ => unreachable!("parse stack 和 write stack 的类型一致"),
+                };
+                if writing_value.len() == *len {
+                    // 如果写入的长度和解析的长度一致, 说明这个 list 已经解析完了
+                    parse_stack.pop();
+                    write_stack.pop();
+                    continue;
+                }
+                let reading_value = values.get(writing_value.len()).unwrap();
+                unsafe {
+                    match reading_value {
+                        BValue::Byte(ptr) => {
+                            // 读一大堆 byte
+                            let _ = reader.roll_to(*ptr);
+                            let data = reader.read_i8_array_unsafe(*len);
+                            for byte in data {
+                                writing_value.push(NbtValue::Byte(byte));
+                            }
+                            // 解析完了, 出栈
+                            parse_stack.pop();
+                            write_stack.pop();
+                            continue;
+                        }
+                        BValue::Short(ptr) => {
+                            let _ = reader.roll_to(*ptr);
+                            let data = reader.read_be_i16_array_unsafe(*len);
+                            for short in data {
+                                writing_value.push(NbtValue::Short(short));
+                            }
+                            // 解析完了, 出栈
+                            parse_stack.pop();
+                            write_stack.pop();
+                            continue;
+                        }
+                        BValue::Int(ptr) => {
+                            let _ = reader.roll_to(*ptr);
+                            let data = reader.read_be_i32_array_unsafe(*len);
+                            for int in data {
+                                writing_value.push(NbtValue::Int(int));
+                            }
+                            // 解析完了, 出栈
+                            parse_stack.pop();
+                            write_stack.pop();
+                            continue;
+                        }
+                        BValue::Long(ptr) => {
+                            let _ = reader.roll_to(*ptr);
+                            let data = reader.read_be_i64_array_unsafe(*len);
+                            for long in data {
+                                writing_value.push(NbtValue::Long(long));
+                            }
+                            // 解析完了, 出栈
+                            parse_stack.pop();
+                            write_stack.pop();
+                            continue;
+                        }
+                        BValue::Float(ptr) => {
+                            let _ = reader.roll_to(*ptr);
+                            let data = reader.read_be_f32_array_unsafe(*len);
+                            for float in data {
+                                writing_value.push(NbtValue::Float(float));
+                            }
+                            // 解析完了, 出栈
+                            parse_stack.pop();
+                            write_stack.pop();
+                            continue;
+                        }
+                        BValue::Double(ptr) => {
+                            let _ = reader.roll_to(*ptr);
+                            let data = reader.read_be_f64_array_unsafe(*len);
+                            for double in data {
+                                writing_value.push(NbtValue::Double(double));
+                            }
+                            // 解析完了, 出栈
+                            parse_stack.pop();
+                            write_stack.pop();
+                            continue;
+                        }
+                        _ => todo!(),
+                    }
+                }
                 todo!()
             }
             _ => unreachable!("解析的时候不会把非 list/compond 的东西放进来"),
