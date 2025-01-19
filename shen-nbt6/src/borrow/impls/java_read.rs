@@ -180,13 +180,10 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                             }
                             let lst_len = lst_len as usize;
                             if lst_type.is_list_or_compound() {
+                                let sub_lst = Vec::with_capacity(lst_len);
                                 // 这两个需要压栈
-                                let value = BorrowNbtValue::List(
-                                    value_ptr,
-                                    lst_len as usize,
-                                    lst_type,
-                                    vec![],
-                                );
+                                let value =
+                                    BorrowNbtValue::List(value_ptr, lst_len, lst_type, sub_lst);
                                 values.push((value_name_start, value_name_len, value));
                                 let last = values.last_mut().unwrap();
                                 read_stack.push(&mut last.2);
@@ -197,8 +194,9 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                             match lst_type {
                                 nbt_consts::TAG_END => {
                                     // 真有 end 标签……
+                                    let lst_0 = Vec::with_capacity(0);
                                     let value =
-                                        BorrowNbtValue::List(value_ptr, lst_len, lst_type, vec![]);
+                                        BorrowNbtValue::List(value_ptr, lst_len, lst_type, lst_0);
                                     values.push((value_name_start, value_name_len, value));
                                     reader.roll_down(lst_len)?;
                                 }
@@ -422,11 +420,12 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                         let sub_lst_len = sub_lst_len as usize;
                         if sub_lst_type.is_list_or_compound() {
                             // 这两个需要压栈
+                            let sub_lst = Vec::with_capacity(sub_lst_len);
                             let value = BorrowNbtValue::List(
                                 reader.cursor,
                                 sub_lst_len,
                                 sub_lst_type,
-                                vec![],
+                                sub_lst,
                             );
                             values.push(value);
                             read_stack.push(values.last_mut().unwrap());
@@ -438,11 +437,12 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                         match sub_lst_type {
                             nbt_consts::TAG_END => {
                                 // 真有
+                                let lst_0 = Vec::with_capacity(0);
                                 values.push(BorrowNbtValue::List(
                                     current_ptr,
                                     sub_lst_len,
                                     sub_lst_type,
-                                    vec![],
+                                    lst_0,
                                 ));
                                 reader.roll_down(sub_lst_len)?;
                             }

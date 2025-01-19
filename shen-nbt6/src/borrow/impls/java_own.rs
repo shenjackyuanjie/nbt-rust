@@ -107,9 +107,7 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
                             // 继续解析
                             continue;
                         }
-                        BValue::List(_, _, _, _) => {
-
-                        }
+                        BValue::List(_, _, _, _) => {}
                     }
                 }
             }
