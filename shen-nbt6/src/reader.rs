@@ -552,6 +552,7 @@ impl NbtReader<'_> {
             value.as_ptr() as *mut u8,
             len * 2,
         );
+        value.set_len(len);
         for n in &mut value {
             *n = n.to_be();
         }
@@ -571,6 +572,7 @@ impl NbtReader<'_> {
             value.as_ptr() as *mut u8,
             len * 4,
         );
+        value.set_len(len);
         for n in &mut value {
             *n = n.to_be();
         }
@@ -590,6 +592,7 @@ impl NbtReader<'_> {
             value.as_ptr() as *mut u8,
             len * 8,
         );
+        value.set_len(len);
         for n in &mut value {
             *n = n.to_be();
         }

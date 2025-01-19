@@ -113,18 +113,19 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
                             // 继续解析
                             continue;
                         }
-                        BValue::List(_, lst_len, _, sub_lst) => {
+                        BValue::List(_, lst_len, _, _) => {
                             let new_vec = Vec::with_capacity(*lst_len);
                             let new_value = NbtValue::List(new_vec);
                             // 入栈 ( 反正都读完了, 肯定保证不会出现过深的情况 )
                             writing_value.push((value_name, new_value));
-                            if sub_lst.is_empty() {
+                            if *lst_len == 0 {
                                 // 如果是空的, 说明是空的 list, 不需要解析
                                 continue;
                             }
                             let new_value = writing_value.last_mut().unwrap();
                             write_stack.push(&mut new_value.1);
                             parse_stack.push(&reading_value.2);
+                            continue;
                         }
                     }
                 }
@@ -210,10 +211,54 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
                             write_stack.pop();
                             continue;
                         }
-                        _ => todo!(),
+                        // 懒得动了, 三 Array 就在大循环里一次一次读吧
+                        BValue::ByteArray(ptr, len) => {
+                            let _ = reader.roll_to(*ptr);
+                            let data = reader.read_i8_array_unsafe(*len);
+                            writing_value.push(NbtValue::ByteArray(data));
+                        }
+                        BValue::IntArray(ptr, len) => {
+                            let _ = reader.roll_to(*ptr);
+                            let data = reader.read_be_i32_array_unsafe(*len);
+                            writing_value.push(NbtValue::IntArray(data));
+                        }
+                        BValue::LongArray(ptr, len) => {
+                            let _ = reader.roll_to(*ptr);
+                            let data = reader.read_be_i64_array_unsafe(*len);
+                            writing_value.push(NbtValue::LongArray(data));
+                        }
+                        BValue::String(ptr, len) => {
+                            let _ = reader.roll_to(*ptr);
+                            let data = Mutf8String::from_reader(reader, *ptr, *len).unwrap();
+                            writing_value.push(NbtValue::String(data));
+                        }
+                        BValue::List(_, sub_lst_len, _, _) => {
+                            let new_vec = Vec::with_capacity(*sub_lst_len);
+                            let new_value = NbtValue::List(new_vec);
+                            writing_value.push(new_value);
+                            if *sub_lst_len == 0 {
+                                // 如果是空的, 说明是空的 list, 不需要解析
+                                continue;
+                            }
+                            let new_value = writing_value.last_mut().unwrap();
+                            write_stack.push(new_value);
+                            parse_stack.push(reading_value);
+                        }
+                        BValue::Compound(_, _, sub_map) => {
+                            let new_map = Vec::with_capacity(sub_map.len());
+                            let new_value = NbtValue::Compound(None, new_map);
+                            writing_value.push(new_value);
+                            if sub_map.is_empty() {
+                                // 如果是空的, 说明是空的 compound, 不需要解析
+                                continue;
+                            }
+                            let new_value = writing_value.last_mut().unwrap();
+                            write_stack.push(new_value);
+                            parse_stack.push(reading_value);
+                            continue;
+                        }
                     }
                 }
-                todo!()
             }
             _ => unreachable!("解析的时候不会把非 list/compond 的东西放进来"),
         }

@@ -113,4 +113,66 @@ impl NbtValue {
             _ => (),
         }
     }
+
+    pub fn display_data(&self) -> String {
+        match self {
+            NbtValue::Byte(b) => b.to_string(),
+            NbtValue::Short(s) => s.to_string(),
+            NbtValue::Int(i) => i.to_string(),
+            NbtValue::Long(l) => l.to_string(),
+            NbtValue::Float(f) => f.to_string(),
+            NbtValue::Double(d) => d.to_string(),
+            NbtValue::String(s) => format!("\"{}\"", s.decode()),
+            NbtValue::ByteArray(b) => {
+                let mut s = String::from("[B; ");
+                for i in b {
+                    s += &i.to_string();
+                    s += ", ";
+                }
+                s += "]";
+                s
+            }
+            NbtValue::IntArray(i) => {
+                let mut s = String::from("[I; ");
+                for i in i {
+                    s += &i.to_string();
+                    s += ", ";
+                }
+                s += "]";
+                s
+            }
+            NbtValue::LongArray(l) => {
+                let mut s = String::from("[L; ");
+                for i in l {
+                    s += &i.to_string();
+                    s += ", ";
+                }
+                s += "]";
+                s
+            }
+            NbtValue::List(l) => {
+                let mut result = String::new();
+                for value in l {
+                    result.push_str(&value.display_data());
+                    result.push_str(", ");
+                }
+                format!("List[{}]", result)
+            }
+            NbtValue::Compound(name, values) => {
+                let mut result = String::new();
+                let possible_name = match name {
+                    Some(n) => n.decode(),
+                    None => String::new(),
+                };
+                for (name, value) in values {
+                    result.push('"');
+                    result.push_str(&name.decode());
+                    result.push_str("\": ");
+                    result.push_str(&value.display_data());
+                    result.push_str(", ");
+                }
+                format!("Compound:{}{{{}}}", possible_name, result)
+            }
+        }
+    }
 }
