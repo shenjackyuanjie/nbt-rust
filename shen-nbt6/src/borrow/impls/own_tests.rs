@@ -1,5 +1,5 @@
 use crate::borrow::{BorrowNbtValue as BValue, NbtBorrowTrait};
-use crate::{nbt_version, NbtReader};
+use crate::{nbt_version, NbtReader, NbtValue};
 
 #[test]
 fn hello_world_borrow() {
@@ -24,5 +24,10 @@ fn hello_world_borrow() {
     let owned_data = nbt_version::Java::read_data(&data, &mut reader);
     println!("{}", owned_data);
 
-    panic!()
+    let expect_data = NbtValue::Compound(
+        Some("hello world".into()),
+        vec![("name".into(), NbtValue::String("Bananrama".into()))],
+    );
+
+    assert_eq!(owned_data, expect_data);
 }

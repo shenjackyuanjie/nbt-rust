@@ -196,7 +196,7 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
                             // 可直接读取的类型
                             match lst_type {
                                 nbt_consts::TAG_END => {
-                                    // 真有
+                                    // 真有 end 标签……
                                     let value =
                                         BorrowNbtValue::List(value_ptr, lst_len, lst_type, vec![]);
                                     values.push((value_name_start, value_name_len, value));
