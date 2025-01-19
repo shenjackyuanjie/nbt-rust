@@ -1,5 +1,5 @@
 use crate::borrow::NbtBorrowTrait;
-use crate::tests::{BIG_TEST_DATA, HELLO_WORLD_DATA};
+use crate::tests::{BIG_TEST_DATA, COMPLEX_PLR_DATA, HELLO_WORLD_DATA};
 use crate::{nbt_version, NbtReader, NbtValue};
 
 #[test]
@@ -7,8 +7,6 @@ fn hello_world() {
     let mut reader = NbtReader::new(&HELLO_WORLD_DATA);
 
     let data = nbt_version::Java::from_reader(&mut reader).unwrap();
-    println!("{:#?}", data);
-
     let owned_data = nbt_version::Java::read_data(&data, &mut reader);
     println!("{}", owned_data);
 
@@ -25,8 +23,6 @@ fn big_test() {
     let mut reader = NbtReader::new(&BIG_TEST_DATA);
 
     let data = nbt_version::Java::from_reader(&mut reader).unwrap();
-    // println!("{:#?}", data);
-
     let owned_data = nbt_version::Java::read_data(&data, &mut reader);
     println!("{}", owned_data.display_data());
 
@@ -115,4 +111,15 @@ fn big_test() {
     );
 
     assert_eq!(owned_data, expect_data);
+}
+
+#[test]
+fn complex_player() {
+    let mut reader = NbtReader::new(&COMPLEX_PLR_DATA);
+
+    let data = nbt_version::Java::from_reader(&mut reader).unwrap();
+    let owned_data = nbt_version::Java::read_data(&data, &mut reader);
+    println!("{}", owned_data.display_data());
+
+    panic!();
 }
