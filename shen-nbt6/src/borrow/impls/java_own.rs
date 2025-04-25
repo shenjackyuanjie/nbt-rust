@@ -1,5 +1,5 @@
 use crate::borrow::BorrowNbtValue as BValue;
-use crate::{Mutf8String, NbtReader, NbtValue};
+use crate::{Mutf8String, NbtReader, NbtValue, RECURSE_LIMIT};
 
 /// 把一个 borrow value 转换成 owned value
 ///
@@ -17,9 +17,11 @@ pub fn own_value(value: &BValue, reader: &mut NbtReader) -> NbtValue {
 
     // 两个 FILO 栈用来解析
     // 解析栈
-    let mut parse_stack = vec![value];
+    let mut parse_stack = Vec::with_capacity(RECURSE_LIMIT);
+    parse_stack.push(value);
     // 写入栈
-    let mut write_stack = vec![&mut root_element];
+    let mut write_stack: Vec<&mut NbtValue> = Vec::with_capacity(RECURSE_LIMIT);
+    write_stack.push(&mut root_element);
 
     while !parse_stack.is_empty() {
         // 从解析栈中取出一个

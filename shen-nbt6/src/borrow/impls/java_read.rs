@@ -30,7 +30,8 @@ pub fn java_from_reader(reader: &mut NbtReader, root_with_name: bool) -> NbtResu
     // 开始解析
     // 先创建一个模拟的 stack
     // 顺便把 root 放进去
-    let mut read_stack: Vec<&mut BorrowNbtValue> = vec![&mut root];
+    let mut read_stack: Vec<&mut BorrowNbtValue> = Vec::with_capacity(RECURSE_LIMIT);
+    read_stack.push(&mut root);
     // 堆栈规则: FILO (First In Last Out)
     // 栈顶是当前正在处理的对象
     // 栈底是 root
